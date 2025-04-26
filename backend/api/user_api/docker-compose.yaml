@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    image: api:latest
+    ports:
+      - "8008:8008"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8008/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    command: uv run uvicorn main:app --host 0.0.0.0 --port 8008 --reload
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: uv run celery -A app.tasks worker --loglevel=info
