@@ -6,12 +6,65 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
-    }
+      "recommended": true,
+      "correctness": {
+        "noUnusedVariables": "error",
+        "noUndeclaredVariables": "error",
+        "useExhaustiveDependencies": "error"
+      },
+      "suspicious": {
+        "noExplicitAny": "warn",
+        "noConsoleLog": "warn"
+      },
+      "style": {
+        "noNegationElse": "warn",
+        "useConst": "warn",
+        "useDefaultParameterLast": "warn"
+      },
+      "performance": {
+        "noDelete": "warn"
+      },
+      "complexity": {
+        "useLiteralKeys": "warn"
+      }
+    },
+    "ignore": [
+      "node_modules",
+      ".next",
+      "dist",
+      "build",
+      "public",
+      "**/*.config.js",
+      "**/*.config.ts"
+    ]
   },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
-    "indentWidth": 2
+    "indentWidth": 2,
+    "lineWidth": 100,
+    "lineEnding": "lf",
+    "ignore": ["node_modules", ".next", "dist", "build", "public"]
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "semicolons": "always"
+    }
+  },
+  "json": {
+    "parser": {
+      "allowComments": true,
+      "allowTrailingCommas": true
+    },
+    "formatter": {
+      "indentStyle": "space",
+      "indentWidth": 2
+    }
+  },
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
   }
 }
