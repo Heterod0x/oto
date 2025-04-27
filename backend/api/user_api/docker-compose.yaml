@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   api:
     build:
@@ -32,6 +30,8 @@ services:
       dockerfile: ./docker/Dockerfile
     volumes:
       - .:/api
+    env_file:
+      - .env
     depends_on:
       - redis
     environment:

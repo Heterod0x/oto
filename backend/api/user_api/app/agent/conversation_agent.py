@@ -20,4 +20,5 @@ class ConversationOverviewExtractor(AbstractAgent):
         )
 
     def handle(self, transcript: str) -> ConversationOverview:
-        return self.agent.run(transcript)
+        response = self.agent.run(transcript)
+        return response.content

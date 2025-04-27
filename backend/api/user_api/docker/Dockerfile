@@ -6,4 +6,4 @@ WORKDIR /api
 ENV PATH="/api/.venv/bin:$PATH"
 
 COPY pyproject.toml uv.lock ./
-RUN uv sync
+RUN uv sync --frozen
