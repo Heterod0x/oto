@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "音声録音アプリ",
-    short_name: "録音アプリ",
+    name: "Oto App",
+    short_name: "Oto",
     description: "音声を録音して分析するアプリケーション",
     start_url: "/",
     display: "standalone",

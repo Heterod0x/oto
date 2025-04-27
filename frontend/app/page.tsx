@@ -1,10 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useWallet } from "@/app/hooks/use-wallet";
 import { ConnectWalletButton } from "@/app/components/connect-wallet-button";
+import { useWallet } from "@/app/hooks/use-wallet";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
+/**
+ * Home page component
+ * @returns 
+ */
 export default function Home() {
   const router = useRouter();
   const { isConnected } = useWallet();
@@ -23,9 +27,7 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <h1 className="mb-8 text-2xl font-bold text-center">
-        Privyなどの
-        <br />
-        Social login
+        SignUp / SignIn
       </h1>
       <ConnectWalletButton />
     </div>

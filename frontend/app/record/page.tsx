@@ -1,11 +1,15 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Separator } from "@/app/components/ui/separator";
 import { Mic, Square } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
+/**
+ * RecordPage Component
+ * @returns 
+ */
 export default function RecordPage() {
   // 録音状態を管理するstate
   const [isRecording, setIsRecording] = useState(false);
@@ -87,7 +91,10 @@ export default function RecordPage() {
       const formData = new FormData();
       formData.append("audio", audioBlob, "recording.wav");
 
+      console.log("audio data:", audioBlob);
+
       // APIエンドポイントに送信
+      // ※ ここはバックエンドのAPIを呼び出すように想定
       const response = await fetch("/api/analyze", {
         method: "POST",
         body: formData,
