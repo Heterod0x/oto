@@ -1,6 +1,8 @@
 "use client";
 
-import { createContext, useState, useEffect, type ReactNode } from "react";
+import { ethersAdapter, networks, projectId, solanaWeb3JsAdapter } from "@/config";
+import { createAppKit } from "@reown/appkit";
+import { createContext, useEffect, useState, type ReactNode } from "react";
 
 // ウォレットコンテキストの型定義
 interface WalletContextType {
@@ -19,6 +21,29 @@ const defaultContext: WalletContextType = {
   connect: async () => {},
   disconnect: () => {},
 };
+
+// Set up metadata
+const metadata = {
+  name: 'oto',
+  description: 'oto',
+  url: 'https://github.com/0xonerb/next-reown-appkit-ssr', // origin must match your domain & subdomain
+  icons: ['https://avatars.githubusercontent.com/u/179229932']
+}
+
+// Create the modal
+export const modal = createAppKit({
+  adapters: [solanaWeb3JsAdapter, ethersAdapter],
+  projectId,
+  networks,
+  metadata,
+  themeMode: 'light',
+  features: {
+    analytics: true // Optional - defaults to your Cloud configuration
+  },
+  themeVariables: {
+    '--w3m-accent': '#000000',
+  }
+})
 
 // コンテキストの作成
 export const WalletContext = createContext<WalletContextType>(defaultContext);

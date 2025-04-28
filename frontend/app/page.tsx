@@ -1,7 +1,8 @@
 "use client";
 
-import { ConnectWalletButton } from "@/app/components/connect-wallet-button";
-import { useWallet } from "@/app/hooks/use-wallet";
+import {
+  useAppKitAccount
+} from '@reown/appkit/react';
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -11,7 +12,7 @@ import { useEffect } from "react";
  */
 export default function Home() {
   const router = useRouter();
-  const { isConnected } = useWallet();
+  const {address, caipAddress, isConnected, embeddedWalletInfo} = useAppKitAccount();
 
   // ウォレット接続状態に応じて録音画面またはウォレット接続画面を表示
   useEffect(() => {
@@ -29,7 +30,7 @@ export default function Home() {
       <h1 className="mb-8 text-2xl font-bold text-center">
         SignUp / SignIn
       </h1>
-      <ConnectWalletButton />
+      <appkit-button />
     </div>
   );
 }
