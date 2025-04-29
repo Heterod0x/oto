@@ -1,11 +1,13 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 
 class UserProfile(BaseModel):
-    name: str
+    # name: str
     age: int
-    hobbies: list[str]
     gender: str
-    favorite_foods: list[str]
+    interests: Optional[list[str]] = None
+    favorite_foods: Optional[list[str]] = None
     personality: str
     self_introduction: str

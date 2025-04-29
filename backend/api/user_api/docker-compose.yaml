@@ -1,15 +1,12 @@
-version: '3.8'
-
 services:
   api:
     build:
       context: .
       dockerfile: ./docker/Dockerfile
-    image: api:latest
     ports:
       - "8008:8008"
     volumes:
-      - .:/app
+      - .:/api
     env_file:
       - .env
     restart: unless-stopped
@@ -32,7 +29,9 @@ services:
       context: .
       dockerfile: ./docker/Dockerfile
     volumes:
-      - .:/app
+      - .:/api
+    env_file:
+      - .env
     depends_on:
       - redis
     environment:

@@ -1,23 +1,18 @@
 from agno.agent import Agent
-from app.agent.models.openai import openai_model
+
 from app.agent.abstract_agent import AbstractAgent
-
-from pydantic import BaseModel
-
-
-class ConversationOverview(BaseModel):
-    title: str
-    one_line_summary: str
-    tags: list[str]
+from app.agent.models import default_model
+from app.domain.conversation.object.conversation_overview import ConversationOverview
 
 
 class ConversationOverviewExtractor(AbstractAgent):
     def __init__(self):
         self.agent = Agent(
-            model=openai_model,
+            model=default_model,
             description="You extract the overview of a conversation from the transcript.",
             response_model=ConversationOverview,
         )
 
     def handle(self, transcript: str) -> ConversationOverview:
-        return self.agent.run(transcript)
+        response = self.agent.run(transcript)
+        return response.content
