@@ -1,9 +1,9 @@
 from loguru import logger
 
-from app.usecase.usecase import UseCase
-from app.domain.conversation.repository.i_conversation_audio_repository import IConversationAudioRepository
 from app.domain.conversation.object.conversation_audio import ConversationAudio
+from app.domain.conversation.repository.i_conversation_audio_repository import IConversationAudioRepository
 from app.tasks import analyze_conversation, evaluate_audio
+from app.usecase.usecase import UseCase
 
 
 class StoreConversationAudio(UseCase):

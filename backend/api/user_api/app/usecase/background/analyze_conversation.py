@@ -1,10 +1,10 @@
 from loguru import logger
 
-from app.usecase.usecase import UseCase
-from app.domain.conversation.repository.i_conversation_repository import IConversationRepository
-from app.domain.conversation.repository.i_conversation_audio_repository import IConversationAudioRepository
-from app.domain.conversation.domain_service.transcription.i_transcriber import ITranscriber
 from app.domain.conversation.domain_service.conversation_factory import ConversationFactory
+from app.domain.conversation.domain_service.transcription.i_transcriber import ITranscriber
+from app.domain.conversation.repository.i_conversation_audio_repository import IConversationAudioRepository
+from app.domain.conversation.repository.i_conversation_repository import IConversationRepository
+from app.usecase.usecase import UseCase
 
 
 class AnalyzeConversation(UseCase):
@@ -21,7 +21,7 @@ class AnalyzeConversation(UseCase):
         self._conversation_repository = conversation_repository
 
     # TODO: returnの型に違和感あり
-    def handle(self, conversation_id: str) -> str:
+    def handle(self, user_id: str, conversation_id: str) -> str:
         conversation_audio = self._conversation_audio_repository.get(conversation_id)
 
         # transcribe audio
@@ -29,8 +29,8 @@ class AnalyzeConversation(UseCase):
         logger.info(f"Transcript: {transcript[:100]}")
 
         # store conversation
-        conversation = self._conversation_factory.create(transcript)
+        conversation = self._conversation_factory.create(conversation_id, transcript)
         logger.info(f"Overview: {conversation.overview}")
-        self._conversation_repository.store(conversation_id, conversation)
+        self._conversation_repository.store(user_id, conversation)
 
         return transcript

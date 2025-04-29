@@ -1,10 +1,11 @@
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter, File, UploadFile
 from fastapi.responses import JSONResponse
 from loguru import logger
 
-from app.usecase.store_conversation_audio import StoreConversationAudio
-from app.infrastructure.repository.supabase_conversation_audio_repository import SupabaseConversationAudioRepository
 from app.infrastructure.handler.supabase_handler import supabase_client
+from app.infrastructure.repository.supabase_conversation_audio_repository import SupabaseConversationAudioRepository
+from app.infrastructure.repository.supabase_conversation_repository import SupabaseConversationRepository
+from app.usecase.store_conversation_audio import StoreConversationAudio
 
 conversation_router = APIRouter(prefix="/conversation", tags=["conversation"])
 
@@ -13,7 +14,9 @@ conversation_router = APIRouter(prefix="/conversation", tags=["conversation"])
 async def get_conversations(
     user_id: str,
 ) -> JSONResponse:
-    return JSONResponse(content={"message": "success"})
+    conversation_repository = SupabaseConversationRepository(supabase_client)
+    conversations = conversation_repository.get_all(user_id)
+    return JSONResponse(content={"conversations": [conversation.model_dump() for conversation in conversations]})
 
 
 @conversation_router.post("/")

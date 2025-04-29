@@ -1,8 +1,9 @@
 from agno.agent import Agent
+
 from app.agent.abstract_agent import AbstractAgent
 from app.agent.models.openai import openai_model
-from app.domain.user_profile.object.user_profile import UserProfile
 from app.domain.user_profile.object.user_context import UserContext
+from app.domain.user_profile.object.user_profile import UserProfile
 
 
 class ProfileGenerator(AbstractAgent):

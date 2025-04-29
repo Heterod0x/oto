@@ -1,8 +1,8 @@
 from loguru import logger
 
-from app.domain.conversation.repository.i_conversation_audio_repository import IConversationAudioRepository
-from app.domain.conversation.domain_service.voice_activity.i_voice_activity_detector import IVoiceActivityDetector
 from app.domain.conversation.domain_service.sound_quality.i_sound_quality_evaluator import ISoundQualityEvaluator
+from app.domain.conversation.domain_service.voice_activity.i_voice_activity_detector import IVoiceActivityDetector
+from app.domain.conversation.repository.i_conversation_audio_repository import IConversationAudioRepository
 from app.usecase.usecase import UseCase
 
 

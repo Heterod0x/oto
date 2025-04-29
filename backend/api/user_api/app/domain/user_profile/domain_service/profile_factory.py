@@ -1,6 +1,6 @@
+from app.agent.profile_generator import ProfileGenerator as ProfileGeneratorAgent
 from app.domain.user_profile.object.user_profile import UserProfile
 from app.domain.user_profile.repository.i_user_context_repository import IUserContextRepository
-from app.agent.profile_generator import ProfileGenerator as ProfileGeneratorAgent
 
 
 class ProfileFactory:

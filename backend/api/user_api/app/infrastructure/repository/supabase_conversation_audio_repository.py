@@ -1,8 +1,8 @@
-from supabase import Client
 from loguru import logger
+from supabase import Client
 
-from app.domain.conversation.repository.i_conversation_audio_repository import IConversationAudioRepository
 from app.domain.conversation.object.conversation_audio import ConversationAudio
+from app.domain.conversation.repository.i_conversation_audio_repository import IConversationAudioRepository
 
 
 class SupabaseConversationAudioRepository(IConversationAudioRepository):

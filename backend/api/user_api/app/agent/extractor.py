@@ -1,8 +1,9 @@
-from pydantic import BaseModel
 from agno.agent import Agent
-from app.agent.models import default_model
 from agno.models.base import Model
+from pydantic import BaseModel
+
 from app.agent.abstract_agent import AbstractAgent
+from app.agent.models import default_model
 
 
 class ExtractedContent(BaseModel):

@@ -1,6 +1,7 @@
 from agno.agent import Agent
-from app.agent.models import default_model
+
 from app.agent.abstract_agent import AbstractAgent
+from app.agent.models import default_model
 from app.domain.conversation.object.conversation_overview import ConversationOverview
 
 

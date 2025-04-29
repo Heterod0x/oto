@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+
 from app.domain.user_profile.object.user_context import UserContext
 
 

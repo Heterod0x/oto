@@ -2,8 +2,8 @@ from agno.memory.v2.db.sqlite import SqliteMemoryDb
 from agno.memory.v2.memory import Memory
 from agno.memory.v2.schema import UserMemory
 
-from app.domain.user_profile.repository.i_user_context_repository import IUserContextRepository
 from app.domain.user_profile.object.user_context import UserContext, UserContextTag
+from app.domain.user_profile.repository.i_user_context_repository import IUserContextRepository
 
 
 class SqliteUserContextRepository(IUserContextRepository):

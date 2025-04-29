@@ -1,8 +1,8 @@
-from app.usecase.usecase import UseCase
-from app.domain.user_profile.domain_service.profile_factory import ProfileFactory
-from app.domain.user_profile.repository.i_user_profile_repository import IUserProfileRepository
-from app.domain.user_profile.repository.i_user_context_repository import IUserContextRepository
 from app.domain.user_profile.domain_service.context_extractor import ContextExtractor
+from app.domain.user_profile.domain_service.profile_factory import ProfileFactory
+from app.domain.user_profile.repository.i_user_context_repository import IUserContextRepository
+from app.domain.user_profile.repository.i_user_profile_repository import IUserProfileRepository
+from app.usecase.usecase import UseCase
 
 
 class RefineUserProfile(UseCase):
