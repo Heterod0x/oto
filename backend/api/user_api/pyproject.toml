@@ -17,4 +17,6 @@ dependencies = [
     "redis>=5.2.1",
     "python-multipart>=0.0.20",
     "agno>=1.4.2",
+    "sqlalchemy>=2.0.40",
+    "google-genai>=1.12.1",
 ]

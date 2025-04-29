@@ -5,15 +5,14 @@ from pydantic import BaseModel
 from loguru import logger
 from supabase import create_client
 
-from app.domain.object.user_profile import UserProfile
-from app.usecase.store_conversation import StoreConversation
-from app.infrastructure.repository.supabase_conversation_repository import SupabaseConversationRepository
-from app.infrastructure.domain_service.openai_transcriber import OpenAITranscriber
+from app.domain.user_profile.object.user_profile import UserProfile
+from app.usecase.store_conversation_audio import StoreConversationAudio
+from app.infrastructure.repository.supabase_conversation_audio_repository import SupabaseConversationAudioRepository
+
+# from app.infrastructure.domain_service.openai_transcriber import OpenAITranscriber
 from app.infrastructure.handler.openai_handler import OpenAIHandler
 from app.infrastructure.domain_service.jina_embedder import JinaEmbedder
 from app.config import supabase_config
-
-from app.tasks import wait
 
 
 class StoreConversationRequest(BaseModel):
@@ -31,10 +30,10 @@ supabase_client = create_client(
     supabase_config.supabase_key,
 )
 
-conversation_repository = SupabaseConversationRepository(supabase_client)
-transcriber = OpenAITranscriber(openai_handler)
+conversation_audio_repository = SupabaseConversationAudioRepository(supabase_client)
+# transcriber = OpenAITranscriber(openai_handler)
 embedder = JinaEmbedder()
-store_conversation_usecase = StoreConversation(conversation_repository, transcriber, embedder)
+store_conversation_usecase = StoreConversationAudio(conversation_audio_repository)
 
 
 @profile_router.get("/{user_id}")
@@ -57,25 +56,15 @@ async def get_conversations(
 ) -> JSONResponse:
     from uuid import uuid4
     from datetime import datetime
-    from app.domain.object.conversation import ConversationQuery
+    from app.domain.conversation.object.conversation import ConversationQuery
 
     dummy = ConversationQuery(
         conversation_id=str(uuid4()),
         title="テストタイトル",
-        text_data="テストテキスト",
-        tags=["テストタグ1", "テストタグ2"],
+        overview="テストオーバービュー",
+        full_transcript="テストテキスト",
+        # tags=["テストタグ1", "テストタグ2"],
         created_at=datetime.now(),
     )
     conversations = [dummy, dummy, dummy]
     return JSONResponse(content={"conversations": [c.model_dump() for c in conversations]})
-
-
-@conversation_router.post("/")
-async def store_conversation(
-    audio: UploadFile = File(...),
-) -> JSONResponse:
-    # text = store_conversation_usecase.handle()
-    text = "dummy text"
-    wait.delay(10)
-    logger.info(f"Transcribed text: {text}")
-    return JSONResponse(content={"message": text})

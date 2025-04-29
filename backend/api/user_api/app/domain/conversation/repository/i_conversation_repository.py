@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
-from app.domain.object.conversation import Conversation
-from app.domain.object.user_id import UserId
+from app.domain.conversation.object.conversation import Conversation
+from app.domain.general.object.user_id import UserId
 
 
 class IConversationRepository(ABC):

@@ -1,9 +1,9 @@
 from loguru import logger
 from supabase import Client
 
-from app.domain.object.conversation import Conversation
-from app.domain.object.user_id import UserId
-from app.domain.repository.i_conversation_repository import IConversationRepository
+from app.domain.conversation.object.conversation import Conversation
+from app.domain.conversation.repository.i_conversation_repository import IConversationRepository
+from app.domain.general.object.user_id import UserId
 
 
 class SupabaseConversationRepository(IConversationRepository):
@@ -13,10 +13,13 @@ class SupabaseConversationRepository(IConversationRepository):
     def store(self, user_id: UserId, conversation: Conversation) -> None:
         logger.info(f"Storing conversation: {conversation.conversation_id}")
 
+        # TODO: 実装
         # save raw voice data in storage
-        self._client.storage.from_("raw-conversation").upload(
-            path=f"{conversation.conversation_id}.m4a",
-            file=conversation.raw_voice_data,
-        )
-
+        # self._client.table("conversation").insert(
+        #     {
+        #         "conversation_id": conversation.conversation_id,
+        #         "user_id": user_id,
+        #         "conversation": conversation,
+        #     }
+        # )
         pass

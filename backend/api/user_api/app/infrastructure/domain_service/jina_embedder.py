@@ -1,5 +1,5 @@
-from app.domain.domain_service.i_embedder import IEmbedder
-from app.domain.object.embedding import Embedding
+from app.domain.conversation.domain_service.embedding.i_embedder import IEmbedder
+from app.domain.conversation.object.embedding import Embedding
 from app.infrastructure.handler.jina_handler import jina_embed_client
 
 

@@ -14,18 +14,20 @@ class ConversationMetadata(BaseModel):
 class Conversation(BaseModel):
     conversation_id: ConversationId = Field(default_factory=lambda: str(uuid.uuid4()))
     title: str
-    tags: list[str]
+    # tags: list[str]
     metadata: ConversationMetadata
-    raw_voice_data: bytes
+    # raw_voice_data: bytes
     # embedding: list[float]
-    text_data: str
+    overview: str
+    full_transcript: str
 
 
 class ConversationQuery(BaseModel):
     conversation_id: ConversationId
     title: str
-    text_data: str
-    tags: list[str]
+    overview: str
+    full_transcript: str
+    # tags: list[str]
     created_at: datetime
 
     @field_serializer("created_at")

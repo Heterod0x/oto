@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 
 class UserProfile(BaseModel):
-    name: str
+    # name: str
     age: int
     hobbies: list[str]
     gender: str

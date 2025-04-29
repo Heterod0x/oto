@@ -1,4 +1,4 @@
-from app.domain.domain_service.i_transcriber import ITranscriber
+from app.domain.conversation.domain_service.transcription.i_transcriber import ITranscriber
 from app.infrastructure.handler.openai_handler import OpenAIHandler
 
 

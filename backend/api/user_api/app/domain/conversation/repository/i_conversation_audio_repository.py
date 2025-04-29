@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from app.domain.object.conversation_audio import ConversationAudio
+from app.domain.conversation.object.conversation_audio import ConversationAudio
 
 
 class IConversationAudioRepository(ABC):
