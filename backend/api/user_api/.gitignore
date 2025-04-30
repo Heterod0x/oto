@@ -11,3 +11,6 @@ wheels/
 
 # environment variables
 .env
+
+# App
+tmp/

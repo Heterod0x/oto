@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from app.domain.object.embedding import Embedding
+from app.domain.conversation.object.embedding import Embedding
 
 
 class IEmbedder(ABC):

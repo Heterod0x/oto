@@ -1,6 +1,8 @@
-import requests
-from app.config import jina_config
 from enum import Enum
+
+import requests
+
+from app.config import jina_config
 
 
 class EmbedType(Enum):
