@@ -9,5 +9,8 @@ wheels/
 # Virtual environments
 .venv
 
+# environment variables
+.env
+
 # App
 tmp/
