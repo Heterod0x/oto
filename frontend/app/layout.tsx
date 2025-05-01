@@ -2,10 +2,10 @@ import { BottomNavigation } from "@/components/bottom-navigation";
 import InstallPrompt from "@/components/install-prompt";
 import { ThemeProvider } from "@/components/theme-provider";
 import { WalletProvider } from "@/contexts/wallet-context";
+import "@/styles/globals.css";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import type React from "react";
-import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,8 +19,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "音声録音アプリ",
-  description: "音声を録音して分析するアプリケーション",
+  title: "oto",
+  description: "oto",
   manifest: "/manifest.json",
   generator: "v0.dev",
   appleWebApp: {
