@@ -3,6 +3,7 @@
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Separator } from "@/app/components/ui/separator";
+import { storeConversation } from "@/lib/api";
 import { Mic, Square } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -93,20 +94,10 @@ export default function RecordPage() {
 
       console.log("audio data:", audioBlob);
 
-      // APIエンドポイントに送信
-      // ※ ここはバックエンドのAPIを呼び出すように想定
-      const response = await fetch("/api/analyze", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (response.ok) {
-        // 分析成功
-        console.log("録音の分析が完了しました");
-        // 分析後の処理（例：会話履歴画面への遷移など）
-      } else {
-        throw new Error("分析に失敗しました");
-      }
+      // 録音データをファイルオブジェクトに変換
+      const audioFile = new File([audioBlob], "recording.wav", { type: "audio/wav" });
+      // storeConversation APIを呼び出す
+      await storeConversation("user123", audioFile);
     } catch (error) {
       console.error("録音の分析中にエラーが発生しました:", error);
     } finally {
