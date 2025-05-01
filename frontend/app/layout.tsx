@@ -1,5 +1,5 @@
 import { BottomNavigation } from "@/app/components/bottom-navigation";
-import { WalletProvider } from "@/app/contexts/wallet-context";
+import { WalletProvider } from "@/contexts/wallet-context";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import type React from "react";
