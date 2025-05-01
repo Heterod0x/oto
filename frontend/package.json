@@ -10,6 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@coral-xyz/anchor": "^0.30.1",
     "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-accordion": "1.2.2",
     "@radix-ui/react-alert-dialog": "1.1.4",
@@ -41,7 +42,10 @@
     "@reown/appkit": "1.7.3",
     "@reown/appkit-adapter-ethers": "^1.7.3",
     "@reown/appkit-adapter-solana": "1.7.3",
+    "@solana/spl-token": "^0.4.13",
+    "@solana/wallet-adapter-react": "^0.15.38",
     "@solana/web3.js": "1.98.0",
+    "@tanstack/react-query": "^5.74.11",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
