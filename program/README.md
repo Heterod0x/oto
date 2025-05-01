@@ -74,6 +74,12 @@ anchor build
 anchor deploy
 ```
 
+- with flags
+
+```bash
+anchor deploy --provider.cluster devnet --provider.wallet keypair.json --program-keypair target/deploy/oto-keypair.json --program-name oto
+```
+
 ### Run tests
 
 ```bash
