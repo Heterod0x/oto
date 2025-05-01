@@ -1,1 +1,1 @@
-# oto program
+# oto
