@@ -188,7 +188,6 @@ export default function SettingsPage() {
             </div>
             <span className="text-lg font-medium">Wallet</span>
           </div>
-          
         </div>
 
         <div className="mt-6">
@@ -226,7 +225,7 @@ export default function SettingsPage() {
               <div className="py-2">
                 {/* AppKitのウォレット接続ボタン */}
                 <appkit-button />
-              </div>     
+              </div>
             </div>
           </div>
 

@@ -30,7 +30,7 @@ export default function HistoryPage() {
     const fetchConversations = async () => {
       try {
         // APIからデータを取得
-        const data = await getConversations("sampleUserId")
+        const data = await getConversations("sampleUserId");
         setConversations(data);
 
         setIsLoading(false);
