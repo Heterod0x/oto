@@ -23,7 +23,7 @@ export default function InstallPrompt() {
 
     // インストール済みかどうかをローカルストレージから確認
     const isInstalled = localStorage.getItem("pwaInstalled") === "true";
-    
+
     if (!isInstalled) {
       // イベントリスナーを登録
       window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);

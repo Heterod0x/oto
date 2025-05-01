@@ -34,7 +34,7 @@ export default function SettingsPage() {
         // 動的にインポート
         const { useContract } = await import("@/hooks/use-contract");
         const { useAppKitAccount } = await import("@reown/appkit/react");
-        
+
         // ウォレット情報を取得
         const { address: walletAddress } = useAppKitAccount();
         if (walletAddress) {
@@ -126,7 +126,7 @@ export default function SettingsPage() {
 
     try {
       setIsClaimLoading(true);
-      
+
       // クレーム可能金額が0の場合は処理しない
       if (Number(claimableAmount) <= 0) {
         toast.error("クレーム可能なトークンがありません");
@@ -134,7 +134,11 @@ export default function SettingsPage() {
         return;
       }
 
-      if (!contractFunctions || !contractFunctions.claimTokens || !contractFunctions.claimTokens.mutateAsync) {
+      if (
+        !contractFunctions ||
+        !contractFunctions.claimTokens ||
+        !contractFunctions.claimTokens.mutateAsync
+      ) {
         toast.error("クレーム機能が初期化されていません");
         setIsClaimLoading(false);
         return;
@@ -143,11 +147,11 @@ export default function SettingsPage() {
       // トークンをクレームするメソッドを呼び出す
       await contractFunctions.claimTokens.mutateAsync({
         userId: address,
-        claimAmount: Number(claimableAmount)
+        claimAmount: Number(claimableAmount),
       });
 
       toast.success("トークンのクレームに成功しました");
-      
+
       // 残高を更新
       if (contractFunctions.getClaimableAmount && contractFunctions.getClaimableAmount.refetch) {
         await contractFunctions.getClaimableAmount.refetch();
@@ -208,9 +212,12 @@ export default function SettingsPage() {
           <div className="mb-3">
             <span className="text-sm text-muted-foreground">Recent Transactions</span>
           </div>
-          
-          {transactions.map(transaction => (
-            <div key={transaction.id} className="flex items-center justify-between py-2 border-t border-muted">
+
+          {transactions.map((transaction) => (
+            <div
+              key={transaction.id}
+              className="flex items-center justify-between py-2 border-t border-muted"
+            >
               <div className="flex items-center">
                 {transaction.type === "sent" ? (
                   <div className="mr-3 p-2 rounded-full bg-muted">
@@ -223,17 +230,19 @@ export default function SettingsPage() {
                 )}
                 <div>
                   <div className="font-medium">
-                    {transaction.type === "sent" 
-                      ? `Sent to ${transaction.recipient}` 
+                    {transaction.type === "sent"
+                      ? `Sent to ${transaction.recipient}`
                       : `Received from ${transaction.sender}`}
                   </div>
                   <div className="text-sm text-muted-foreground">{transaction.time}</div>
                 </div>
               </div>
-              <div className={cn(
-                "font-medium",
-                transaction.type === "sent" ? "text-destructive" : "text-green-600"
-              )}>
+              <div
+                className={cn(
+                  "font-medium",
+                  transaction.type === "sent" ? "text-destructive" : "text-green-600",
+                )}
+              >
                 {transaction.type === "sent" ? "-" : "+"}${transaction.amount}
               </div>
             </div>
@@ -243,11 +252,13 @@ export default function SettingsPage() {
         <div className="mt-6">
           <div className="text-sm text-muted-foreground mb-2">クレーム可能なトークン</div>
           <div className="font-medium text-lg mb-3">{claimableAmount} TOKEN</div>
-          <Button 
+          <Button
             className="w-full flex items-center justify-center gap-2"
             variant="default"
             onClick={handleClaim}
-            disabled={!isConnected || Number(claimableAmount) <= 0 || isClaimLoading || !contractReady}
+            disabled={
+              !isConnected || Number(claimableAmount) <= 0 || isClaimLoading || !contractReady
+            }
           >
             {isClaimLoading ? (
               <span>処理中...</span>
@@ -264,7 +275,7 @@ export default function SettingsPage() {
       {/* アプリ設定 */}
       <Card className="border rounded-xl p-5">
         <h2 className="text-xl font-semibold mb-4">App Settings</h2>
-        
+
         <div className="space-y-6">
           {/* ウォレット情報 */}
           <div className="space-y-2">
@@ -276,12 +287,7 @@ export default function SettingsPage() {
                     <p className="text-sm text-muted-foreground">Address</p>
                     <div className="flex items-center justify-between">
                       <p className="font-mono text-sm">{displayAddress}</p>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-8 px-2"
-                        onClick={copyAddress}
-                      >
+                      <Button variant="ghost" size="sm" className="h-8 px-2" onClick={copyAddress}>
                         <Copy size={14} />
                       </Button>
                     </div>
@@ -291,8 +297,8 @@ export default function SettingsPage() {
                     <p>0.000 SOL</p>
                   </div>
                   <div className="pt-2">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="w-full"
                       onClick={() => {
                         localStorage.removeItem("walletAddress");
@@ -311,7 +317,7 @@ export default function SettingsPage() {
               )}
             </div>
           </div>
-          
+
           {/* アピアランス */}
           <div className="space-y-2">
             <h3 className="font-medium">Appearance</h3>

@@ -10,23 +10,22 @@ export default function Offline() {
           インターネット接続がないようです。接続が復帰したらページを再読み込みしてください。
         </p>
         <div className="flex justify-center mt-4">
-          <Button
-            onClick={() => window.location.reload()}
-            className="mx-auto"
-          >
+          <Button onClick={() => window.location.reload()} className="mx-auto">
             再読み込み
           </Button>
         </div>
         <div className="mt-8">
-          <p className="text-sm text-muted-foreground">
-            一部の機能はオフラインでも利用可能です
-          </p>
+          <p className="text-sm text-muted-foreground">一部の機能はオフラインでも利用可能です</p>
           <div className="flex flex-wrap gap-2 mt-2 justify-center">
             <Link href="/record">
-              <Button variant="outline" size="sm">録音</Button>
+              <Button variant="outline" size="sm">
+                録音
+              </Button>
             </Link>
             <Link href="/history">
-              <Button variant="outline" size="sm">履歴</Button>
+              <Button variant="outline" size="sm">
+                履歴
+              </Button>
             </Link>
           </div>
         </div>

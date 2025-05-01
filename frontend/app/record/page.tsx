@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "react";
 
 /**
  * RecordPage Component
- * @returns 
+ * @returns
  */
 export default function RecordPage() {
   // 録音状態を管理するstate

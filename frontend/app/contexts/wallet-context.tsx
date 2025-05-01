@@ -24,11 +24,11 @@ const defaultContext: WalletContextType = {
 
 // Set up metadata
 const metadata = {
-  name: 'oto',
-  description: 'oto',
-  url: 'https://github.com/0xonerb/next-reown-appkit-ssr', // origin must match your domain & subdomain
-  icons: ['https://avatars.githubusercontent.com/u/179229932']
-}
+  name: "oto",
+  description: "oto",
+  url: "https://github.com/0xonerb/next-reown-appkit-ssr", // origin must match your domain & subdomain
+  icons: ["https://avatars.githubusercontent.com/u/179229932"],
+};
 
 // Create the modal
 export const modal = createAppKit({
@@ -36,14 +36,14 @@ export const modal = createAppKit({
   projectId,
   networks,
   metadata,
-  themeMode: 'light',
+  themeMode: "light",
   features: {
-    analytics: true // Optional - defaults to your Cloud configuration
+    analytics: true, // Optional - defaults to your Cloud configuration
   },
   themeVariables: {
-    '--w3m-accent': '#000000',
-  }
-})
+    "--w3m-accent": "#000000",
+  },
+});
 
 // コンテキストの作成
 export const WalletContext = createContext<WalletContextType>(defaultContext);
