@@ -140,6 +140,7 @@ export default function SettingsPage() {
         return;
       }
 
+      // トークンをクレームするメソッドを呼び出す
       await contractFunctions.claimTokens.mutateAsync({
         userId: address,
         claimAmount: Number(claimableAmount)
@@ -158,12 +159,6 @@ export default function SettingsPage() {
     } finally {
       setIsClaimLoading(false);
     }
-  };
-
-  // ウォレット接続ボタンのクリックハンドラ
-  const handleWalletConnect = () => {
-    // ウォレット接続処理（実際にはWebComponentを使用）
-    console.log("ウォレット接続ボタンがクリックされました");
   };
 
   return (
