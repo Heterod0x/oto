@@ -9,7 +9,9 @@ import { cn } from "@/lib/utils";
 import { ArrowDown, ArrowUp, ChevronDown, Copy, Send } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
+// クライアントサイドでのみ実行されるコンポーネント
 export default function SettingsPage() {
   // ウォレット情報
   const [balance, setBalance] = useState("0.00");
@@ -17,19 +19,52 @@ export default function SettingsPage() {
   const [isClaimLoading, setIsClaimLoading] = useState(false);
   const { theme, setTheme } = useTheme();
   const [currency, setCurrency] = useState("USD");
-  const [address, setAddress] = useState("4ZT9...5rpPNi");
+  const [address, setAddress] = useState("");
+  const [displayAddress, setDisplayAddress] = useState("");
   const [isConnected, setIsConnected] = useState(false);
+  const [claimableAmount, setClaimableAmount] = useState("0");
+  const [contractReady, setContractReady] = useState(false);
+  const [contractFunctions, setContractFunctions] = useState<any>(null);
+
+  // コントラクトの初期化とウォレット情報の取得
+  useEffect(() => {
+    // クライアントサイドでのみ実行される
+    const initializeContract = async () => {
+      try {
+        // 動的にインポート
+        const { useContract } = await import("@/hooks/use-contract");
+        const { useAppKitAccount } = await import("@reown/appkit/react");
+        
+        // ウォレット情報を取得
+        const { address: walletAddress } = useAppKitAccount();
+        if (walletAddress) {
+          setAddress(walletAddress);
+          setIsConnected(true);
+          // アドレスの表示形式を整形（最初と最後の数文字のみ表示）
+          try {
+            const formatted = `${walletAddress.slice(0, 4)}...${walletAddress.slice(-6)}`;
+            setDisplayAddress(formatted);
+          } catch (error) {
+            setDisplayAddress("接続中...");
+          }
+        }
+
+        // コントラクト機能を初期化
+        const contract = useContract();
+        setContractFunctions(contract);
+        setContractReady(true);
+      } catch (error) {
+        console.error("コントラクトの初期化に失敗しました:", error);
+      }
+    };
+
+    initializeContract();
+  }, []);
 
   // ウォレット情報の取得
   useEffect(() => {
     const fetchWalletInfo = async () => {
       try {
-        // APIからデータを取得
-        // const response = await fetch('/api/wallet');
-        // const data = await response.json();
-        // setBalance(data.balance);
-        // setTransactions(data.transactions);
-
         // ダミーデータ（実際の実装ではAPIから取得）
         setBalance("2,458.00");
         setTransactions([
@@ -54,27 +89,81 @@ export default function SettingsPage() {
     };
 
     fetchWalletInfo();
-
-    // ウォレット接続状態をチェック
-    const checkConnection = async () => {
-      // ここで実際の接続状態を確認する処理が入る
-      const storedAddress = localStorage.getItem("walletAddress");
-      setIsConnected(!!storedAddress);
-    };
-    
-    checkConnection();
   }, []);
+
+  // クレーム可能な金額を取得
+  useEffect(() => {
+    if (isConnected && address && contractReady && contractFunctions?.getClaimableAmount) {
+      const fetchClaimableAmount = async () => {
+        try {
+          const data = await contractFunctions.getClaimableAmount.refetch();
+          if (data && data.data) {
+            setClaimableAmount(data.data);
+          }
+        } catch (error) {
+          console.error("クレーム可能金額の取得に失敗しました:", error);
+        }
+      };
+
+      fetchClaimableAmount();
+    }
+  }, [isConnected, address, contractReady, contractFunctions]);
 
   // アドレスをコピー
   const copyAddress = () => {
-    navigator.clipboard.writeText(address);
-    // ここでトーストなどで通知を表示するとよい
-    console.log("アドレスをクリップボードにコピーしました");
+    if (address) {
+      navigator.clipboard.writeText(address);
+      toast.success("アドレスをクリップボードにコピーしました");
+    }
   };
 
-  // 送金処理
-  const handleSend = () => {
-    console.log("送金画面へ");
+  // クレーム処理
+  const handleClaim = async () => {
+    if (!address || !isConnected) {
+      toast.error("ウォレットを接続してください");
+      return;
+    }
+
+    try {
+      setIsClaimLoading(true);
+      
+      // クレーム可能金額が0の場合は処理しない
+      if (Number(claimableAmount) <= 0) {
+        toast.error("クレーム可能なトークンがありません");
+        setIsClaimLoading(false);
+        return;
+      }
+
+      if (!contractFunctions || !contractFunctions.claimTokens || !contractFunctions.claimTokens.mutateAsync) {
+        toast.error("クレーム機能が初期化されていません");
+        setIsClaimLoading(false);
+        return;
+      }
+
+      await contractFunctions.claimTokens.mutateAsync({
+        userId: address,
+        claimAmount: Number(claimableAmount)
+      });
+
+      toast.success("トークンのクレームに成功しました");
+      
+      // 残高を更新
+      if (contractFunctions.getClaimableAmount && contractFunctions.getClaimableAmount.refetch) {
+        await contractFunctions.getClaimableAmount.refetch();
+        setClaimableAmount("0");
+      }
+    } catch (error) {
+      console.error("トークンのクレームに失敗しました:", error);
+      toast.error("トークンのクレームに失敗しました");
+    } finally {
+      setIsClaimLoading(false);
+    }
+  };
+
+  // ウォレット接続ボタンのクリックハンドラ
+  const handleWalletConnect = () => {
+    // ウォレット接続処理（実際にはWebComponentを使用）
+    console.log("ウォレット接続ボタンがクリックされました");
   };
 
   return (
@@ -156,14 +245,25 @@ export default function SettingsPage() {
           ))}
         </div>
 
-        <Button 
-          className="w-full mt-6 flex items-center justify-center gap-2"
-          variant="default"
-          onClick={handleSend}
-        >
-          <span>Claim</span>
-          <Send size={16} />
-        </Button>
+        <div className="mt-6">
+          <div className="text-sm text-muted-foreground mb-2">クレーム可能なトークン</div>
+          <div className="font-medium text-lg mb-3">{claimableAmount} TOKEN</div>
+          <Button 
+            className="w-full flex items-center justify-center gap-2"
+            variant="default"
+            onClick={handleClaim}
+            disabled={!isConnected || Number(claimableAmount) <= 0 || isClaimLoading || !contractReady}
+          >
+            {isClaimLoading ? (
+              <span>処理中...</span>
+            ) : (
+              <>
+                <span>トークンをクレーム</span>
+                <Send size={16} />
+              </>
+            )}
+          </Button>
+        </div>
       </Card>
 
       {/* アプリ設定 */}
@@ -180,7 +280,7 @@ export default function SettingsPage() {
                   <div>
                     <p className="text-sm text-muted-foreground">Address</p>
                     <div className="flex items-center justify-between">
-                      <p className="font-mono text-sm">{address}</p>
+                      <p className="font-mono text-sm">{displayAddress}</p>
                       <Button 
                         variant="ghost" 
                         size="sm" 
