@@ -1,10 +1,10 @@
-import { BottomNavigation } from "@/app/components/bottom-navigation";
+import { BottomNavigation } from "@/components/bottom-navigation";
+import InstallPrompt from "@/components/install-prompt";
+import { ThemeProvider } from "@/components/theme-provider";
 import { WalletProvider } from "@/contexts/wallet-context";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import type React from "react";
-import InstallPrompt from "./components/install-prompt";
-import { ThemeProvider } from "./components/theme-provider";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });

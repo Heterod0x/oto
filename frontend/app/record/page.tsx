@@ -1,8 +1,8 @@
 "use client";
 
-import { Button } from "@/app/components/ui/button";
-import { Card, CardContent } from "@/app/components/ui/card";
-import { Separator } from "@/app/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { storeConversation } from "@/lib/api";
 import { Mic, Square } from "lucide-react";
 import { useEffect, useRef, useState } from "react";

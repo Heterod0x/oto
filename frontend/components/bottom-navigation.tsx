@@ -1,8 +1,8 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { History, Layers, Mic, Settings, User } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { Button } from "@/app/components/ui/button";
-import { Mic, History, Settings, User, Layers } from "lucide-react";
 
 export function BottomNavigation() {
   const pathname = usePathname();
