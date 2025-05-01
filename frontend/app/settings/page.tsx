@@ -1,12 +1,10 @@
 "use client";
 
-import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
-import { ArrowDown, ArrowUp, ChevronDown, Copy, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -190,63 +188,7 @@ export default function SettingsPage() {
             </div>
             <span className="text-lg font-medium">Wallet</span>
           </div>
-          <div className="flex items-center">
-            <Avatar className="h-10 w-10 bg-green-500 text-white">
-              <span className="text-lg font-semibold">C</span>
-            </Avatar>
-          </div>
-        </div>
-
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-muted-foreground">Available Balance</span>
-            <div className="flex items-center">
-              <span className="mr-1">{currency}</span>
-              <ChevronDown size={16} className="opacity-70" />
-            </div>
-          </div>
-          <div className="text-3xl font-semibold">${balance}</div>
-        </div>
-
-        <div className="space-y-4">
-          <div className="mb-3">
-            <span className="text-sm text-muted-foreground">Recent Transactions</span>
-          </div>
-
-          {transactions.map((transaction) => (
-            <div
-              key={transaction.id}
-              className="flex items-center justify-between py-2 border-t border-muted"
-            >
-              <div className="flex items-center">
-                {transaction.type === "sent" ? (
-                  <div className="mr-3 p-2 rounded-full bg-muted">
-                    <ArrowUp size={16} />
-                  </div>
-                ) : (
-                  <div className="mr-3 p-2 rounded-full bg-muted">
-                    <ArrowDown size={16} />
-                  </div>
-                )}
-                <div>
-                  <div className="font-medium">
-                    {transaction.type === "sent"
-                      ? `Sent to ${transaction.recipient}`
-                      : `Received from ${transaction.sender}`}
-                  </div>
-                  <div className="text-sm text-muted-foreground">{transaction.time}</div>
-                </div>
-              </div>
-              <div
-                className={cn(
-                  "font-medium",
-                  transaction.type === "sent" ? "text-destructive" : "text-green-600",
-                )}
-              >
-                {transaction.type === "sent" ? "-" : "+"}${transaction.amount}
-              </div>
-            </div>
-          ))}
+          
         </div>
 
         <div className="mt-6">
@@ -281,40 +223,10 @@ export default function SettingsPage() {
           <div className="space-y-2">
             <h3 className="font-medium">Wallet</h3>
             <div className="rounded-lg border p-4 space-y-4">
-              {isConnected ? (
-                <>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Address</p>
-                    <div className="flex items-center justify-between">
-                      <p className="font-mono text-sm">{displayAddress}</p>
-                      <Button variant="ghost" size="sm" className="h-8 px-2" onClick={copyAddress}>
-                        <Copy size={14} />
-                      </Button>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">SOL Balance</p>
-                    <p>0.000 SOL</p>
-                  </div>
-                  <div className="pt-2">
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => {
-                        localStorage.removeItem("walletAddress");
-                        setIsConnected(false);
-                      }}
-                    >
-                      Disconnect Wallet
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <div className="py-2">
-                  {/* AppKitのウォレット接続ボタン */}
-                  <appkit-button />
-                </div>
-              )}
+              <div className="py-2">
+                {/* AppKitのウォレット接続ボタン */}
+                <appkit-button />
+              </div>     
             </div>
           </div>
 
