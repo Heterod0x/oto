@@ -1,20 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Button } from "@/app/components/ui/button";
-import { Card, CardContent } from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-} from "@/app/components/ui/dialog";
-import { Input } from "@/app/components/ui/input";
-import { Textarea } from "@/app/components/ui/textarea";
-import { Label } from "@/app/components/ui/label";
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { getUserProfile } from "@/lib/api";
 import { Pencil } from "lucide-react";
+import { useEffect, useState } from "react";
 
 // プロフィールの型定義
 interface Profile {
@@ -48,21 +49,8 @@ export default function DigitalTwinPage() {
     const fetchProfile = async () => {
       try {
         // APIからデータを取得
-        // const response = await fetch('/api/profile');
-        // const data = await response.json();
-        // setProfile(data);
-
-        // ダミーデータ（実際の実装ではAPIから取得）
-        setProfile({
-          name: "Yuto",
-          age: 24,
-          gender: "Male",
-          location: "from Japan",
-          favoriteFood: "Humburger",
-          hobbies: ["Music", "Gaming", "Guitar"],
-          description:
-            "a curious and creative boy with a heart full of dreams and a backpack full of gadgets. From the moment he wakes up, Yuto's world is filled with music, games, and endless imagination. With his headphones always on, he navigates through his day, constantly exploring new sounds, strumming his toy guitar, or getting lost in his favorite retro games. Though small in size, Yuto has a big personality. He's thoughtful, kind-hearted, and always eager to learn something new. Whether he's building intricate LEGO structures or gazing at the stars, he brings a soft, joyful energy to everything he does. His room is filled with treasures—sounds from his favorite tally, toy consoles, and hand-drawn comics filled with heroes he dreams of becoming one day. Yuto isn't just a fan of cute things—he's a maker of them. He believes the world is better when it's full of color, kindness, and a little bit of magic.",
-        });
+        const data = await getUserProfile("sampleUserId");
+        setProfile(data);
 
         setIsLoading(false);
       } catch (error) {

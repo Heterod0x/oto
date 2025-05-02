@@ -1,8 +1,8 @@
 "use client";
 
-import type React from "react";
-
-import { useState, useEffect, useContext, createContext } from "react";
+import { ethersAdapter, networks, projectId, solanaWeb3JsAdapter } from "@/config";
+import { createAppKit } from "@reown/appkit";
+import { createContext, useEffect, useState, type ReactNode } from "react";
 
 // ウォレットコンテキストの型定義
 interface WalletContextType {
@@ -13,17 +13,43 @@ interface WalletContextType {
   disconnect: () => void;
 }
 
-// ウォレットコンテキストの作成
-const WalletContext = createContext<WalletContextType>({
+// デフォルト値
+const defaultContext: WalletContextType = {
   isConnected: false,
   isConnecting: false,
   address: null,
   connect: async () => {},
   disconnect: () => {},
+};
+
+// Set up metadata
+const metadata = {
+  name: "oto",
+  description: "oto",
+  url: "https://github.com/0xonerb/next-reown-appkit-ssr", // origin must match your domain & subdomain
+  icons: ["https://avatars.githubusercontent.com/u/179229932"],
+};
+
+// Create the modal
+export const modal = createAppKit({
+  adapters: [solanaWeb3JsAdapter, ethersAdapter],
+  projectId,
+  networks,
+  metadata,
+  themeMode: "light",
+  features: {
+    analytics: true, // Optional - defaults to your Cloud configuration
+  },
+  themeVariables: {
+    "--w3m-accent": "#000000",
+  },
 });
 
-// ウォレットプロバイダーコンポーネント
-export function WalletProvider({ children }: { children: React.ReactNode }) {
+// コンテキストの作成
+export const WalletContext = createContext<WalletContextType>(defaultContext);
+
+// プロバイダーコンポーネント
+export function WalletProvider({ children }: { children: ReactNode }) {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [address, setAddress] = useState<string | null>(null);
@@ -81,9 +107,4 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       {children}
     </WalletContext.Provider>
   );
-}
-
-// ウォレットフックの作成
-export function useWallet() {
-  return useContext(WalletContext);
 }

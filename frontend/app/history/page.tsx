@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
-import { Input } from "@/app/components/ui/input";
-import { Button } from "@/app/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { getConversations } from "@/lib/api";
 import { Calendar, Search } from "lucide-react";
+import { useEffect, useState } from "react";
 
 // 会話履歴の型定義
 interface Conversation {
@@ -29,34 +30,8 @@ export default function HistoryPage() {
     const fetchConversations = async () => {
       try {
         // APIからデータを取得
-        // const response = await fetch('/api/conversations');
-        // const data = await response.json();
-        // setConversations(data);
-
-        // ダミーデータ（実際の実装ではAPIから取得）
-        setConversations([
-          {
-            id: "1",
-            title: "ゴルフについての会話",
-            text: "今週末のゴルフコンペについて話し合いました。天気が良ければ参加する予定です。スコアは100を切ることが目標です。新しいクラブも購入しました。",
-            tags: ["Sport", "Golf"],
-            date: "April 24th, 2025",
-          },
-          {
-            id: "2",
-            title: "プロジェクトミーティング",
-            text: "新しいプロジェクトの進捗状況について話し合いました。デザインフェーズは完了し、実装フェーズに入る予定です。締め切りは来月末です。",
-            tags: ["Work", "Project", "Meeting"],
-            date: "April 24th, 2025",
-          },
-          {
-            id: "3",
-            title: "レストランでの食事",
-            text: "新しくオープンしたイタリアンレストランに行きました。パスタとピザがとても美味しかったです。デザートのティラミスも絶品でした。",
-            tags: ["Food", "Restaurant"],
-            date: "April 24th, 2025",
-          },
-        ]);
+        const data = await getConversations("sampleUserId");
+        setConversations(data);
 
         setIsLoading(false);
       } catch (error) {

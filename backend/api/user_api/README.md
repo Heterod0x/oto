@@ -12,7 +12,7 @@ create `.env` file from `.env.example` and set the environment variables(dummy i
 docker compose build --no-cache
 ```
 
-```base
+```bash
 docker compose up -d
 ```
 
