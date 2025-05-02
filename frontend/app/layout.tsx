@@ -1,5 +1,6 @@
 import { BottomNavigation } from "@/components/bottom-navigation";
 import InstallPrompt from "@/components/install-prompt";
+import { QueryProvider } from "@/components/query-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { WalletProvider } from "@/contexts/wallet-context";
 import "@/styles/globals.css";
@@ -46,20 +47,22 @@ export default function RootLayout({
         <meta name="theme-color" content="#000000" />
       </head>
       <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <WalletProvider>
-            <div className="flex flex-col min-h-screen">
-              <main className="flex-1 pb-16">{children}</main>
-              <BottomNavigation />
-              <InstallPrompt />
-            </div>
-          </WalletProvider>
-        </ThemeProvider>
+        <QueryProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="light"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <WalletProvider>
+              <div className="flex flex-col min-h-screen">
+                <main className="flex-1 pb-16">{children}</main>
+                <BottomNavigation />
+                <InstallPrompt />
+              </div>
+            </WalletProvider>
+          </ThemeProvider>
+        </QueryProvider>
       </body>
     </html>
   );

@@ -1,13 +1,13 @@
 "use client";
 
-import { BN } from "@coral-xyz/anchor";
+import { BN, Program } from "@coral-xyz/anchor";
 import { useAppKitAccount } from "@reown/appkit/react";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { PublicKey, SystemProgram } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 
-import type { Oto } from "@/contracts/oto";
+import { Oto } from "@/contracts/oto";
 import otoIdl from "@/contracts/oto.json";
 import { useAnchorProvider } from "./useAnchorProvider";
 
@@ -15,6 +15,9 @@ import { useAnchorProvider } from "./useAnchorProvider";
 const OTO_SEED = "oto";
 const USER_SEED = "user";
 const MINT_SEED = "mint";
+
+// サーバーサイドレンダリング中であるかを検出
+const isServer = typeof window === "undefined";
 
 /**
  * Otoコントラクトと通信するためのカスタムフック
@@ -26,50 +29,84 @@ export const useContract = () => {
   const [mintPDA, setMintPDA] = useState<string | null>(null);
 
   const { address } = useAppKitAccount();
-  const { provider, cluster, program: programInstance } = useAnchorProvider();
+  const { provider, cluster } = useAnchorProvider();
 
   // プログラムIDとプログラムインスタンスをメモ化
-  const programId = useMemo(() => new PublicKey(otoIdl.address), []);
+  const programId = useMemo(() => {
+    try {
+      return new PublicKey(otoIdl.address);
+    } catch (error) {
+      console.error("Failed to create PublicKey:", error);
+      return null;
+    }
+  }, []);
 
   // Otoプログラムインスタンス
   const program = useMemo(() => {
-    if (!provider || !programId) return null;
-    return programInstance<Oto>(otoIdl as any, programId);
-  }, [provider, programId, programInstance]);
+    try {
+      if (!provider || !programId) return null;
+      // Program クラスを直接使用してプログラムインスタンスを作成
+      return new Program<Oto>(otoIdl as any, {
+        connection: provider.connection,
+      });
+    } catch (error) {
+      console.error("Failed to create Program instance:", error);
+      return null;
+    }
+  }, [provider, programId]);
 
   // PDAsの計算
   useEffect(() => {
     const calculatePDAs = async () => {
       if (!program) return;
 
+      console.log("Program ID:", programId);
+
       // Oto PDA
-      const [oto] = await PublicKey.findProgramAddress([Buffer.from(OTO_SEED)], programId);
+      const [oto] = await PublicKey.findProgramAddressSync(
+        [Buffer.from(OTO_SEED)],
+        programId as any,
+      );
       setOtoPDA(oto.toBase58());
 
       // Mint PDA
-      const [mint] = await PublicKey.findProgramAddress([Buffer.from(MINT_SEED)], programId);
+      const [mint] = await PublicKey.findProgramAddressSync(
+        [Buffer.from(MINT_SEED)],
+        programId as any,
+      );
       setMintPDA(mint.toBase58());
     };
 
     calculatePDAs();
   }, [program, programId]);
 
-  // 特定ユーザーのPDAを計算
+  /**
+   * 特定ユーザーのPDAを算出
+   * @param userId
+   * @returns
+   */
   const getUserPDA = async (userId: string) => {
     if (!program) return null;
-    const [userPDA] = await PublicKey.findProgramAddress(
-      [Buffer.from(USER_SEED), Buffer.from(userId)],
-      programId,
+    // PDA
+    const [userPDA] = await PublicKey.findProgramAddressSync(
+      [Buffer.from(userId), Buffer.from(OTO_SEED)],
+      programId as any,
     );
     return userPDA.toBase58();
   };
 
-  // ユーザー情報取得
+  /**
+   * get User Account PDA
+   * @param userId
+   * @returns
+   */
   const getUserAccount = async (userId: string) => {
+    // call getUserPDA
     const userAddress = await getUserPDA(userId);
     if (!userAddress || !program) return null;
 
     try {
+      // call fetch method
       return await program.account.user.fetch(userAddress);
     } catch (error) {
       console.error("ユーザー情報取得エラー:", error);
@@ -77,7 +114,9 @@ export const useContract = () => {
     }
   };
 
-  // ユーザーを初期化するミューテーション
+  /**
+   * ユーザーを初期化するミューテーション
+   */
   const initializeUser = useMutation({
     mutationKey: ["oto", "initializeUser", { cluster }],
     mutationFn: async ({ userId, owner }: { userId: string; owner?: string }) => {
@@ -93,16 +132,15 @@ export const useContract = () => {
       return program.methods
         .initializeUser(userId, ownerKey)
         .accounts({
-          oto: otoPDA,
-          user: calculatedUserPDA,
           payer: address,
-          systemProgram: SystemProgram.programId,
         })
         .rpc();
     },
   });
 
-  // クレーム操作のミューテーション
+  /**
+   * トークンをクレームするミューテーション
+   */
   const claimTokens = useMutation({
     mutationKey: ["oto", "claim", { cluster }],
     mutationFn: async ({ userId, claimAmount }: { userId: string; claimAmount: number }) => {
@@ -113,7 +151,7 @@ export const useContract = () => {
       if (!calculatedUserPDA) throw new Error("Failed to calculate user PDA");
 
       // ATAを計算
-      const [userTokenAccount] = await PublicKey.findProgramAddress(
+      const [userTokenAccount] = await PublicKey.findProgramAddressSync(
         [
           new PublicKey(address).toBuffer(),
           TOKEN_PROGRAM_ID.toBuffer(),
@@ -125,20 +163,16 @@ export const useContract = () => {
       return program.methods
         .claim(userId, new BN(claimAmount))
         .accounts({
-          oto: otoPDA,
-          user: calculatedUserPDA,
           beneficiary: address,
-          userTokenAccount: userTokenAccount.toBase58(),
-          mint: mintPDA,
           tokenProgram: TOKEN_PROGRAM_ID,
-          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-          systemProgram: SystemProgram.programId,
         })
         .rpc();
     },
   });
 
-  // ポイント更新のミューテーション（管理者用）
+  /**
+   * ポイント更新のミューテーション（管理者用）
+   */
   const updatePoint = useMutation({
     mutationKey: ["oto", "updatePoint", { cluster }],
     mutationFn: async ({ userId, delta }: { userId: string; delta: number }) => {
@@ -159,7 +193,9 @@ export const useContract = () => {
     },
   });
 
-  // Otoアカウント情報の取得
+  /**
+   *  Otoアカウント情報の取得するクエリ
+   */
   const getOtoAccount = useQuery({
     queryKey: ["oto", "otoAccount", { cluster }],
     queryFn: async () => {
@@ -169,7 +205,9 @@ export const useContract = () => {
     enabled: !!program && !!otoPDA,
   });
 
-  // ユーザーのクレーム可能な金額を取得
+  /**
+   * ユーザーのクレーム可能な金額を取得するクエリ
+   */
   const getClaimableAmount = useQuery({
     queryKey: ["oto", "claimableAmount", { userId: address }],
     queryFn: async () => {

@@ -4,37 +4,45 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import useContract from "@/hooks/use-contract";
+import { useAppKitAccount } from "@reown/appkit/react";
 import { Send } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-// クライアントサイドでのみ実行されるコンポーネント
+// サーバーサイドレンダリング中であるかを検出
+const isServer = typeof window === "undefined";
+
+/**
+ * Setting Page Component
+ * @returns
+ */
 export default function SettingsPage() {
-  // ウォレット情報
-  const [balance, setBalance] = useState("0.00");
-  const [transactions, setTransactions] = useState<any[]>([]);
   const [isClaimLoading, setIsClaimLoading] = useState(false);
-  const { theme, setTheme } = useTheme();
-  const [currency, setCurrency] = useState("USD");
   const [address, setAddress] = useState("");
   const [displayAddress, setDisplayAddress] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [claimableAmount, setClaimableAmount] = useState("0");
   const [contractReady, setContractReady] = useState(false);
-  const [contractFunctions, setContractFunctions] = useState<any>(null);
+
+  const { theme, setTheme } = useTheme();
+
+  // サーバーサイドでは実行しない
+  const { address: walletAddress } = !isServer ? useAppKitAccount() : { address: null };
+
+  // コントラクト機能をコンポーネントのトップレベルで初期化（サーバーサイドでは実行しない）
+  const contractFunctions = useContract();
 
   // コントラクトの初期化とウォレット情報の取得
   useEffect(() => {
-    // クライアントサイドでのみ実行される
-    const initializeContract = async () => {
+    /**
+     * ウォレット情報の初期化メソッド
+     */
+    const initializeWallet = async () => {
       try {
-        // 動的にインポート
-        const { useContract } = await import("@/hooks/use-contract");
-        const { useAppKitAccount } = await import("@reown/appkit/react");
+        console.log("ウォレットアドレス:", walletAddress);
 
-        // ウォレット情報を取得
-        const { address: walletAddress } = useAppKitAccount();
         if (walletAddress) {
           setAddress(walletAddress);
           setIsConnected(true);
@@ -47,53 +55,28 @@ export default function SettingsPage() {
           }
         }
 
-        // コントラクト機能を初期化
-        const contract = useContract();
-        setContractFunctions(contract);
         setContractReady(true);
       } catch (error) {
-        console.error("コントラクトの初期化に失敗しました:", error);
+        console.error("ウォレットの初期化に失敗しました:", error);
       }
     };
 
-    initializeContract();
-  }, []);
-
-  // ウォレット情報の取得
-  useEffect(() => {
-    const fetchWalletInfo = async () => {
-      try {
-        // ダミーデータ（実際の実装ではAPIから取得）
-        setBalance("2,458.00");
-        setTransactions([
-          {
-            id: "1",
-            type: "sent",
-            recipient: "John",
-            amount: "150.00",
-            time: "2 hours ago",
-          },
-          {
-            id: "2",
-            type: "received",
-            sender: "Sarah",
-            amount: "280.00",
-            time: "Yesterday",
-          },
-        ]);
-      } catch (error) {
-        console.error("ウォレット情報の取得に失敗しました:", error);
-      }
-    };
-
-    fetchWalletInfo();
-  }, []);
+    if (!isServer) {
+      initializeWallet();
+    }
+  }, [walletAddress]);
 
   // クレーム可能な金額を取得
   useEffect(() => {
+    console.log("address:", address);
+
+    if (isServer) return;
+
     if (isConnected && address && contractReady && contractFunctions?.getClaimableAmount) {
+      // call refetch method
       const fetchClaimableAmount = async () => {
         try {
+          // call refetch method
           const data = await contractFunctions.getClaimableAmount.refetch();
           if (data && data.data) {
             setClaimableAmount(data.data);
@@ -107,15 +90,10 @@ export default function SettingsPage() {
     }
   }, [isConnected, address, contractReady, contractFunctions]);
 
-  // アドレスをコピー
-  const copyAddress = () => {
-    if (address) {
-      navigator.clipboard.writeText(address);
-      toast.success("アドレスをクリップボードにコピーしました");
-    }
-  };
-
-  // クレーム処理
+  /**
+   * クレーム処理 メソッド
+   * @returns
+   */
   const handleClaim = async () => {
     if (!address || !isConnected) {
       toast.error("ウォレットを接続してください");
