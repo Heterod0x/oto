@@ -1,7 +1,7 @@
 "use client";
 
 import { BN, Program } from "@coral-xyz/anchor";
-import { useAppKitAccount } from "@reown/appkit/react";
+import { useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -11,13 +11,6 @@ import { Oto } from "@/contracts/oto";
 import otoIdl from "@/contracts/oto.json";
 import { useAnchorProvider } from "./useAnchorProvider";
 
-// 定数
-const OTO_SEED = "oto";
-const USER_SEED = "user";
-const MINT_SEED = "mint";
-
-// サーバーサイドレンダリング中であるかを検出
-const isServer = typeof window === "undefined";
 
 /**
  * Otoコントラクトと通信するためのカスタムフック
@@ -29,6 +22,7 @@ export const useContract = () => {
   const [mintPDA, setMintPDA] = useState<string | null>(null);
 
   const { address } = useAppKitAccount();
+  const { walletProvider } = useAppKitProvider<any>("solana");
   const { provider, cluster } = useAnchorProvider();
 
   // プログラムIDとプログラムインスタンスをメモ化
@@ -57,6 +51,10 @@ export const useContract = () => {
 
   // PDAsの計算
   useEffect(() => {
+    /**
+     * calculatePDAs method
+     * @returns 
+     */
     const calculatePDAs = async () => {
       if (!program) return;
 
@@ -64,14 +62,14 @@ export const useContract = () => {
 
       // Oto PDA
       const [oto] = await PublicKey.findProgramAddressSync(
-        [Buffer.from(OTO_SEED)],
+        [walletProvider.publicKey.toBytes()],
         programId as any,
       );
       setOtoPDA(oto.toBase58());
 
       // Mint PDA
       const [mint] = await PublicKey.findProgramAddressSync(
-        [Buffer.from(MINT_SEED)],
+        [walletProvider.publicKey.toBytes()],
         programId as any,
       );
       setMintPDA(mint.toBase58());
@@ -87,9 +85,12 @@ export const useContract = () => {
    */
   const getUserPDA = async (userId: string) => {
     if (!program) return null;
-    // PDA
+    console.log("Program ID:", programId);
+    console.log("User ID:", userId);
+
+    // PDA - USER_SEEDとuserIdを使用して正しいPDAを生成
     const [userPDA] = await PublicKey.findProgramAddressSync(
-      [Buffer.from(userId), Buffer.from(OTO_SEED)],
+      [walletProvider.publicKey.toBytes()],
       programId as any,
     );
     return userPDA.toBase58();
@@ -103,12 +104,24 @@ export const useContract = () => {
   const getUserAccount = async (userId: string) => {
     // call getUserPDA
     const userAddress = await getUserPDA(userId);
+    console.log("User Address:", userAddress);
     if (!userAddress || !program) return null;
+
+    // PDA - USER_SEEDとuserIdを使用して正しいPDAを生成
+    const [userPDA] = await PublicKey.findProgramAddressSync(
+      [walletProvider.publicKey.toBytes()],
+      programId as any,
+    );
 
     try {
       // call fetch method
-      return await program.account.user.fetch(userAddress);
+      console.log("userPDA", userPDA);
+      return await program.account.user.fetch(userPDA);
     } catch (error) {
+      // エラーの種類を判別
+      if (error instanceof Error && error.message.includes("Account does not exist")) {
+        console.log("ユーザーアカウントが存在しません:", userId);
+      }
       console.error("ユーザー情報取得エラー:", error);
       return null;
     }
@@ -152,11 +165,7 @@ export const useContract = () => {
 
       // ATAを計算
       const [userTokenAccount] = await PublicKey.findProgramAddressSync(
-        [
-          new PublicKey(address).toBuffer(),
-          TOKEN_PROGRAM_ID.toBuffer(),
-          new PublicKey(mintPDA).toBuffer(),
-        ],
+        [walletProvider.publicKey.toBytes()],
         ASSOCIATED_TOKEN_PROGRAM_ID,
       );
 
@@ -209,20 +218,38 @@ export const useContract = () => {
    * ユーザーのクレーム可能な金額を取得するクエリ
    */
   const getClaimableAmount = useQuery({
-    queryKey: ["oto", "claimableAmount", { userId: address }],
+    queryKey: ["oto", "claimableAmount", { userId: address, cluster }],
     queryFn: async () => {
       if (!address || !program) throw new Error("Not initialized");
 
       try {
         const userId = address; // ユーザーIDとして現在のアドレスを使用
+        console.log("ユーザーID:", userId);
         const userAccount = await getUserAccount(userId);
-        return userAccount?.claimableAmount?.toString() || "0";
+        
+        // アカウントが存在しない場合は0を返す
+        if (!userAccount) {
+          console.log("ユーザーアカウントが存在しないため、クレーム可能金額は0です");
+          return "0";
+        }
+        
+        // claimableAmountが存在するか確認
+        if (userAccount.claimableAmount) {
+          const amount = userAccount.claimableAmount.toString();
+          console.log(`ユーザー ${userId} のクレーム可能金額: ${amount}`);
+          return amount;
+        }
+        
+        return "0";
       } catch (error) {
         console.error("クレーム可能金額取得エラー:", error);
-        return "0";
+        throw new Error("クレーム可能金額の取得に失敗しました");
       }
     },
     enabled: !!program && !!address,
+    staleTime: 60 * 1000, // 1分間はキャッシュを使用
+    refetchOnWindowFocus: true, // ウィンドウフォーカス時に再取得
+    retry: 2, // エラー時に2回リトライ
   });
 
   return {
