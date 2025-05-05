@@ -40,7 +40,7 @@ export const useContract = () => {
     try {
       if (!provider || !programId) return null;
       // Program クラスを直接使用してプログラムインスタンスを作成
-      return new Program<Oto>(otoIdl as any, {
+      return new Program<Oto>(otoIdl as any,{
         connection: provider.connection,
       });
     } catch (error) {
