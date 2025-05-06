@@ -175,6 +175,8 @@ export const useContract = () => {
       return program.methods
         .initializeUser(userId, ownerKey)
         .accounts({
+          oto: new PublicKey(otoPDA),
+          user: new PublicKey(calculatedUserPDA),
           payer: new PublicKey(address),
         })
         .rpc();
