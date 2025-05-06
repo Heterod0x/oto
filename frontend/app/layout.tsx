@@ -42,7 +42,7 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <head>
-        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+        <link rel="apple-touch-icon" href="/icons/icon.jpeg" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content="#000000" />
       </head>
