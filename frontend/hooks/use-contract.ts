@@ -132,23 +132,23 @@ export const useContract = () => {
         error.message?.includes("Program failed to complete")
       ) {
         console.log("ユーザーアカウントが存在しません:", userId);
-        return null; // アカウントが存在しないことを示すnullを返す
+
+        if (!program || !address || !otoPDA || !mintPDA) throw new Error("Not initialized");
+
+        // 指定されたオーナーまたは現在の接続アドレスを使用
+        const ownerKey = new PublicKey(address);
+
+        await program.methods
+          .initializeUser(userId, ownerKey)
+          .accounts({
+            payer: new PublicKey(address)
+          })
+          .rpc();
       }
       
       // その他のエラー（接続エラーなど）
       console.error("ユーザー情報取得エラー:", error);
 
-      if (!program || !address || !otoPDA || !mintPDA) throw new Error("Not initialized");
-
-      // 指定されたオーナーまたは現在の接続アドレスを使用
-      const ownerKey = new PublicKey(address);
-
-      await program.methods
-        .initializeUser(userId, ownerKey)
-        .accounts({
-          payer: new PublicKey(address)
-        })
-        .rpc();
     }
   };
 
@@ -201,6 +201,9 @@ export const useContract = () => {
         [Buffer.from(MINT_SEED)],
         programId
       );
+
+      console.log("Oto PDA:", otoPDA.toBase58());
+      console.log("Mint PDA:", mintPDA.toBase58());
       
       // metadataアドレスの計算
       const TOKEN_METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
@@ -225,8 +228,6 @@ export const useContract = () => {
           payer: new PublicKey(address),
           nftCollection: nftCollection,
           tokenProgram: TOKEN_PROGRAM_ID,
-          rent: SYSVAR_RENT_PUBKEY,
-          tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
           metadata: metadataAddress,
         })
         .rpc();

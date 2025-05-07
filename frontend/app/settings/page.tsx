@@ -5,11 +5,18 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import useContract from "@/hooks/use-contract";
-import { useAppKitAccount } from "@reown/appkit/react";
+import { createCollectionV1, createV1 } from "@metaplex-foundation/mpl-core";
+import { generateSigner, keypairIdentity } from "@metaplex-foundation/umi";
+import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import { fromWeb3JsKeypair } from "@metaplex-foundation/umi-web3js-adapters";
+import { useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
+import { useConnection } from "@solana/wallet-adapter-react";
+import { PublicKey } from "@solana/web3.js";
 import { Send } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+
 
 // サーバーサイドレンダリング中であるかを検出
 const isServer = typeof window === "undefined";
@@ -27,6 +34,9 @@ export default function SettingsPage() {
   const [contractReady, setContractReady] = useState(false);
 
   const { theme, setTheme } = useTheme();
+
+  const { connection } = useConnection();
+  const { walletProvider } = useAppKitProvider<any>("solana");
 
   // サーバーサイドでは実行しない
   const { address: walletAddress } = !isServer ? useAppKitAccount() : { address: null };
@@ -141,6 +151,70 @@ export default function SettingsPage() {
     }
   };
 
+  /**
+   * Otoを初期化するメソッド
+   */
+  const handleInitOto = async () => {
+    if (!address || !isConnected) {
+      toast.error("ウォレットを接続してください");
+      return;
+    }
+
+    try {
+      setIsClaimLoading(true);
+
+      console.log("MetaplexでNFTコレクションを作成します。")
+
+      const umi = createUmi(connection).use(
+        keypairIdentity(fromWeb3JsKeypair(walletProvider))
+      );
+
+      console.log("umi:", umi);
+      
+      // Collection
+      const collectionMint = generateSigner(umi);
+      console.log("collectionMint:", collectionMint);
+      
+      // コレクションの作成
+      await createCollectionV1(umi, {
+        collection: collectionMint,
+        name: "Oto VAsset Collection",
+        uri: "",
+        updateAuthority: umi.identity.publicKey,
+      }).sendAndConfirm(umi);
+
+      console.log("NFTコレクションの作成に成功しました:", collectionMint.publicKey.toString());
+      
+      // Asset
+      const asset = generateSigner(umi);
+      await createV1(umi, {
+        name: "Oto VAsset ...",
+        uri: "",
+        asset: asset,
+        collection: collectionMint.publicKey,
+        authority: umi.identity,
+        updateAuthority: umi.identity.publicKey,
+      }).sendAndConfirm(umi);
+
+      console.log("NFTアセットの作成に成功しました:", asset.publicKey.toString());
+
+      console.log("Otoの初期化を開始します");
+
+      // トークンをクレームするメソッドを呼び出す
+      await contractFunctions.initializeOto.mutate({
+        nftCollection: new PublicKey(collectionMint.publicKey)
+      });
+
+      toast.success("Otoの初期化に成功しました");
+
+    } catch (error) {
+      console.error("Otoの初期化に失敗しました:", error);
+      toast.error("Otoの初期化に失敗しました");
+    } finally {
+      setIsClaimLoading(false);
+    }
+  };
+
   return (
     <div className="container max-w-md mx-auto p-4 pt-8">
       {/* ウォレットカード */}
@@ -185,6 +259,23 @@ export default function SettingsPage() {
               <>
                 <span>トークンをクレーム</span>
                 <Send size={16} />
+              </>
+            )}
+          </Button>
+          <br />
+          <Button
+            className="w-full flex items-center justify-center gap-2"
+            variant="default"
+            onClick={handleInitOto}
+            disabled={
+              !isConnected || isClaimLoading || !contractReady
+            }
+          >
+            {isClaimLoading ? (
+              <span>処理中...</span>
+            ) : (
+              <>
+                <span>Init oto</span>
               </>
             )}
           </Button>
