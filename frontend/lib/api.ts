@@ -21,6 +21,8 @@ export async function getConversations(userId: string): Promise<any> {
       throw new Error(`API error: ${response.status}`);
     }
 
+    console.log("API response:", response);
+
     return await response.json();
   } catch (error) {
     console.error("Error fetching conversations:", error);
@@ -49,6 +51,8 @@ export async function storeConversation(userId: string, audioFile: File): Promis
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
     }
+
+    console.log("API response:", response);
 
     return await response.json();
   } catch (error) {
