@@ -228,8 +228,11 @@ export const useContract = () => {
           payer: new PublicKey(address),
           nftCollection: nftCollection,
           tokenProgram: TOKEN_PROGRAM_ID,
+          rent: SYSVAR_RENT_PUBKEY,
+          tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
           metadata: metadataAddress,
         })
+        .signers([walletProvider])
         .rpc();
     },
   });
@@ -257,8 +260,7 @@ export const useContract = () => {
         .accounts({
           beneficiary: address,
           tokenProgram: TOKEN_PROGRAM_ID,
-        })
-        .rpc();
+        }).signers([walletProvider]).rpc();
     },
   });
 

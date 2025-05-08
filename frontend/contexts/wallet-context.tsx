@@ -28,7 +28,7 @@ const defaultContext: WalletContextType = {
 const metadata = {
   name: "oto",
   description: "oto",
-  url: "https://github.com/0xonerb/next-reown-appkit-ssr", // origin must match your domain & subdomain
+  url: "https://github.com/Heterod0x/oto", // origin must match your domain & subdomain
   icons: ["https://avatars.githubusercontent.com/u/179229932"],
 };
 
