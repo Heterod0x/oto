@@ -4,11 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import AssetKeyPair from "@/config/asset-keypair.json";
+import CollectionKeyPair from "@/config/collection-keypair.json";
 import useContract from "@/hooks/use-contract";
+import { useAnchorProvider } from "@/hooks/useAnchorProvider";
 import { createCollectionV1, createV1 } from "@metaplex-foundation/mpl-core";
-import { generateSigner, keypairIdentity } from "@metaplex-foundation/umi";
+import { createSignerFromKeypair, keypairIdentity } from "@metaplex-foundation/umi";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
-import { fromWeb3JsKeypair } from "@metaplex-foundation/umi-web3js-adapters";
+import { fromWeb3JsKeypair, toWeb3JsTransaction } from "@metaplex-foundation/umi-web3js-adapters";
 import { useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
@@ -16,7 +19,6 @@ import { Send } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-
 
 // サーバーサイドレンダリング中であるかを検出
 const isServer = typeof window === "undefined";
@@ -36,6 +38,7 @@ export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
 
   const { connection } = useConnection();
+  const { provider } = useAnchorProvider();
   const { walletProvider } = useAppKitProvider<any>("solana");
 
   // サーバーサイドでは実行しない
@@ -172,35 +175,54 @@ export default function SettingsPage() {
       console.log("umi:", umi);
       
       // Collection
-      const collectionMint = generateSigner(umi);
-      console.log("collectionMint:", collectionMint);
-      
+      // const collectionMint = generateSigner(umi);
+      const collectionMint = createSignerFromKeypair(umi, {
+        publicKey: new PublicKey(CollectionKeyPair.publicKey) as any,
+        secretKey: new Uint8Array(CollectionKeyPair.secretKey),
+      })
+    
       // コレクションの作成
-      await createCollectionV1(umi, {
+      const umiTx = await createCollectionV1(umi, {
         collection: collectionMint,
         name: "Oto VAsset Collection",
         uri: "",
         updateAuthority: umi.identity.publicKey,
-      }).sendAndConfirm(umi);
+      }).buildWithLatestBlockhash(umi);
+      // web3js用のTxに変換する
+      const web3jsTx = toWeb3JsTransaction(umiTx);
+      // トランザクションを送信する
+      provider?.sendAndConfirm(web3jsTx as any)
 
       console.log("NFTコレクションの作成に成功しました:", collectionMint.publicKey.toString());
       
       // Asset
-      const asset = generateSigner(umi);
-      await createV1(umi, {
+      const asset = createSignerFromKeypair(umi, {
+        publicKey: new PublicKey(AssetKeyPair.publicKey) as any,
+        secretKey: new Uint8Array(AssetKeyPair.secretKey),
+      })
+      
+      console.log("asset:", asset.publicKey);
+      console.log("asset:", asset.secretKey);
+
+      const umiTx2 = await createV1(umi, {
         name: "Oto VAsset ...",
         uri: "",
         asset: asset,
         collection: collectionMint.publicKey,
         authority: umi.identity,
         updateAuthority: umi.identity.publicKey,
-      }).sendAndConfirm(umi);
+      }).buildWithLatestBlockhash(umi);
+
+      // web3js用のTxに変換する
+      const web3jsTx2 = toWeb3JsTransaction(umiTx2);
+      // トランザクションを送信する
+      provider?.sendAndConfirm(web3jsTx2 as any)
 
       console.log("NFTアセットの作成に成功しました:", asset.publicKey.toString());
 
       console.log("Otoの初期化を開始します");
 
-      // トークンをクレームするメソッドを呼び出す
+      // Otoの初期化メソッドを呼び出す
       await contractFunctions.initializeOto.mutate({
         nftCollection: new PublicKey(collectionMint.publicKey)
       });
