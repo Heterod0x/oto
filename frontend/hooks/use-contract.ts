@@ -3,7 +3,7 @@
 import { BN, Program } from "@coral-xyz/anchor";
 import { useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 
@@ -82,6 +82,10 @@ export const useContract = () => {
     calculatePDAs();
   }, [program, programId]);
 
+  const getUserId = (address: string) => {
+    return address.substring(0, 8);
+  }
+
   /**
    * 特定ユーザーのPDAを算出
    * @param userId
@@ -94,7 +98,7 @@ export const useContract = () => {
     
     // ユーザーIDが長すぎる場合は、最初の8文字だけを使用
     // もしくは、ウォレットのアドレスを使用する場合は一定の長さに制限する
-    const shortenedUserId = userId.length > 8 ? userId.substring(0, 8) : userId;
+    const shortenedUserId = getUserId(userId);
     console.log("Shortened User ID:", shortenedUserId);
 
     // PDA - USER_SEEDとuserIdを使用して正しいPDAを生成
@@ -134,21 +138,9 @@ export const useContract = () => {
         console.log("ユーザーアカウントが存在しません:", userId);
 
         if (!program || !address || !otoPDA || !mintPDA) throw new Error("Not initialized");
-
-        // 指定されたオーナーまたは現在の接続アドレスを使用
-        const ownerKey = new PublicKey(address);
-
-        await program.methods
-          .initializeUser(userId, ownerKey)
-          .accounts({
-            payer: new PublicKey(address)
-          })
-          .rpc();
       }
-      
-      // その他のエラー（接続エラーなど）
-      console.error("ユーザー情報取得エラー:", error);
 
+      return null;
     }
   };
 
@@ -159,6 +151,8 @@ export const useContract = () => {
     mutationKey: ["oto", "initializeUser", { cluster }],
     mutationFn: async ({ userId, owner }: { userId: string; owner?: string }) => {
       if (!program || !address || !otoPDA) throw new Error("Not initialized");
+
+      const shortenedUserId = getUserId(userId);
 
       // 指定されたオーナーまたは現在の接続アドレスを使用
       const ownerKey = owner ? new PublicKey(owner) : new PublicKey(address);
@@ -172,14 +166,17 @@ export const useContract = () => {
       console.log("支払者:", address);
 
       // IDLに基づいて必要なアカウントを正しく指定
-      return program.methods
-        .initializeUser(userId, ownerKey)
+      try{
+      const sig = await program.methods
+        .initializeUser(shortenedUserId, ownerKey)
         .accounts({
-          oto: new PublicKey(otoPDA),
-          user: new PublicKey(calculatedUserPDA),
           payer: new PublicKey(address),
         })
         .rpc();
+        console.log(sig);
+      }catch(error){
+        console.error("ユーザーアカウントの初期化に失敗しました:", error);
+      }
     },
   });
 
@@ -221,8 +218,7 @@ export const useContract = () => {
       console.log("NFT Collection:", nftCollection.toBase58());
       console.log("Metadata Address:", metadataAddress.toBase58());
       
-      // IDLに基づいて必要なアカウントを正しく指定
-      return program.methods
+      return await program.methods
         .initializeOto()
         .accounts({
           payer: new PublicKey(address),
@@ -232,7 +228,6 @@ export const useContract = () => {
           tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
           metadata: metadataAddress,
         })
-        .signers([walletProvider])
         .rpc();
     },
   });
@@ -246,7 +241,8 @@ export const useContract = () => {
       if (!program || !address || !otoPDA || !mintPDA) throw new Error("Not initialized");
 
       // ユーザーPDAを計算
-      const calculatedUserPDA = await getUserPDA(userId);
+      const shortenedUserId = getUserId(userId);
+      const calculatedUserPDA = await getUserPDA(shortenedUserId);
       if (!calculatedUserPDA) throw new Error("Failed to calculate user PDA");
 
       // ATAを計算
@@ -256,11 +252,11 @@ export const useContract = () => {
       );
 
       return program.methods
-        .claim(userId, new BN(claimAmount))
+        .claim(shortenedUserId, new BN(claimAmount))
         .accounts({
           beneficiary: address,
           tokenProgram: TOKEN_PROGRAM_ID,
-        }).signers([walletProvider]).rpc();
+        }).rpc();
     },
   });
 
@@ -273,11 +269,12 @@ export const useContract = () => {
       if (!program || !address || !otoPDA) throw new Error("Not initialized");
 
       // ユーザーPDAを計算
-      const calculatedUserPDA = await getUserPDA(userId);
+      const shortenedUserId = getUserId(userId);
+      const calculatedUserPDA = await getUserPDA(shortenedUserId);
       if (!calculatedUserPDA) throw new Error("Failed to calculate user PDA");
 
       return program.methods
-        .updatePoint(userId, new BN(delta))
+        .updatePoint(shortenedUserId, new BN(delta))
         .accounts({
           oto: otoPDA,
           user: calculatedUserPDA,
@@ -316,31 +313,10 @@ export const useContract = () => {
         let userAccount = await getUserAccount(userId);
 
         console.log("ユーザーアカウント情報:", userAccount);
-        
-        // ユーザーが存在しない場合、初期化を試みる
+
         if (!userAccount) {
-          console.log(`ユーザー ${userId} が存在しないため、初期化を行います`);
-          try {
-            // initializeUser ミューテーションを実行
-            await initializeUser.mutateAsync({
-              userId,
-              owner: address,
-            });
-            
-            console.log(`ユーザー ${userId} の初期化が完了しました`);
-            
-            // 初期化後、再度ユーザー情報を取得
-            userAccount = await getUserAccount(userId);
-            
-            // 初期化後もアカウントが取得できない場合
-            if (!userAccount) {
-              console.log("初期化後もユーザーアカウントが取得できません");
-              return "0";
-            }
-          } catch (initError) {
-            console.error("ユーザー初期化中にエラーが発生しました:", initError);
-            return "0";
-          }
+          console.log("ユーザーアカウントが初期化されていません. Claimable Amount を0として返します");
+          return "0";
         }
           
         // claimableAmountが存在するか確認

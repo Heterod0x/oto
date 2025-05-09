@@ -9,9 +9,9 @@ import CollectionKeyPair from "@/config/collection-keypair.json";
 import useContract from "@/hooks/use-contract";
 import { useAnchorProvider } from "@/hooks/useAnchorProvider";
 import { createCollectionV1, createV1 } from "@metaplex-foundation/mpl-core";
-import { createSignerFromKeypair, keypairIdentity } from "@metaplex-foundation/umi";
+import { createSignerFromKeypair, keypairIdentity, publicKey } from "@metaplex-foundation/umi";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
-import { fromWeb3JsKeypair, toWeb3JsTransaction } from "@metaplex-foundation/umi-web3js-adapters";
+import { fromWeb3JsKeypair, toWeb3JsKeypair, toWeb3JsTransaction } from "@metaplex-foundation/umi-web3js-adapters";
 import { useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
@@ -175,60 +175,44 @@ export default function SettingsPage() {
       console.log("umi:", umi);
       
       // Collection
-      // const collectionMint = generateSigner(umi);
+      console.log("CollectionKeyPair:", CollectionKeyPair);
       const collectionMint = createSignerFromKeypair(umi, {
-        publicKey: new PublicKey(CollectionKeyPair.publicKey) as any,
+        publicKey: publicKey(CollectionKeyPair.publicKey),
         secretKey: new Uint8Array(CollectionKeyPair.secretKey),
-      })
+      });
+
+      const collectionAccountExists = await umi.rpc.accountExists(collectionMint.publicKey);
     
-      // コレクションの作成
-      const umiTx = await createCollectionV1(umi, {
-        collection: collectionMint,
-        name: "Oto VAsset Collection",
-        uri: "",
-        updateAuthority: umi.identity.publicKey,
-      }).buildWithLatestBlockhash(umi);
-      // web3js用のTxに変換する
-      const web3jsTx = toWeb3JsTransaction(umiTx);
-      // トランザクションを送信する
-      provider?.sendAndConfirm(web3jsTx as any)
-
-      console.log("NFTコレクションの作成に成功しました:", collectionMint.publicKey.toString());
-      
-      // Asset
-      const asset = createSignerFromKeypair(umi, {
-        publicKey: new PublicKey(AssetKeyPair.publicKey) as any,
-        secretKey: new Uint8Array(AssetKeyPair.secretKey),
-      })
-      
-      console.log("asset:", asset.publicKey);
-      console.log("asset:", asset.secretKey);
-
-      const umiTx2 = await createV1(umi, {
-        name: "Oto VAsset ...",
-        uri: "",
-        asset: asset,
-        collection: collectionMint.publicKey,
-        authority: umi.identity,
-        updateAuthority: umi.identity.publicKey,
-      }).buildWithLatestBlockhash(umi);
-
-      // web3js用のTxに変換する
-      const web3jsTx2 = toWeb3JsTransaction(umiTx2);
-      // トランザクションを送信する
-      provider?.sendAndConfirm(web3jsTx2 as any)
-
-      console.log("NFTアセットの作成に成功しました:", asset.publicKey.toString());
+      if (!collectionAccountExists) {
+        // コレクションの作成
+        const umiTx = await createCollectionV1(umi, {
+          collection: collectionMint,
+          name: "Oto VAsset Collection",
+          uri: "",
+          updateAuthority: umi.identity.publicKey,
+        }).buildWithLatestBlockhash(umi);
+        // web3js用のTxに変換する
+        const web3jsTx = toWeb3JsTransaction(umiTx);
+        // トランザクションを送信する
+        const sig = await provider?.sendAndConfirm(web3jsTx as any, [toWeb3JsKeypair(collectionMint)]);
+        console.log("Signature:", sig);
+        console.log("NFTコレクションの作成に成功しました:", collectionMint.publicKey.toString());
+      }else{
+        console.log("NFTコレクションが存在します:", collectionMint.publicKey.toString());
+      }
 
       console.log("Otoの初期化を開始します");
 
-      // Otoの初期化メソッドを呼び出す
-      await contractFunctions.initializeOto.mutate({
-        nftCollection: new PublicKey(collectionMint.publicKey)
-      });
-
-      toast.success("Otoの初期化に成功しました");
-
+      const otoAccount = await contractFunctions.getOtoAccount.refetch();
+      if (!otoAccount.data) {
+        // Otoの初期化メソッドを呼び出す
+        await contractFunctions.initializeOto.mutate({
+          nftCollection: new PublicKey(collectionMint.publicKey)
+        });
+        toast.success("Otoの初期化に成功しました");
+      }else{
+        console.log("Otoが既に初期化されています");
+      }
     } catch (error) {
       console.error("Otoの初期化に失敗しました:", error);
       toast.error("Otoの初期化に失敗しました");
@@ -236,6 +220,39 @@ export default function SettingsPage() {
       setIsClaimLoading(false);
     }
   };
+
+  /**
+   * ユーザーアカウントを初期化するメソッド
+   */
+  const handleInitAccount = async () => {
+    try {
+      setIsClaimLoading(true);
+
+      const otoAccount = await contractFunctions.getOtoAccount.refetch();
+      if (!otoAccount.data) {
+        return;
+      }
+
+      const userAccount = await contractFunctions.getUserAccount(address);
+      if (userAccount) {
+        console.log("ユーザーアカウントが既に初期化されています");
+        return;
+      }
+
+      console.log("ユーザーアカウントの初期化を開始します");
+      console.log("[testing purpose] アドレス[0:8]をユーザーIDとして初期化します", address);
+
+      await contractFunctions.initializeUser.mutate({
+        userId: address,
+      });
+      toast.success("ユーザーアカウントの初期化に成功しました");
+    } catch (error) {
+      console.error("ユーザーアカウントの初期化に失敗しました:", error);
+      toast.error("ユーザーアカウントの初期化に失敗しました");
+    } finally {
+      setIsClaimLoading(false);
+    }
+  }
 
   return (
     <div className="container max-w-md mx-auto p-4 pt-8">
@@ -298,6 +315,23 @@ export default function SettingsPage() {
             ) : (
               <>
                 <span>Init oto</span>
+              </>
+            )}
+          </Button>
+          <br />
+          <Button
+            className="w-full flex items-center justify-center gap-2"
+            variant="default"
+            onClick={handleInitAccount}
+            disabled={
+              !isConnected || isClaimLoading || !contractReady
+            }
+          >
+            {isClaimLoading ? (
+              <span>処理中...</span>
+            ) : (
+              <>
+                <span>Init user</span>
               </>
             )}
           </Button>
