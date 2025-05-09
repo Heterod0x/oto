@@ -1,14 +1,14 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { LoadingButton } from "@/components/ui/loading-button";
+import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Switch } from "@/components/ui/switch";
-import AssetKeyPair from "@/config/asset-keypair.json";
 import CollectionKeyPair from "@/config/collection-keypair.json";
 import useContract from "@/hooks/use-contract";
 import { useAnchorProvider } from "@/hooks/useAnchorProvider";
-import { createCollectionV1, createV1 } from "@metaplex-foundation/mpl-core";
+import { createCollectionV1 } from "@metaplex-foundation/mpl-core";
 import { createSignerFromKeypair, keypairIdentity, publicKey } from "@metaplex-foundation/umi";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { fromWeb3JsKeypair, toWeb3JsKeypair, toWeb3JsTransaction } from "@metaplex-foundation/umi-web3js-adapters";
@@ -29,11 +29,14 @@ const isServer = typeof window === "undefined";
  */
 export default function SettingsPage() {
   const [isClaimLoading, setIsClaimLoading] = useState(false);
+  const [isInitOtoLoading, setIsInitOtoLoading] = useState(false);
+  const [isInitUserLoading, setIsInitUserLoading] = useState(false);
   const [address, setAddress] = useState("");
   const [displayAddress, setDisplayAddress] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [claimableAmount, setClaimableAmount] = useState("0");
   const [contractReady, setContractReady] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(false);
 
   const { theme, setTheme } = useTheme();
 
@@ -86,6 +89,9 @@ export default function SettingsPage() {
     if (isServer) return;
 
     if (isConnected && address && contractReady && contractFunctions?.getClaimableAmount) {
+      // クレーム可能額の取得中にローディング状態を表示
+      setIsLoadingData(true);
+      
       // call refetch method
       const fetchClaimableAmount = async () => {
         try {
@@ -96,6 +102,8 @@ export default function SettingsPage() {
           }
         } catch (error) {
           console.error("クレーム可能金額の取得に失敗しました:", error);
+        } finally {
+          setIsLoadingData(false);
         }
       };
 
@@ -164,7 +172,7 @@ export default function SettingsPage() {
     }
 
     try {
-      setIsClaimLoading(true);
+      setIsInitOtoLoading(true);
 
       console.log("MetaplexでNFTコレクションを作成します。")
 
@@ -217,7 +225,7 @@ export default function SettingsPage() {
       console.error("Otoの初期化に失敗しました:", error);
       toast.error("Otoの初期化に失敗しました");
     } finally {
-      setIsClaimLoading(false);
+      setIsInitOtoLoading(false);
     }
   };
 
@@ -226,7 +234,7 @@ export default function SettingsPage() {
    */
   const handleInitAccount = async () => {
     try {
-      setIsClaimLoading(true);
+      setIsInitUserLoading(true);
 
       const otoAccount = await contractFunctions.getOtoAccount.refetch();
       if (!otoAccount.data) {
@@ -250,14 +258,20 @@ export default function SettingsPage() {
       console.error("ユーザーアカウントの初期化に失敗しました:", error);
       toast.error("ユーザーアカウントの初期化に失敗しました");
     } finally {
-      setIsClaimLoading(false);
+      setIsInitUserLoading(false);
     }
   }
 
   return (
     <div className="container max-w-md mx-auto p-4 pt-8">
       {/* ウォレットカード */}
-      <Card className="bg-muted/30 border rounded-xl p-5 mb-6">
+      <Card className="bg-muted/30 border rounded-xl p-5 mb-6 relative">
+        {/* データ読み込み中のローディングオーバーレイ */}
+        <LoadingOverlay 
+          isLoading={isLoadingData} 
+          text="データを読み込み中..." 
+        />
+        
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
             <div className="mr-3">
@@ -284,57 +298,42 @@ export default function SettingsPage() {
         <div className="mt-6">
           <div className="text-sm text-muted-foreground mb-2">クレーム可能なトークン</div>
           <div className="font-medium text-lg mb-3">{claimableAmount} TOKEN</div>
-          <Button
+          <LoadingButton
             className="w-full flex items-center justify-center gap-2"
             variant="default"
             onClick={handleClaim}
             disabled={
               !isConnected || Number(claimableAmount) <= 0 || isClaimLoading || !contractReady
             }
+            isLoading={isClaimLoading}
           >
-            {isClaimLoading ? (
-              <span>処理中...</span>
-            ) : (
-              <>
-                <span>トークンをクレーム</span>
-                <Send size={16} />
-              </>
-            )}
-          </Button>
+            <span>トークンをクレーム</span>
+            <Send size={16} />
+          </LoadingButton>
           <br />
-          <Button
+          <LoadingButton
             className="w-full flex items-center justify-center gap-2"
             variant="default"
             onClick={handleInitOto}
             disabled={
-              !isConnected || isClaimLoading || !contractReady
+              !isConnected || isInitOtoLoading || !contractReady
             }
+            isLoading={isInitOtoLoading}
           >
-            {isClaimLoading ? (
-              <span>処理中...</span>
-            ) : (
-              <>
-                <span>Init oto</span>
-              </>
-            )}
-          </Button>
+            <span>Init oto</span>
+          </LoadingButton>
           <br />
-          <Button
+          <LoadingButton
             className="w-full flex items-center justify-center gap-2"
             variant="default"
             onClick={handleInitAccount}
             disabled={
-              !isConnected || isClaimLoading || !contractReady
+              !isConnected || isInitUserLoading || !contractReady
             }
+            isLoading={isInitUserLoading}
           >
-            {isClaimLoading ? (
-              <span>処理中...</span>
-            ) : (
-              <>
-                <span>Init user</span>
-              </>
-            )}
-          </Button>
+            <span>Init user</span>
+          </LoadingButton>
         </div>
       </Card>
 

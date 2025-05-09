@@ -2,7 +2,9 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
 import { storeConversation } from "@/lib/api";
 import { Mic, Square } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -122,7 +124,15 @@ export default function RecordPage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-between min-h-screen p-4">
+    <div className="flex flex-col items-center justify-between min-h-screen p-4 relative">
+      {/* ローディングオーバーレイ */}
+      <LoadingOverlay 
+        isLoading={isAnalyzing} 
+        text="音声を分析中..." 
+        fullScreen={false} 
+        className="rounded-xl"
+      />
+
       {/* 上部のロゴ/アイコン */}
       <div className="w-24 h-24 mb-8 mt-8 rounded-full bg-gradient-to-r from-green-200 to-yellow-200 flex items-center justify-center">
         <span className="text-4xl font-bold text-white">N</span>
@@ -163,7 +173,12 @@ export default function RecordPage() {
       {/* 録音後の分析ボタン */}
       {audioBlob && !isRecording && (
         <Button className="mb-8" onClick={analyzeRecording} disabled={isAnalyzing}>
-          {isAnalyzing ? "分析中..." : "分析する"}
+          {isAnalyzing ? (
+            <>
+              <Spinner size="sm" className="mr-2" />
+              分析中...
+            </>
+          ) : "分析する"}
         </Button>
       )}
 
