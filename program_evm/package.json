@@ -1,8 +1,8 @@
 {
-  "name": "Ginco-One-Paltform-Sample",
+  "name": "program_evm",
   "version": "1.0.0",
   "main": "index.js",
-  "repository": "https://github.com/mashharuki/Ginco-One-Paltform-Sample.git",
+  "repository": "",
   "author": "Haruki Kondo",
   "license": "MIT",
   "engines": {
@@ -45,5 +45,7 @@
     "typescript": "~5.0.4",
     "viem": "^2.21.55"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.3.0"
+  }
 }

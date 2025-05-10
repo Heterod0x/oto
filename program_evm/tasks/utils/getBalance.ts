@@ -18,14 +18,12 @@ task("getBalance", "getBalance").setAction(
 
     // アドレスを取得
     const deployerAddress = walletClient.account.address;
-    
+
     const balance = await publicClient.getBalance({
       address: deployerAddress,
     });
 
-    console.log(
-      `Balance of ${deployerAddress}: ${formatEther(balance)} ETH`,
-    );
+    console.log(`Balance of ${deployerAddress}: ${formatEther(balance)} ETH`);
 
     console.log(
       "################################### [END] ###################################",
