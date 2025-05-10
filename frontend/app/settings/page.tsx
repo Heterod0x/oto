@@ -1,40 +1,64 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { LoadingButton } from "@/components/ui/loading-button";
+import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Switch } from "@/components/ui/switch";
+import CollectionKeyPair from "@/config/collection-keypair.json";
+import useContract from "@/hooks/use-contract";
+import { useAnchorProvider } from "@/hooks/useAnchorProvider";
+import { createCollectionV1 } from "@metaplex-foundation/mpl-core";
+import { createSignerFromKeypair, keypairIdentity, publicKey } from "@metaplex-foundation/umi";
+import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import { fromWeb3JsKeypair, toWeb3JsKeypair, toWeb3JsTransaction } from "@metaplex-foundation/umi-web3js-adapters";
+import { useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
+import { useConnection } from "@solana/wallet-adapter-react";
+import { PublicKey } from "@solana/web3.js";
 import { Send } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-// クライアントサイドでのみ実行されるコンポーネント
+// サーバーサイドレンダリング中であるかを検出
+const isServer = typeof window === "undefined";
+
+/**
+ * Setting Page Component
+ * @returns
+ */
 export default function SettingsPage() {
-  // ウォレット情報
-  const [balance, setBalance] = useState("0.00");
-  const [transactions, setTransactions] = useState<any[]>([]);
   const [isClaimLoading, setIsClaimLoading] = useState(false);
-  const { theme, setTheme } = useTheme();
-  const [currency, setCurrency] = useState("USD");
+  const [isInitOtoLoading, setIsInitOtoLoading] = useState(false);
+  const [isInitUserLoading, setIsInitUserLoading] = useState(false);
   const [address, setAddress] = useState("");
   const [displayAddress, setDisplayAddress] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [claimableAmount, setClaimableAmount] = useState("0");
   const [contractReady, setContractReady] = useState(false);
-  const [contractFunctions, setContractFunctions] = useState<any>(null);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+
+  const { theme, setTheme } = useTheme();
+
+  const { connection } = useConnection();
+  const { provider } = useAnchorProvider();
+  const { walletProvider } = useAppKitProvider<any>("solana");
+
+  // サーバーサイドでは実行しない
+  const { address: walletAddress } = !isServer ? useAppKitAccount() : { address: null };
+
+  // コントラクト機能をコンポーネントのトップレベルで初期化（サーバーサイドでは実行しない）
+  const contractFunctions = useContract();
 
   // コントラクトの初期化とウォレット情報の取得
   useEffect(() => {
-    // クライアントサイドでのみ実行される
-    const initializeContract = async () => {
+    /**
+     * ウォレット情報の初期化メソッド
+     */
+    const initializeWallet = async () => {
       try {
-        // 動的にインポート
-        const { useContract } = await import("@/hooks/use-contract");
-        const { useAppKitAccount } = await import("@reown/appkit/react");
+        console.log("ウォレットアドレス:", walletAddress);
 
-        // ウォレット情報を取得
-        const { address: walletAddress } = useAppKitAccount();
         if (walletAddress) {
           setAddress(walletAddress);
           setIsConnected(true);
@@ -47,75 +71,79 @@ export default function SettingsPage() {
           }
         }
 
-        // コントラクト機能を初期化
-        const contract = useContract();
-        setContractFunctions(contract);
         setContractReady(true);
       } catch (error) {
-        console.error("コントラクトの初期化に失敗しました:", error);
+        console.error("ウォレットの初期化に失敗しました:", error);
       }
     };
 
-    initializeContract();
-  }, []);
-
-  // ウォレット情報の取得
-  useEffect(() => {
-    const fetchWalletInfo = async () => {
-      try {
-        // ダミーデータ（実際の実装ではAPIから取得）
-        setBalance("2,458.00");
-        setTransactions([
-          {
-            id: "1",
-            type: "sent",
-            recipient: "John",
-            amount: "150.00",
-            time: "2 hours ago",
-          },
-          {
-            id: "2",
-            type: "received",
-            sender: "Sarah",
-            amount: "280.00",
-            time: "Yesterday",
-          },
-        ]);
-      } catch (error) {
-        console.error("ウォレット情報の取得に失敗しました:", error);
-      }
-    };
-
-    fetchWalletInfo();
-  }, []);
+    if (!isServer) {
+      initializeWallet();
+    }
+  }, [walletAddress]);
 
   // クレーム可能な金額を取得
   useEffect(() => {
-    if (isConnected && address && contractReady && contractFunctions?.getClaimableAmount) {
-      const fetchClaimableAmount = async () => {
-        try {
-          const data = await contractFunctions.getClaimableAmount.refetch();
+    if (isServer) {
+      return;
+    }
+
+    // 初回レンダリング時にのみローディング状態にする
+    const isDependenciesReady = isConnected && address && contractReady && 
+                               contractFunctions?.getClaimableAmount?.refetch;
+    
+    // いずれかの条件が満たされていない場合は、ローディングを停止
+    if (!isDependenciesReady) {
+      setIsLoadingData(false);
+      return;
+    }
+
+    // すでにクレーム可能金額がある場合は何もしない（重複呼び出しを防止）
+    if (claimableAmount !== "0" && !isLoadingData) {
+      return;
+    }
+    
+    let isMounted = true;
+    
+    // クレーム可能額の取得
+    const fetchClaimableAmount = async () => {
+      // すでにローディング中であれば重複して実行しない
+      if (isLoadingData) return;
+      
+      try {
+        setIsLoadingData(true);
+        console.log("クレーム可能金額を取得中...");
+        
+        const data = await contractFunctions.getClaimableAmount.refetch();
+        
+        // コンポーネントがマウントされている場合のみ状態を更新
+        if (isMounted) {
           if (data && data.data) {
             setClaimableAmount(data.data);
           }
-        } catch (error) {
-          console.error("クレーム可能金額の取得に失敗しました:", error);
+          setIsLoadingData(false);
         }
-      };
+      } catch (error) {
+        console.error("クレーム可能金額の取得に失敗しました:", error);
+        // コンポーネントがマウントされている場合のみ状態を更新
+        if (isMounted) {
+          setIsLoadingData(false);
+        }
+      }
+    };
 
-      fetchClaimableAmount();
-    }
-  }, [isConnected, address, contractReady, contractFunctions]);
+    fetchClaimableAmount();
+    
+    // クリーンアップ関数
+    return () => {
+      isMounted = false;
+    };
+  }, [isConnected, address, contractReady]); // contractFunctionsを依存配列から削除
 
-  // アドレスをコピー
-  const copyAddress = () => {
-    if (address) {
-      navigator.clipboard.writeText(address);
-      toast.success("アドレスをクリップボードにコピーしました");
-    }
-  };
-
-  // クレーム処理
+  /**
+   * クレーム処理 メソッド
+   * @returns
+   */
   const handleClaim = async () => {
     if (!address || !isConnected) {
       toast.error("ウォレットを接続してください");
@@ -163,10 +191,116 @@ export default function SettingsPage() {
     }
   };
 
+  /**
+   * Otoを初期化するメソッド
+   */
+  const handleInitOto = async () => {
+    if (!address || !isConnected) {
+      toast.error("ウォレットを接続してください");
+      return;
+    }
+
+    try {
+      setIsInitOtoLoading(true);
+
+      console.log("MetaplexでNFTコレクションを作成します。")
+
+      const umi = createUmi(connection).use(
+        keypairIdentity(fromWeb3JsKeypair(walletProvider))
+      );
+
+      console.log("umi:", umi);
+      
+      // Collection
+      console.log("CollectionKeyPair:", CollectionKeyPair);
+      const collectionMint = createSignerFromKeypair(umi, {
+        publicKey: publicKey(CollectionKeyPair.publicKey),
+        secretKey: new Uint8Array(CollectionKeyPair.secretKey),
+      });
+
+      const collectionAccountExists = await umi.rpc.accountExists(collectionMint.publicKey);
+    
+      if (!collectionAccountExists) {
+        // コレクションの作成
+        const umiTx = await createCollectionV1(umi, {
+          collection: collectionMint,
+          name: "Oto VAsset Collection",
+          uri: "",
+          updateAuthority: umi.identity.publicKey,
+        }).buildWithLatestBlockhash(umi);
+        // web3js用のTxに変換する
+        const web3jsTx = toWeb3JsTransaction(umiTx);
+        // トランザクションを送信する
+        const sig = await provider?.sendAndConfirm(web3jsTx as any, [toWeb3JsKeypair(collectionMint)]);
+        console.log("Signature:", sig);
+        console.log("NFTコレクションの作成に成功しました:", collectionMint.publicKey.toString());
+      }else{
+        console.log("NFTコレクションが存在します:", collectionMint.publicKey.toString());
+      }
+
+      console.log("Otoの初期化を開始します");
+
+      const otoAccount = await contractFunctions.getOtoAccount.refetch();
+      if (!otoAccount.data) {
+        // Otoの初期化メソッドを呼び出す
+        await contractFunctions.initializeOto.mutate({
+          nftCollection: new PublicKey(collectionMint.publicKey)
+        });
+        toast.success("Otoの初期化に成功しました");
+      }else{
+        console.log("Otoが既に初期化されています");
+      }
+    } catch (error) {
+      console.error("Otoの初期化に失敗しました:", error);
+      toast.error("Otoの初期化に失敗しました");
+    } finally {
+      setIsInitOtoLoading(false);
+    }
+  };
+
+  /**
+   * ユーザーアカウントを初期化するメソッド
+   */
+  const handleInitAccount = async () => {
+    try {
+      setIsInitUserLoading(true);
+
+      const otoAccount = await contractFunctions.getOtoAccount.refetch();
+      if (!otoAccount.data) {
+        return;
+      }
+
+      const userAccount = await contractFunctions.getUserAccount(address);
+      if (userAccount) {
+        console.log("ユーザーアカウントが既に初期化されています");
+        return;
+      }
+
+      console.log("ユーザーアカウントの初期化を開始します");
+      console.log("[testing purpose] アドレス[0:8]をユーザーIDとして初期化します", address);
+
+      await contractFunctions.initializeUser.mutate({
+        userId: address,
+      });
+      toast.success("ユーザーアカウントの初期化に成功しました");
+    } catch (error) {
+      console.error("ユーザーアカウントの初期化に失敗しました:", error);
+      toast.error("ユーザーアカウントの初期化に失敗しました");
+    } finally {
+      setIsInitUserLoading(false);
+    }
+  }
+
   return (
     <div className="container max-w-md mx-auto p-4 pt-8">
       {/* ウォレットカード */}
-      <Card className="bg-muted/30 border rounded-xl p-5 mb-6">
+      <Card className="bg-muted/30 border rounded-xl p-5 mb-6 relative">
+        {/* データ読み込み中のローディングオーバーレイ */}
+        <LoadingOverlay 
+          isLoading={isLoadingData} 
+          text="データを読み込み中..." 
+        />
+        
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
             <div className="mr-3">
@@ -193,23 +327,42 @@ export default function SettingsPage() {
         <div className="mt-6">
           <div className="text-sm text-muted-foreground mb-2">クレーム可能なトークン</div>
           <div className="font-medium text-lg mb-3">{claimableAmount} TOKEN</div>
-          <Button
+          <LoadingButton
             className="w-full flex items-center justify-center gap-2"
             variant="default"
             onClick={handleClaim}
             disabled={
               !isConnected || Number(claimableAmount) <= 0 || isClaimLoading || !contractReady
             }
+            isLoading={isClaimLoading}
           >
-            {isClaimLoading ? (
-              <span>処理中...</span>
-            ) : (
-              <>
-                <span>トークンをクレーム</span>
-                <Send size={16} />
-              </>
-            )}
-          </Button>
+            <span>トークンをクレーム</span>
+            <Send size={16} />
+          </LoadingButton>
+          <br />
+          <LoadingButton
+            className="w-full flex items-center justify-center gap-2"
+            variant="default"
+            onClick={handleInitOto}
+            disabled={
+              !isConnected || isInitOtoLoading || !contractReady
+            }
+            isLoading={isInitOtoLoading}
+          >
+            <span>Init oto</span>
+          </LoadingButton>
+          <br />
+          <LoadingButton
+            className="w-full flex items-center justify-center gap-2"
+            variant="default"
+            onClick={handleInitAccount}
+            disabled={
+              !isConnected || isInitUserLoading || !contractReady
+            }
+            isLoading={isInitUserLoading}
+          >
+            <span>Init user</span>
+          </LoadingButton>
         </div>
       </Card>
 

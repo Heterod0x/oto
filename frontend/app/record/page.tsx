@@ -2,10 +2,14 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
 import { storeConversation } from "@/lib/api";
 import { Mic, Square } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 /**
  * RecordPage Component
@@ -64,6 +68,16 @@ export default function RecordPage() {
       }, 1000);
     } catch (error) {
       console.error("録音の開始に失敗しました:", error);
+      toast.error("録音の開始に失敗しました....", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
     }
   };
 
@@ -98,8 +112,30 @@ export default function RecordPage() {
       const audioFile = new File([audioBlob], "recording.wav", { type: "audio/wav" });
       // storeConversation APIを呼び出す
       await storeConversation("user123", audioFile);
+
+      console.log("録音データの分析が完了しました");
+      toast.success("🦄 Success!", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
     } catch (error) {
       console.error("録音の分析中にエラーが発生しました:", error);
+      toast.error("録音の分析中にエラーが発生しました....", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
     } finally {
       setIsAnalyzing(false);
     }
@@ -122,7 +158,15 @@ export default function RecordPage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-between min-h-screen p-4">
+    <div className="flex flex-col items-center justify-between min-h-screen p-4 relative">
+      {/* ローディングオーバーレイ */}
+      <LoadingOverlay 
+        isLoading={isAnalyzing} 
+        text="音声を分析中..." 
+        fullScreen={false} 
+        className="rounded-xl"
+      />
+
       {/* 上部のロゴ/アイコン */}
       <div className="w-24 h-24 mb-8 mt-8 rounded-full bg-gradient-to-r from-green-200 to-yellow-200 flex items-center justify-center">
         <span className="text-4xl font-bold text-white">N</span>
@@ -163,7 +207,12 @@ export default function RecordPage() {
       {/* 録音後の分析ボタン */}
       {audioBlob && !isRecording && (
         <Button className="mb-8" onClick={analyzeRecording} disabled={isAnalyzing}>
-          {isAnalyzing ? "分析中..." : "分析する"}
+          {isAnalyzing ? (
+            <>
+              <Spinner size="sm" className="mr-2" />
+              分析中...
+            </>
+          ) : "分析する"}
         </Button>
       )}
 

@@ -2,6 +2,8 @@
 
 import { ethersAdapter, networks, projectId, solanaWeb3JsAdapter } from "@/config";
 import { createAppKit } from "@reown/appkit";
+import { ConnectionProvider } from "@solana/wallet-adapter-react";
+import { clusterApiUrl } from "@solana/web3.js";
 import { createContext, useEffect, useState, type ReactNode } from "react";
 
 // ウォレットコンテキストの型定義
@@ -26,9 +28,11 @@ const defaultContext: WalletContextType = {
 const metadata = {
   name: "oto",
   description: "oto",
-  url: "https://github.com/0xonerb/next-reown-appkit-ssr", // origin must match your domain & subdomain
+  url: "https://github.com/Heterod0x/oto", // origin must match your domain & subdomain
   icons: ["https://avatars.githubusercontent.com/u/179229932"],
 };
+
+const solanaEndpoint = clusterApiUrl("devnet");
 
 // Create the modal
 export const modal = createAppKit({
@@ -95,16 +99,18 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <WalletContext.Provider
-      value={{
-        isConnected,
-        isConnecting,
-        address,
-        connect,
-        disconnect,
-      }}
-    >
-      {children}
-    </WalletContext.Provider>
+    <ConnectionProvider endpoint={solanaEndpoint}>
+      <WalletContext.Provider
+        value={{
+          isConnected,
+          isConnecting,
+          address,
+          connect,
+          disconnect,
+        }}
+      >
+        {children}
+      </WalletContext.Provider>
+    </ConnectionProvider>
   );
 }

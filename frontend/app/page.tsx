@@ -10,7 +10,7 @@ import { useEffect } from "react";
  */
 export default function Home() {
   const router = useRouter();
-  const { address, caipAddress, isConnected, embeddedWalletInfo } = useAppKitAccount();
+  const { isConnected } = useAppKitAccount();
 
   // ウォレット接続状態に応じて録音画面またはウォレット接続画面を表示
   useEffect(() => {
