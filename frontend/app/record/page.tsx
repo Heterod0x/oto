@@ -142,7 +142,7 @@ export default function RecordPage() {
 
       {/* 上部のロゴ/アイコン */}
       <div className="w-24 h-24 mb-8 mt-8 rounded-full bg-gradient-to-r from-green-200 to-yellow-200 flex items-center justify-center">
-        <span className="text-4xl font-bold text-white">N</span>
+        <img src="/icons/logo.jpeg" />
       </div>
 
       {/* 録音コントロール */}

@@ -19,37 +19,37 @@ export default function EcosystemPage() {
       id: "1",
       name: "App Name",
       description: "Description Description Description Description Description Description",
-      icon: "/placeholder.svg?height=80&width=80",
+      icon: "/icons/logo.jpeg?height=80&width=80",
     },
     {
       id: "2",
       name: "App Name",
       description: "Description Description Description Description Description Description",
-      icon: "/placeholder.svg?height=80&width=80",
+      icon: "/icons/logo.jpeg?height=80&width=80",
     },
     {
       id: "3",
       name: "App Name",
       description: "Description Description Description Description Description Description",
-      icon: "/placeholder.svg?height=80&width=80",
+      icon: "/icons/logo.jpeg?height=80&width=80",
     },
     {
       id: "4",
       name: "App Name",
       description: "Description Description Description Description Description Description",
-      icon: "/placeholder.svg?height=80&width=80",
+      icon: "/icons/logo.jpeg?height=80&width=80",
     },
     {
       id: "5",
       name: "App Name",
       description: "Description Description Description Description Description Description",
-      icon: "/placeholder.svg?height=80&width=80",
+      icon: "/icons/logo.jpeg?height=80&width=80",
     },
     {
       id: "6",
       name: "App Name",
       description: "Description Description Description Description Description Description",
-      icon: "/placeholder.svg?height=80&width=80",
+      icon: "/icons/logo.jpeg?height=80&width=80",
     },
   ];
 
