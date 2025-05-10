@@ -5,9 +5,9 @@ import { Label } from "@/components/ui/label";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Switch } from "@/components/ui/switch";
-import CollectionKeyPair from "@/config/collection-keypair.json";
 import useContract from "@/hooks/use-contract";
 import { useAnchorProvider } from "@/hooks/useAnchorProvider";
+import { getAssetKeypair } from "@/lib/keypair-utils";
 import { createCollectionV1 } from "@metaplex-foundation/mpl-core";
 import { createSignerFromKeypair, keypairIdentity, publicKey } from "@metaplex-foundation/umi";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
@@ -240,11 +240,11 @@ export default function SettingsPage() {
 
       console.log("umi:", umi);
       
-      // Collection
-      console.log("CollectionKeyPair:", CollectionKeyPair);
+      // get CollectionKeyPair 
+      const { publicKey: collectionPublicKey, secretKey } = getAssetKeypair();
       const collectionMint = createSignerFromKeypair(umi, {
-        publicKey: publicKey(CollectionKeyPair.publicKey),
-        secretKey: new Uint8Array(CollectionKeyPair.secretKey),
+        publicKey: publicKey(collectionPublicKey),
+        secretKey: new Uint8Array(secretKey),
       });
 
       const collectionAccountExists = await umi.rpc.accountExists(collectionMint.publicKey);
