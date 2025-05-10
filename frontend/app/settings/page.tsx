@@ -84,32 +84,61 @@ export default function SettingsPage() {
 
   // クレーム可能な金額を取得
   useEffect(() => {
-    console.log("address:", address);
+    if (isServer) {
+      return;
+    }
 
-    if (isServer) return;
+    // 初回レンダリング時にのみローディング状態にする
+    const isDependenciesReady = isConnected && address && contractReady && 
+                               contractFunctions?.getClaimableAmount?.refetch;
+    
+    // いずれかの条件が満たされていない場合は、ローディングを停止
+    if (!isDependenciesReady) {
+      setIsLoadingData(false);
+      return;
+    }
 
-    if (isConnected && address && contractReady && contractFunctions?.getClaimableAmount) {
-      // クレーム可能額の取得中にローディング状態を表示
-      setIsLoadingData(true);
+    // すでにクレーム可能金額がある場合は何もしない（重複呼び出しを防止）
+    if (claimableAmount !== "0" && !isLoadingData) {
+      return;
+    }
+    
+    let isMounted = true;
+    
+    // クレーム可能額の取得
+    const fetchClaimableAmount = async () => {
+      // すでにローディング中であれば重複して実行しない
+      if (isLoadingData) return;
       
-      // call refetch method
-      const fetchClaimableAmount = async () => {
-        try {
-          // call refetch method
-          const data = await contractFunctions.getClaimableAmount.refetch();
+      try {
+        setIsLoadingData(true);
+        console.log("クレーム可能金額を取得中...");
+        
+        const data = await contractFunctions.getClaimableAmount.refetch();
+        
+        // コンポーネントがマウントされている場合のみ状態を更新
+        if (isMounted) {
           if (data && data.data) {
             setClaimableAmount(data.data);
           }
-        } catch (error) {
-          console.error("クレーム可能金額の取得に失敗しました:", error);
-        } finally {
           setIsLoadingData(false);
         }
-      };
+      } catch (error) {
+        console.error("クレーム可能金額の取得に失敗しました:", error);
+        // コンポーネントがマウントされている場合のみ状態を更新
+        if (isMounted) {
+          setIsLoadingData(false);
+        }
+      }
+    };
 
-      fetchClaimableAmount();
-    }
-  }, [isConnected, address, contractReady, contractFunctions]);
+    fetchClaimableAmount();
+    
+    // クリーンアップ関数
+    return () => {
+      isMounted = false;
+    };
+  }, [isConnected, address, contractReady]); // contractFunctionsを依存配列から削除
 
   /**
    * クレーム処理 メソッド
