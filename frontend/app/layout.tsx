@@ -2,7 +2,7 @@ import { BottomNavigation } from "@/components/bottom-navigation";
 import InstallPrompt from "@/components/install-prompt";
 import { QueryProvider } from "@/components/query-provider";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "@/components/ui/toaster";
+import { Toaster } from "@/components/ui/sonner";
 import { WalletProvider } from "@/contexts/wallet-context";
 import "@/styles/globals.css";
 import type { Metadata, Viewport } from "next";

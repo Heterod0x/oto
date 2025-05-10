@@ -37,6 +37,8 @@ export default function SettingsPage() {
   const [claimableAmount, setClaimableAmount] = useState("0");
   const [contractReady, setContractReady] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [isOtoInitialized, setIsOtoInitialized] = useState(false);
+  const [isUserInitialized, setIsUserInitialized] = useState(false);
 
   const { theme, setTheme } = useTheme();
 
@@ -82,6 +84,32 @@ export default function SettingsPage() {
     }
   }, [walletAddress]);
 
+  // Otoとユーザーアカウントの初期化状態を確認
+  useEffect(() => {
+    if (isServer || !address || !isConnected || !contractReady || 
+        !contractFunctions?.getOtoAccount || !contractFunctions?.getUserAccount) {
+      return;
+    }
+
+    const checkInitializationStatus = async () => {
+      try {
+        // Otoの初期化状態を確認
+        const otoAccount = await contractFunctions.getOtoAccount.refetch();
+        setIsOtoInitialized(!!otoAccount.data);
+        
+        if (address) {
+          // ユーザーアカウントの初期化状態を確認
+          const userAccount = await contractFunctions.getUserAccount(address);
+          setIsUserInitialized(!!userAccount);
+        }
+      } catch (error) {
+        console.error("初期化状態の確認に失敗しました:", error);
+      }
+    };
+    
+    checkInitializationStatus();
+  }, [isConnected, address, contractReady, contractFunctions?.getOtoAccount, contractFunctions?.getUserAccount]);
+
   // クレーム可能な金額を取得
   useEffect(() => {
     if (isServer) {
@@ -125,6 +153,7 @@ export default function SettingsPage() {
         }
       } catch (error) {
         console.error("クレーム可能金額の取得に失敗しました:", error);
+        toast.error("クレーム可能金額の取得に失敗しました");
         // コンポーネントがマウントされている場合のみ状態を更新
         if (isMounted) {
           setIsLoadingData(false);
@@ -247,8 +276,11 @@ export default function SettingsPage() {
           nftCollection: new PublicKey(collectionMint.publicKey)
         });
         toast.success("Otoの初期化に成功しました");
-      }else{
+        setIsOtoInitialized(true);
+      } else {
         console.log("Otoが既に初期化されています");
+        toast.info("Otoは既に初期化されています");
+        setIsOtoInitialized(true);
       }
     } catch (error) {
       console.error("Otoの初期化に失敗しました:", error);
@@ -267,12 +299,17 @@ export default function SettingsPage() {
 
       const otoAccount = await contractFunctions.getOtoAccount.refetch();
       if (!otoAccount.data) {
+        toast.error("Otoが初期化されていません。まずOtoを初期化してください。");
+        setIsInitUserLoading(false);
         return;
       }
 
       const userAccount = await contractFunctions.getUserAccount(address);
       if (userAccount) {
         console.log("ユーザーアカウントが既に初期化されています");
+        toast.info("ユーザーアカウントは既に初期化されています");
+        setIsUserInitialized(true);
+        setIsInitUserLoading(false);
         return;
       }
 
@@ -283,6 +320,7 @@ export default function SettingsPage() {
         userId: address,
       });
       toast.success("ユーザーアカウントの初期化に成功しました");
+      setIsUserInitialized(true);
     } catch (error) {
       console.error("ユーザーアカウントの初期化に失敗しました:", error);
       toast.error("ユーザーアカウントの初期化に失敗しました");
@@ -345,11 +383,11 @@ export default function SettingsPage() {
             variant="default"
             onClick={handleInitOto}
             disabled={
-              !isConnected || isInitOtoLoading || !contractReady
+              !isConnected || isInitOtoLoading || !contractReady || isOtoInitialized
             }
             isLoading={isInitOtoLoading}
           >
-            <span>Init oto</span>
+            <span>{isOtoInitialized ? "Oto 初期化済み" : "Init oto"}</span>
           </LoadingButton>
           <br />
           <LoadingButton
@@ -357,11 +395,11 @@ export default function SettingsPage() {
             variant="default"
             onClick={handleInitAccount}
             disabled={
-              !isConnected || isInitUserLoading || !contractReady
+              !isConnected || isInitUserLoading || !contractReady || isUserInitialized || !isOtoInitialized
             }
             isLoading={isInitUserLoading}
           >
-            <span>Init user</span>
+            <span>{isUserInitialized ? "ユーザー初期化済み" : "Init user"}</span>
           </LoadingButton>
         </div>
       </Card>
