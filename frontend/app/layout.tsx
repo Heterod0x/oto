@@ -2,6 +2,7 @@ import { BottomNavigation } from "@/components/bottom-navigation";
 import InstallPrompt from "@/components/install-prompt";
 import { QueryProvider } from "@/components/query-provider";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/toaster";
 import { WalletProvider } from "@/contexts/wallet-context";
 import "@/styles/globals.css";
 import type { Metadata, Viewport } from "next";
@@ -56,13 +57,16 @@ export default function RootLayout({
           >
             <WalletProvider>
               <div className="flex flex-col min-h-screen">
-                <main className="flex-1 pb-16">{children}</main>
+                <main className="flex-1 pb-16">
+                  {children}
+                </main>
                 <BottomNavigation />
                 <InstallPrompt />
               </div>
             </WalletProvider>
           </ThemeProvider>
         </QueryProvider>
+        <Toaster />
       </body>
     </html>
   );

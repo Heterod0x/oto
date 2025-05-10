@@ -8,6 +8,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { storeConversation } from "@/lib/api";
 import { Mic, Square } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 /**
  * RecordPage Component
@@ -66,6 +68,16 @@ export default function RecordPage() {
       }, 1000);
     } catch (error) {
       console.error("録音の開始に失敗しました:", error);
+      toast.error("録音の開始に失敗しました....", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
     }
   };
 
@@ -100,8 +112,30 @@ export default function RecordPage() {
       const audioFile = new File([audioBlob], "recording.wav", { type: "audio/wav" });
       // storeConversation APIを呼び出す
       await storeConversation("user123", audioFile);
+
+      console.log("録音データの分析が完了しました");
+      toast.success("🦄 Success!", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
     } catch (error) {
       console.error("録音の分析中にエラーが発生しました:", error);
+      toast.error("録音の分析中にエラーが発生しました....", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
     } finally {
       setIsAnalyzing(false);
     }
