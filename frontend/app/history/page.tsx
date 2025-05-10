@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { getConversations } from "@/lib/api";
 import { Calendar, Search } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -91,9 +92,11 @@ export default function HistoryPage() {
       </div>
 
       {/* 会話履歴リスト */}
-      <div className="space-y-4">
+      <div className="space-y-4 relative">
         {isLoading ? (
-          <p className="text-center py-8">読み込み中...</p>
+          <div className="py-20">
+            <LoadingOverlay isLoading={isLoading} text="会話履歴を読み込んでいます" />
+          </div>
         ) : filteredConversations.length === 0 ? (
           <p className="text-center py-8">会話履歴がありません</p>
         ) : (
