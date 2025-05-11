@@ -7,51 +7,51 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title Oto
- * @dev Otoプログラムの実装。READMEに基づいて設計されています。
+ * @dev Implementation of the Oto program. Designed based on the README.
  * 
- * 機能：
- * 1. 管理者がプログラムを初期化
- * 2. ユーザーアカウントの作成
- * 3. ポイント残高の更新（管理者のみ）
- * 4. ポイントをトークンに変換（クレーム）
+ * Features:
+ * 1. Admin initializes the program
+ * 2. User account creation
+ * 3. Update point balance (admin only)
+ * 4. Convert points to tokens (claim)
  */
 contract Oto is ERC20, Ownable {
-    // === イベント ===
+    // === Events ===
     event UserInitialized(string userId, address owner);
     event PointsUpdated(string userId, uint256 newPoints);
     event TokensClaimed(string userId, uint256 claimAmount);
     
-    // === エラー ===
+    // === Errors ===
     error UserAlreadyExists(string userId);
     error UserNotFound(string userId);
     error InsufficientPoints(string userId, uint256 requested, uint256 available);
     error InvalidAmount(uint256 amount);
     error UnauthorizedOwner(address caller, address owner);
     
-    // === ストレージ変数 ===
+    // === Storage Variables ===
     
-    // コアアセットコレクションアドレス（ERC721コレクション）
+    // Core asset collection address (ERC721 collection)
     address public coreAssetCollection;
     
-    // ユーザー情報を保持する構造体
+    // Structure to store user information
     struct UserAccount {
-        string userId;       // ユーザーID
-        uint256 points;      // 請求可能なポイント量
-        address owner;       // ユーザーアカウントの所有者
-        bool initialized;    // 初期化済みフラグ
+        string userId;       // User ID
+        uint256 points;      // Claimable points
+        address owner;       // Owner of the user account
+        bool initialized;    // Initialization flag
     }
     
-    // ユーザーIDからユーザー情報へのマッピング
+    // Mapping from user ID to user information
     mapping(string => UserAccount) public users;
     
-    // アドレスが所有するユーザーIDのリスト
+    // List of user IDs owned by an address
     mapping(address => string[]) private usersByOwner;
     
     /**
-     * @dev コンストラクタ
-     * @param name トークン名
-     * @param symbol トークンシンボル
-     * @param _coreAssetCollection コアアセットコレクションのアドレス
+     * @dev Constructor
+     * @param name Token name
+     * @param symbol Token symbol
+     * @param _coreAssetCollection Address of the core asset collection
      */
     constructor(
         string memory name,
@@ -63,19 +63,19 @@ contract Oto is ERC20, Ownable {
     }
     
     /**
-     * @dev ユーザーアカウントを初期化する
-     * @param userId ユーザーID
-     * @param owner ユーザーアカウントの所有者
+     * @dev Initialize user account
+     * @param userId User ID
+     * @param owner Owner of the user account
      * 
-     * SolanaのinitializeUser関数に相当
+     * Equivalent to initializeUser function in Solana
      */
     function initializeUser(string memory userId, address owner) external {
-        // ユーザーが既に存在するか確認
+        // Check if user already exists
         if (users[userId].initialized) {
             revert UserAlreadyExists(userId);
         }
         
-        // ユーザー情報を保存
+        // Save user information
         users[userId] = UserAccount({
             userId: userId,
             points: 0,
@@ -83,83 +83,83 @@ contract Oto is ERC20, Ownable {
             initialized: true
         });
         
-        // オーナーのユーザーリストに追加
+        // Add to owner's user list
         usersByOwner[owner].push(userId);
         
         emit UserInitialized(userId, owner);
     }
     
     /**
-     * @dev ユーザーのポイント残高を更新する（管理者のみ）
-     * @param userId ユーザーID
-     * @param delta 加算するポイント量
+     * @dev Update user's point balance (admin only)
+     * @param userId User ID
+     * @param delta Points to add
      * 
-     * SolanaのupdatePoint関数に相当
+     * Equivalent to updatePoint function in Solana
      */
     function updatePoint(string memory userId, uint256 delta) external onlyOwner {
-        // ユーザーが存在するか確認
+        // Check if user exists
         if (!users[userId].initialized) {
             revert UserNotFound(userId);
         }
         
-        // ポイントを更新
+        // Update points
         users[userId].points += delta;
         
         emit PointsUpdated(userId, users[userId].points);
     }
     
     /**
-     * @dev ポイントをトークンに変換する（クレーム）
-     * @param userId ユーザーID
-     * @param claimAmount 請求するポイント量
+     * @dev Convert points to tokens (claim)
+     * @param userId User ID
+     * @param claimAmount Points to claim
      * 
-     * SolanaのClaim関数に相当
+     * Equivalent to Claim function in Solana
      */
     function claim(string memory userId, uint256 claimAmount) external {
-        // ユーザーが存在するか確認
+        // Check if user exists
         if (!users[userId].initialized) {
             revert UserNotFound(userId);
         }
         
-        // 呼び出し元がユーザーの所有者であることを確認
+        // Check if caller is the owner of the user account
         if (msg.sender != users[userId].owner) {
             revert UnauthorizedOwner(msg.sender, users[userId].owner);
         }
         
-        // 請求量が0より大きいことを確認
+        // Check if claim amount is greater than 0
         if (claimAmount == 0) {
             revert InvalidAmount(claimAmount);
         }
         
-        // ポイントが十分にあることを確認
+        // Check if user has enough points
         if (users[userId].points < claimAmount) {
             revert InsufficientPoints(userId, claimAmount, users[userId].points);
         }
         
-        // ポイントを減算
+        // Deduct points
         users[userId].points -= claimAmount;
         
-        // トークンをミント
+        // Mint tokens
         _mint(users[userId].owner, claimAmount * (10 ** decimals()));
         
         emit TokensClaimed(userId, claimAmount);
     }
     
     /**
-     * @dev 指定したアドレスが所有するすべてのユーザーIDを取得する
-     * @param owner オーナーアドレス
-     * @return userIds ユーザーIDの配列
+     * @dev Get all user IDs owned by a specific address
+     * @param owner Owner address
+     * @return userIds Array of user IDs
      */
     function getUsersByOwner(address owner) external view returns (string[] memory) {
         return usersByOwner[owner];
     }
     
     /**
-     * @dev ユーザーの情報を取得する
-     * @param userId ユーザーID
-     * @return initialized 初期化済みかどうか
-     * @return points ポイント残高
-     * @return owner オーナーアドレス
+     * @dev Get user information
+     * @param userId User ID
+     * @return initialized Whether initialized or not
+     * @return points Point balance
+     * @return owner Owner address
      */
     function getUserInfo(string memory userId) external view returns (
         bool initialized,
@@ -171,8 +171,8 @@ contract Oto is ERC20, Ownable {
     }
     
     /**
-     * @dev コアアセットコレクションアドレスを更新する（管理者のみ）
-     * @param newCollection 新しいコレクションアドレス
+     * @dev Update core asset collection address (admin only)
+     * @param newCollection New collection address
      */
     function updateCoreAssetCollection(address newCollection) external onlyOwner {
         require(newCollection != address(0), "Invalid collection address");

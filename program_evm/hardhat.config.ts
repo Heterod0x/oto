@@ -1,27 +1,12 @@
 import "@nomicfoundation/hardhat-toolbox-viem";
 import "@nomicfoundation/hardhat-verify";
-import fs from "node:fs";
-import path from "node:path";
 import * as dotenv from "dotenv";
 import type { HardhatUserConfig } from "hardhat/config";
+import "./tasks";
 
 dotenv.config();
 
 const { PRIVATE_KEY, BASESCAN_API_KEY } = process.env;
-
-// タスクファイルを読み込むための設定
-const SKIP_LOAD = process.env.SKIP_LOAD === "true";
-if (!SKIP_LOAD) {
-  const taskPaths = ["", "utils", "lock"];
-  taskPaths.forEach((folder) => {
-    const tasksPath = path.join(__dirname, "tasks", folder);
-    fs.readdirSync(tasksPath)
-      .filter((_path) => _path.includes(".ts"))
-      .forEach((task) => {
-        require(`${tasksPath}/${task}`);
-      });
-  });
-}
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -49,8 +34,8 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: {
-      base: "",
-      baseSepolia: "",
+      base: `${BASESCAN_API_KEY}`,
+      baseSepolia: `${BASESCAN_API_KEY}`,
     },
     customChains: [
       {

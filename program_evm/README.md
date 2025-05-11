@@ -37,6 +37,14 @@
     yarn deploy:Lock --network baseSepolia
     ```
 
+    ```bash
+    yarn deploy:CoreAssetCollection --network baseSepolia
+    ```
+
+    ```bash
+    yarn deploy:Oto --network baseSepolia
+    ```
+
   - **verify contract**
 
     ```bash
