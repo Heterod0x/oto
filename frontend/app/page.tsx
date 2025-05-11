@@ -1,14 +1,12 @@
 "use client";
 
 import { WalletContext } from "@/contexts/wallet-context";
-import { useAppKitModal } from "@reown/appkit/react";
 import { useRouter } from "next/navigation";
 import { useContext, useEffect } from "react";
 import ConnectWalletButton from "../components/connect-wallet-button";
 
 export default function Home() {
   const { isConnected } = useContext(WalletContext);
-  const { modal } = useAppKitModal();
   const router = useRouter();
 
   useEffect(() => {
