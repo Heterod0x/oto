@@ -21,13 +21,12 @@ import { useCallback } from "react";
 
 // プロフィールの型定義
 interface Profile {
-  name: string;
   age: number;
   gender: string;
-  location: string;
-  favoriteFood: string;
-  hobbies: string[];
-  description: string;
+  interests: string[];
+  favorite_foods: string | null;
+  personality: string;
+  self_introduction: string;
 }
 
 export default function DigitalTwinPage() {
@@ -36,13 +35,12 @@ export default function DigitalTwinPage() {
   
   // プロフィールデータ
   const [profile, setProfile] = useState<Profile>({
-    name: "",
     age: 0,
     gender: "",
-    location: "",
-    favoriteFood: "",
-    hobbies: [],
-    description: "",
+    interests: [],
+    favorite_foods: null,
+    personality: "",
+    self_introduction: "",
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -53,9 +51,14 @@ export default function DigitalTwinPage() {
   const fetchProfile = useCallback(async () => {
     try {
       // APIからデータを取得 (固定値)
-      const data = await getUserProfile("user123");
-      console.log("取得したプロフィールデータ:", data);
-      setProfile(data);
+      const response = await getUserProfile("user123");
+      console.log("取得したプロフィールデータ:", response);
+      // APIからprofileオブジェクトを取得
+      if (response && response.profile) {
+        setProfile(response.profile);
+      } else {
+        console.error("プロフィールデータが正しい形式ではありません");
+      }
       setIsLoading(false);
     } catch (error) {
       console.error("プロフィールの取得に失敗しました:", error);
@@ -86,13 +89,13 @@ export default function DigitalTwinPage() {
     if (!editedProfile) return;
 
     try {
-      // APIにデータを送信
+      // APIにデータを送信（現在は実装されていないためコメントアウト）
       // await fetch('/api/profile', {
       //   method: 'PUT',
       //   headers: {
       //     'Content-Type': 'application/json',
       //   },
-      //   body: JSON.stringify(editedProfile),
+      //   body: JSON.stringify({ profile: editedProfile }),
       // });
 
       // 成功したら状態を更新
@@ -103,15 +106,15 @@ export default function DigitalTwinPage() {
     }
   };
 
-  // 趣味の入力を処理
-  const handleHobbiesChange = (value: string) => {
+  // 興味・関心の入力を処理
+  const handleInterestsChange = (value: string) => {
     if (!editedProfile) return;
 
-    const hobbiesArray = value
+    const interestsArray = value
       .split(",")
-      .map((hobby) => hobby.trim())
+      .map((interest) => interest.trim())
       .filter(Boolean);
-    setEditedProfile({ ...editedProfile, hobbies: hobbiesArray });
+    setEditedProfile({ ...editedProfile, interests: interestsArray });
   };
 
   // サーバーサイドレンダリングまたはハイドレーション中は何も表示しない
@@ -127,7 +130,7 @@ export default function DigitalTwinPage() {
   return (
     <div className="container p-4">
       <div className="flex justify-between items-start mb-4">
-        <h1 className="text-2xl font-bold">{profile.name}</h1>
+        <h1 className="text-2xl font-bold">Digital Twin</h1>
         <Button variant="ghost" size="sm" onClick={openEditDialog}>
           <span className="mr-2">Preference</span>
           <Pencil className="h-4 w-4" />
@@ -144,12 +147,14 @@ export default function DigitalTwinPage() {
 
       {/* 趣味アイコン */}
       <div className="flex justify-end gap-2 mb-6">
-        {profile.hobbies.map((hobby, index) => (
+        {profile.interests && profile.interests.map((interest: string, index: number) => (
           <div key={index} className="w-10 h-10 flex items-center justify-center">
-            {hobby === "Music" && "🎵"}
-            {hobby === "Gaming" && "🎮"}
-            {hobby === "Guitar" && "🎸"}
-            {!["Music", "Gaming", "Guitar"].includes(hobby) && "🔍"}
+            {interest.toLowerCase().includes("ai") && "🤖"}
+            {interest.toLowerCase().includes("blockchain") && "⛓️"}
+            {interest.toLowerCase().includes("crypto") && "💰"}
+            {interest.toLowerCase().includes("project") && "📊"}
+            {!["ai", "blockchain", "crypto", "project"].some(keyword => 
+              interest.toLowerCase().includes(keyword)) && "🔍"}
           </div>
         ))}
       </div>
@@ -162,20 +167,27 @@ export default function DigitalTwinPage() {
         <Badge variant="outline" className="px-4 py-2 text-sm">
           {profile.gender}
         </Badge>
-        <Badge variant="outline" className="px-4 py-2 text-sm">
-          {profile.location}
-        </Badge>
       </div>
 
-      <Badge variant="outline" className="px-4 py-2 text-sm mb-4 block">
-        Favorite food: {profile.favoriteFood}
-      </Badge>
+      {profile.favorite_foods && (
+        <Badge variant="outline" className="px-4 py-2 text-sm mb-4 block">
+          Favorite food: {profile.favorite_foods}
+        </Badge>
+      )}
+
+      {/* 性格 */}
+      <Card className="mb-4">
+        <CardContent className="p-4">
+          <h2 className="text-sm font-medium mb-2">Personality</h2>
+          <p className="text-sm">{profile.personality}</p>
+        </CardContent>
+      </Card>
 
       {/* 自己紹介 */}
       <Card className="mb-8">
         <CardContent className="p-4">
-          <h2 className="text-sm font-medium mb-2">Description</h2>
-          <p className="text-sm">{profile.description}</p>
+          <h2 className="text-sm font-medium mb-2">Self Introduction</h2>
+          <p className="text-sm">{profile.self_introduction}</p>
         </CardContent>
       </Card>
 
@@ -188,15 +200,6 @@ export default function DigitalTwinPage() {
 
           {editedProfile && (
             <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name">名前</Label>
-                <Input
-                  id="name"
-                  value={editedProfile.name}
-                  onChange={(e) => setEditedProfile({ ...editedProfile, name: e.target.value })}
-                />
-              </div>
-
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label htmlFor="age">年齢</Label>
@@ -228,52 +231,53 @@ export default function DigitalTwinPage() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="location">出身地</Label>
+                <Label htmlFor="interests">興味・関心（カンマ区切り）</Label>
                 <Input
-                  id="location"
-                  value={editedProfile.location}
+                  id="interests"
+                  value={editedProfile.interests.join(", ")}
+                  onChange={(e) => handleInterestsChange(e.target.value)}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="favorite_foods">好きな食べ物</Label>
+                <Input
+                  id="favorite_foods"
+                  value={editedProfile.favorite_foods || ""}
                   onChange={(e) =>
                     setEditedProfile({
                       ...editedProfile,
-                      location: e.target.value,
+                      favorite_foods: e.target.value || null,
                     })
                   }
                 />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="favoriteFood">好きな食べ物</Label>
-                <Input
-                  id="favoriteFood"
-                  value={editedProfile.favoriteFood}
-                  onChange={(e) =>
-                    setEditedProfile({
-                      ...editedProfile,
-                      favoriteFood: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="hobbies">趣味（カンマ区切り）</Label>
-                <Input
-                  id="hobbies"
-                  value={editedProfile.hobbies.join(", ")}
-                  onChange={(e) => handleHobbiesChange(e.target.value)}
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="description">自己紹介</Label>
+                <Label htmlFor="personality">性格</Label>
                 <Textarea
-                  id="description"
-                  rows={5}
-                  value={editedProfile.description}
+                  id="personality"
+                  rows={3}
+                  value={editedProfile.personality}
                   onChange={(e) =>
                     setEditedProfile({
                       ...editedProfile,
-                      description: e.target.value,
+                      personality: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="self_introduction">自己紹介</Label>
+                <Textarea
+                  id="self_introduction"
+                  rows={5}
+                  value={editedProfile.self_introduction}
+                  onChange={(e) =>
+                    setEditedProfile({
+                      ...editedProfile,
+                      self_introduction: e.target.value,
                     })
                   }
                 />
