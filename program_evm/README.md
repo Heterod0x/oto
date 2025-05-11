@@ -48,7 +48,7 @@
   - **verify contract**
 
     ```bash
-    yarn verify chain-1946
+    yarn verify chain-84532
     ```
 
   - **get chain info**
