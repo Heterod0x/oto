@@ -23,7 +23,13 @@
     "getChainInfo": "npx hardhat getChainInfo",
     "getContractAddress": "npx hardhat getContractAddress",
     "callReadMethod": "npx hardhat callReadMethod",
-    "callWriteMethod": "npx hardhat callWriteMethod"
+    "callWriteMethod": "npx hardhat callWriteMethod",
+    "oto:initUser": "npx hardhat oto:initializeUser",
+    "oto:updatePoint": "npx hardhat oto:updatePoint",
+    "oto:claim": "npx hardhat oto:claim",
+    "oto:getUsersByOwner": "npx hardhat oto:getUsersByOwner",
+    "oto:getUserInfo": "npx hardhat oto:getUserInfo",
+    "oto:updateCollection": "npx hardhat oto:updateCoreAssetCollection"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

@@ -74,3 +74,33 @@
     ```bash
     yarn callWriteMethod --network baseSepolia
     ```
+
+  - **claim**
+
+    ```bash
+    yarn oto:claim --user-id "user123" --amount 600 --network baseSepolia
+    ```
+
+  - **getUserInfo**
+
+    ```bash
+    yarn oto:getUserInfo --user-id "user123" --network baseSepolia
+    ```
+
+  - **getUsersByOwner**
+
+    ```bash
+    yarn oto:getUsersByOwner --network baseSepolia
+    ```
+
+  - **initializeUser**
+
+    ```bash
+    yarn oto:initUser --user-id "user123" --network baseSepolia
+    ```
+
+  - **updatePoint**
+
+    ```bash
+    yarn oto:updatePoint --user-id "user123" --points 600 --network baseSepolia
+    ```
