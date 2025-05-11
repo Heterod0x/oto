@@ -1,19 +1,18 @@
 "use client";
 
-import { WalletContext } from "@/contexts/wallet-context";
+import { useAppKitAccount } from "@reown/appkit/react";
 import { useRouter } from "next/navigation";
-import { useContext, useEffect } from "react";
-import ConnectWalletButton from "../components/connect-wallet-button";
+import { useEffect } from "react";
 
 export default function Home() {
-  const { isConnected } = useContext(WalletContext);
+  const { address: walletAddress } = useAppKitAccount();
   const router = useRouter();
 
   useEffect(() => {
-    if (isConnected) {
+    if (walletAddress) {
       router.push("/record");
     }
-  }, [isConnected, router]);
+  }, [walletAddress, router]);
 
   // Display recording screen or wallet connection screen based on wallet connection status
   return (
@@ -23,9 +22,9 @@ export default function Home() {
         <p className="text-xl text-muted-foreground">Connect your wallet to get started</p>
       </div>
 
-      {isConnected ? null : ( // Redirecting to recording screen
+      {walletAddress ? null : ( // Redirecting to recording screen
         <div className="flex flex-col items-center">
-          <ConnectWalletButton />
+          <appkit-button />
         </div>
       )}
     </div>
