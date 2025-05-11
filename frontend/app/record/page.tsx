@@ -6,6 +6,7 @@ import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { storeConversation } from "@/lib/api";
+import { useAppKitAccount } from "@reown/appkit/react";
 import { Mic, Square } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -25,6 +26,8 @@ export default function RecordPage() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  // get wallet address
+  const { address } = useAppKitAccount();
 
   // Start recording function
   const startRecording = async () => {
@@ -101,7 +104,7 @@ export default function RecordPage() {
       // Convert recording data to File object
       const audioFile = new File([audioBlob], "recording.wav", { type: "audio/wav" });
       // Call storeConversation API
-      await storeConversation("user123", audioFile);
+      await storeConversation(address!, audioFile);
 
       console.log("Recording analysis completed");
       toast.success("Recording analysis completed");

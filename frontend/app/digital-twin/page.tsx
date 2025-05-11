@@ -16,6 +16,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { getUserProfile } from "@/lib/api";
 import { Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
+// Import useCallback for memoized functions
+import { useCallback } from "react";
 
 // プロフィールの型定義
 interface Profile {
@@ -29,6 +31,9 @@ interface Profile {
 }
 
 export default function DigitalTwinPage() {
+  // クライアントサイドのレンダリングを確認する状態
+  const [isMounted, setIsMounted] = useState(false);
+  
   // プロフィールデータ
   const [profile, setProfile] = useState<Profile>({
     name: "",
@@ -44,23 +49,31 @@ export default function DigitalTwinPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editedProfile, setEditedProfile] = useState<Profile | null>(null);
 
-  // プロフィールデータの取得
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        // APIからデータを取得
-        const data = await getUserProfile("sampleUserId");
-        setProfile(data);
-
-        setIsLoading(false);
-      } catch (error) {
-        console.error("プロフィールの取得に失敗しました:", error);
-        setIsLoading(false);
-      }
-    };
-
-    fetchProfile();
+  // プロフィールデータを取得する関数を定義
+  const fetchProfile = useCallback(async () => {
+    try {
+      // APIからデータを取得 (固定値)
+      const data = await getUserProfile("user123");
+      console.log("取得したプロフィールデータ:", data);
+      setProfile(data);
+      setIsLoading(false);
+    } catch (error) {
+      console.error("プロフィールの取得に失敗しました:", error);
+      setIsLoading(false);
+    }
   }, []);
+
+  // コンポーネントがマウントされたことを確認
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // クライアントサイドでのみデータを取得
+  useEffect(() => {
+    if (isMounted) {
+      fetchProfile();
+    }
+  }, [isMounted, fetchProfile]);
 
   // プロフィール編集ダイアログを開く
   const openEditDialog = () => {
@@ -101,6 +114,12 @@ export default function DigitalTwinPage() {
     setEditedProfile({ ...editedProfile, hobbies: hobbiesArray });
   };
 
+  // サーバーサイドレンダリングまたはハイドレーション中は何も表示しない
+  if (!isMounted) {
+    return null;
+  }
+
+  // クライアントサイドでのみローディング状態を表示
   if (isLoading) {
     return <div className="flex justify-center items-center min-h-screen">読み込み中...</div>;
   }

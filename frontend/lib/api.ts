@@ -46,6 +46,9 @@ export async function storeConversation(userId: string, audioFile: File): Promis
     const response = await fetch(`${API_BASE_URL}/conversation/`, {
       method: "POST",
       body: formData,
+      headers: {
+        "accept": "application/json",
+      },
     });
 
     if (!response.ok) {
@@ -71,7 +74,7 @@ export async function getUserProfile(userId: string): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/profile/${encodeURIComponent(userId)}`, {
       method: "GET",
       headers: {
-        "Content-Type": "application/json",
+        "accept": "application/json",
       },
     });
 
