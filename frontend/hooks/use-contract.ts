@@ -11,14 +11,14 @@ import { Oto } from "@/contracts/oto";
 import otoIdl from "@/contracts/oto.json";
 import { useAnchorProvider } from "./useAnchorProvider";
 
-// 定数
+// Constants
 const OTO_SEED = "oto";
 const USER_SEED = "user";
 const MINT_SEED = "mint";
 
 /**
- * Otoコントラクトと通信するためのカスタムフック
- * @returns コントラクト操作用の関数とデータ
+ * Custom hook to communicate with the Oto contract
+ * @returns Functions and data for contract operations
  */
 export const useContract = () => {
   const [otoPDA, setOtoPDA] = useState<string | null>(null);
@@ -29,7 +29,7 @@ export const useContract = () => {
   const { walletProvider } = useAppKitProvider<any>("solana");
   const { provider, cluster } = useAnchorProvider();
 
-  // プログラムIDとプログラムインスタンスをメモ化
+  // Memoize program ID and program instance
   const programId = useMemo(() => {
     try {
       return new PublicKey(otoIdl.address);
@@ -39,11 +39,11 @@ export const useContract = () => {
     }
   }, []);
 
-  // Otoプログラムインスタンス
+  // Oto program instance
   const program = useMemo(() => {
     try {
       if (!provider || !programId) return null;
-      // Program クラスを正しく作成
+      // Create Program class correctly
       return new Program<Oto>(otoIdl as any, provider);
     } catch (error) {
       console.error("Failed to create Program instance:", error);
@@ -51,7 +51,7 @@ export const useContract = () => {
     }
   }, [provider, programId]);
 
-  // PDAsの計算
+  // Calculation of PDAs
   useEffect(() => {
     /**
      * calculatePDAs method
@@ -62,7 +62,7 @@ export const useContract = () => {
 
       console.log("Program ID:", programId.toBase58());
 
-      // Oto PDA - IDL定義に基づく正しいシード
+      // Oto PDA - correct seeds based on IDL definition
       const [oto] = PublicKey.findProgramAddressSync(
         [Buffer.from(OTO_SEED)],
         programId
@@ -70,7 +70,7 @@ export const useContract = () => {
       setOtoPDA(oto.toBase58());
       console.log("Oto PDA:", oto.toBase58());
 
-      // Mint PDA - IDL定義に基づく正しいシード
+      // Mint PDA - correct seeds based on IDL definition
       const [mint] = PublicKey.findProgramAddressSync(
         [Buffer.from(MINT_SEED)],
         programId
@@ -87,7 +87,7 @@ export const useContract = () => {
   }
 
   /**
-   * 特定ユーザーのPDAを算出
+   * Calculate PDA for a specific user
    * @param userId
    * @returns
    */
@@ -96,12 +96,12 @@ export const useContract = () => {
     console.log("Program ID:", programId.toBase58());
     console.log("User ID:", userId);
     
-    // ユーザーIDが長すぎる場合は、最初の8文字だけを使用
-    // もしくは、ウォレットのアドレスを使用する場合は一定の長さに制限する
+    // If user ID is too long, use only the first 8 characters
+    // Or, if using the wallet address, limit to a certain length
     const shortenedUserId = getUserId(userId);
     console.log("Shortened User ID:", shortenedUserId);
 
-    // PDA - USER_SEEDとuserIdを使用して正しいPDAを生成
+    // PDA - generate correct PDA using USER_SEED and userId
     const [userPDA] = PublicKey.findProgramAddressSync(
       [Buffer.from(USER_SEED), Buffer.from(shortenedUserId)],
       programId
@@ -129,13 +129,13 @@ export const useContract = () => {
       // call fetch method with the correct PDA
       return await program.account.user.fetch(userPDA);
     } catch (error: any) {
-      // アカウントが存在しないケースを特定
+      // Identify cases where the account does not exist
       if (
         error.message?.includes("Account does not exist") ||
         error.message?.includes("account not found") ||
         error.message?.includes("Program failed to complete")
       ) {
-        console.log("ユーザーアカウントが存在しません:", userId);
+        console.log("User account does not exist:", userId);
 
         if (!program || !address || !otoPDA || !mintPDA) throw new Error("Not initialized");
       }
@@ -145,7 +145,7 @@ export const useContract = () => {
   };
 
   /**
-   * ユーザーを初期化するミューテーション
+   * Mutation to initialize a user
    */
   const initializeUser = useMutation({
     mutationKey: ["oto", "initializeUser", { cluster }],
@@ -154,18 +154,18 @@ export const useContract = () => {
 
       const shortenedUserId = getUserId(userId);
 
-      // 指定されたオーナーまたは現在の接続アドレスを使用
+      // Use the specified owner or the current connected address
       const ownerKey = owner ? new PublicKey(owner) : new PublicKey(address);
 
-      // ユーザーのPDAを計算
+      // Calculate the user's PDA
       const calculatedUserPDA = await getUserPDA(userId);
       if (!calculatedUserPDA) throw new Error("Failed to calculate user PDA");
 
-      console.log("初期化するユーザーPDA:", calculatedUserPDA);
+      console.log("User PDA to initialize:", calculatedUserPDA);
       console.log("Oto PDA:", otoPDA);
-      console.log("支払者:", address);
+      console.log("Payer:", address);
 
-      // IDLに基づいて必要なアカウントを正しく指定
+      // Correctly specify the required accounts based on the IDL
       try{
       const sig = await program.methods
         .initializeUser(shortenedUserId, ownerKey)
@@ -175,20 +175,20 @@ export const useContract = () => {
         .rpc();
         console.log(sig);
       }catch(error){
-        console.error("ユーザーアカウントの初期化に失敗しました:", error);
+        console.error("Failed to initialize user account:", error);
       }
     },
   });
 
   /**
-   * Otoプログラムを初期化するミューテーション
+   * Mutation to initialize the Oto program
    */
   const initializeOto = useMutation({
     mutationKey: ["oto", "initializeOto", { cluster }],
     mutationFn: async ({ nftCollection }: { nftCollection: PublicKey }) => {
       if (!program || !address || !programId) throw new Error("Not initialized");
 
-      // PDAsの計算
+      // Calculate PDAs
       const [otoPDA] = PublicKey.findProgramAddressSync(
         [Buffer.from(OTO_SEED)],
         programId
@@ -202,7 +202,7 @@ export const useContract = () => {
       console.log("Oto PDA:", otoPDA.toBase58());
       console.log("Mint PDA:", mintPDA.toBase58());
       
-      // metadataアドレスの計算
+      // Calculate metadata address
       const TOKEN_METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
       const metadataAddress = PublicKey.findProgramAddressSync(
         [
@@ -213,7 +213,7 @@ export const useContract = () => {
         TOKEN_METADATA_PROGRAM_ID
       )[0];
 
-      console.log("初期化するOto PDA:", otoPDA.toBase58());
+      console.log("Oto PDA to initialize:", otoPDA.toBase58());
       console.log("Mint PDA:", mintPDA.toBase58());
       console.log("NFT Collection:", nftCollection.toBase58());
       console.log("Metadata Address:", metadataAddress.toBase58());
@@ -233,19 +233,19 @@ export const useContract = () => {
   });
 
   /**
-   * トークンをクレームするミューテーション
+   * Mutation to claim tokens
    */
   const claimTokens = useMutation({
     mutationKey: ["oto", "claim", { cluster }],
     mutationFn: async ({ userId, claimAmount }: { userId: string; claimAmount: number }) => {
       if (!program || !address || !otoPDA || !mintPDA) throw new Error("Not initialized");
 
-      // ユーザーPDAを計算
+      // Calculate user PDA
       const shortenedUserId = getUserId(userId);
       const calculatedUserPDA = await getUserPDA(shortenedUserId);
       if (!calculatedUserPDA) throw new Error("Failed to calculate user PDA");
 
-      // ATAを計算
+      // Calculate ATA
       const [userTokenAccount] = await PublicKey.findProgramAddressSync(
         [walletProvider.publicKey.toBytes()],
         ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -261,14 +261,14 @@ export const useContract = () => {
   });
 
   /**
-   * ポイント更新のミューテーション（管理者用）
+   * Mutation to update points (for admin)
    */
   const updatePoint = useMutation({
     mutationKey: ["oto", "updatePoint", { cluster }],
     mutationFn: async ({ userId, delta }: { userId: string; delta: number }) => {
       if (!program || !address || !otoPDA) throw new Error("Not initialized");
 
-      // ユーザーPDAを計算
+      // Calculate user PDA
       const shortenedUserId = getUserId(userId);
       const calculatedUserPDA = await getUserPDA(shortenedUserId);
       if (!calculatedUserPDA) throw new Error("Failed to calculate user PDA");
@@ -285,7 +285,7 @@ export const useContract = () => {
   });
 
   /**
-   *  Otoアカウント情報の取得するクエリ
+   * Query to get Oto account information
    */
   const getOtoAccount = useQuery({
     queryKey: ["oto", "otoAccount", { cluster }],
@@ -297,8 +297,8 @@ export const useContract = () => {
   });
 
   /**
-   * ユーザーのクレーム可能な金額を取得するクエリ
-   * ユーザーが存在しない場合は自動的に初期化を行う
+   * Query to get the claimable amount for a user
+   * Automatically initializes the user if they do not exist
    */
   const getClaimableAmount = useQuery({
     queryKey: ["oto", "claimableAmount", { userId: address, cluster }],
@@ -306,37 +306,37 @@ export const useContract = () => {
       if (!address || !program) throw new Error("Not initialized");
 
       try {
-        const userId = address; // ユーザーIDとして現在のアドレスを使用
-        console.log("ユーザーID:", userId);
+        const userId = address; // Use the current address as the user ID
+        console.log("User ID:", userId);
         
-        // ユーザーアカウント情報を取得
+        // Get user account information
         let userAccount = await getUserAccount(userId);
 
-        console.log("ユーザーアカウント情報:", userAccount);
+        console.log("User account information:", userAccount);
 
         if (!userAccount) {
-          console.log("ユーザーアカウントが初期化されていません. Claimable Amount を0として返します");
+          console.log("User account is not initialized. Returning claimable amount as 0");
           return "0";
         }
           
-        // claimableAmountが存在するか確認
+        // Check if claimableAmount exists
         if (userAccount.claimableAmount) {
           console.log("userAccount.claimableAmount:", userAccount.claimableAmount)
           const amount = userAccount.claimableAmount.toString();
-          console.log(`ユーザー ${userId} のクレーム可能金額: ${amount}`);
+          console.log(`Claimable amount for user ${userId}: ${amount}`);
           return amount;
         }
         
         return "0";
       } catch (error) {
-        console.error("クレーム可能金額取得エラー:", error);
-        return "0"; // エラーの場合は0を返す（UIを壊さない）
+        console.error("Error fetching claimable amount:", error);
+        return "0"; // Return 0 in case of error (to avoid breaking the UI)
       }
     },
     enabled: !!program && !!address && !!walletProvider,
-    staleTime: 60 * 1000, // 1分間はキャッシュを使用
-    refetchOnWindowFocus: true, // ウィンドウフォーカス時に再取得
-    retry: 2, // エラー時に2回リトライ
+    staleTime: 60 * 1000, // Use cache for 1 minute
+    refetchOnWindowFocus: true, // Refetch on window focus
+    retry: 2, // Retry 2 times on error
   });
 
   return {

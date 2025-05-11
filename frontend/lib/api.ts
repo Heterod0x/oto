@@ -1,9 +1,9 @@
 import { API_BASE_URL } from "./constants";
 
 /**
- * 会話履歴を取得する
- * @param userId ユーザーID
- * @returns 会話履歴
+ * Get conversation history
+ * @param userId User ID
+ * @returns Conversation history
  */
 export async function getConversations(userId: string): Promise<any> {
   try {
@@ -31,10 +31,10 @@ export async function getConversations(userId: string): Promise<any> {
 }
 
 /**
- * 会話を保存する
- * @param userId ユーザーID
- * @param audioFile 音声ファイル
- * @returns 保存結果
+ * Save conversation
+ * @param userId User ID
+ * @param audioFile Audio file
+ * @returns Save result
  */
 export async function storeConversation(userId: string, audioFile: File): Promise<any> {
   try {
@@ -42,7 +42,7 @@ export async function storeConversation(userId: string, audioFile: File): Promis
     formData.append("user_id", userId);
     formData.append("audio", audioFile);
 
-    // conversation APIの呼び出し
+    // Calling the conversation API
     const response = await fetch(`${API_BASE_URL}/conversation/`, {
       method: "POST",
       body: formData,
@@ -62,9 +62,9 @@ export async function storeConversation(userId: string, audioFile: File): Promis
 }
 
 /**
- * ユーザープロファイルを取得する
- * @param userId ユーザーID
- * @returns ユーザープロファイル
+ * Get user profile
+ * @param userId User ID
+ * @returns User profile
  */
 export async function getUserProfile(userId: string): Promise<any> {
   try {

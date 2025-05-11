@@ -8,20 +8,20 @@ export function BottomNavigation() {
   const pathname = usePathname();
   const router = useRouter();
 
-  // 現在のパスに基づいてアクティブなアイコンを決定
+  // Determine active icon based on current path
   const isActive = (path: string) => pathname === path;
 
-  // ナビゲーションアイテム
+  // Navigation items
   const navItems = [
     {
       path: "/ecosystem",
       icon: <Layers className="h-6 w-6" />,
-      label: "エコシステム",
+      label: "Ecosystem",
     },
     {
       path: "/digital-twin",
       icon: <User className="h-6 w-6" />,
-      label: "デジタルツイン",
+      label: "Digital Twin",
     },
     {
       path: "/record",
@@ -31,17 +31,17 @@ export function BottomNavigation() {
           <Mic className="h-6 w-6 relative z-10" />
         </div>
       ),
-      label: "録音",
+      label: "Record",
     },
     {
       path: "/history",
       icon: <History className="h-6 w-6" />,
-      label: "会話履歴",
+      label: "Conversation History",
     },
     {
       path: "/settings",
       icon: <Settings className="h-6 w-6" />,
-      label: "設定",
+      label: "Settings",
     },
   ];
 

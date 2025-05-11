@@ -5,70 +5,70 @@ import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export default function InstallPrompt() {
-  // PWAインストールプロンプトのイベントを保存
+  // Store the PWA installation prompt event
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  // プロンプトが表示可能かどうか
+  // Whether the prompt can be displayed
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
 
   useEffect(() => {
-    // beforeinstallpromptイベントが発生したときに処理
+    // Handle beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
-      // デフォルトのプロンプトを防止
+      // Prevent the default prompt
       e.preventDefault();
-      // イベントを保存
+      // Store the event
       setDeferredPrompt(e);
-      // プロンプトを表示可能に
+      // Make the prompt available
       setShowInstallPrompt(true);
     };
 
-    // インストール済みかどうかをローカルストレージから確認
+    // Check if already installed from local storage
     const isInstalled = localStorage.getItem("pwaInstalled") === "true";
 
     if (!isInstalled) {
-      // イベントリスナーを登録
+      // Register event listener
       window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     }
 
     return () => {
-      // コンポーネントのクリーンアップ時にイベントリスナーを削除
+      // Remove event listener when component unmounts
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     };
   }, []);
 
-  // インストールを実行する処理
+  // Function to execute installation
   const handleInstallClick = async () => {
     if (!deferredPrompt) {
       return;
     }
 
-    // インストールプロンプトを表示
+    // Show installation prompt
     deferredPrompt.prompt();
 
-    // ユーザーの選択を待つ
+    // Wait for user's choice
     const choiceResult = await deferredPrompt.userChoice;
 
-    // 選択結果に応じた処理
+    // Process based on selection result
     if (choiceResult.outcome === "accepted") {
-      console.log("ユーザーがPWAのインストールを承認しました");
+      console.log("User accepted the installation");
       localStorage.setItem("pwaInstalled", "true");
     } else {
-      console.log("ユーザーがPWAのインストールを拒否しました");
+      console.log("User declined the installation");
     }
 
-    // 使用済みのプロンプトをクリア
+    // Clear the used prompt
     setDeferredPrompt(null);
     setShowInstallPrompt(false);
   };
 
-  // バナーを閉じる処理
+  // Function to close the banner
   const dismissPrompt = () => {
     setShowInstallPrompt(false);
-    // 24時間表示しない設定を保存
+    // Save setting to not show for 24 hours
     const now = new Date();
     localStorage.setItem("installPromptDismissed", now.toString());
   };
 
-  // プロンプトが表示できない場合は何も表示しない
+  // Don't display anything if prompt is not available
   if (!showInstallPrompt) {
     return null;
   }
@@ -77,16 +77,16 @@ export default function InstallPrompt() {
     <div className="fixed bottom-20 left-0 right-0 mx-auto max-w-sm p-4 z-50">
       <div className="bg-primary text-primary-foreground rounded-lg shadow-lg p-4 flex flex-col">
         <div className="flex justify-between items-start">
-          <h3 className="font-bold">アプリをインストール</h3>
+          <h3 className="font-bold">Install App</h3>
           <button onClick={dismissPrompt} className="text-primary-foreground">
             <X size={18} />
           </button>
         </div>
         <p className="text-sm my-2">
-          ホーム画面に追加して、オフラインでも使用できるようにしましょう
+          Add to your home screen for offline use
         </p>
         <Button onClick={handleInstallClick} className="mt-2 w-full">
-          インストール
+          Install
         </Button>
       </div>
     </div>
