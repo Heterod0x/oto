@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Oto App",
     short_name: "Oto",
-    description: "音声を録音して分析するアプリケーション",
+    description: "An application for recording and analyzing audio",
     start_url: "/",
     display: "standalone",
     background_color: "#ffffff",

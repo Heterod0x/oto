@@ -11,7 +11,7 @@ const NETWORK = {
   "Solana Devnet": "devnet",
 };
 
-// サーバーサイドレンダリング中であるかを検出
+// Detect if we're in server-side rendering
 const isServer = typeof window === "undefined";
 
 /**
@@ -19,7 +19,7 @@ const isServer = typeof window === "undefined";
  * @returns 
  */
 export function useAnchorProvider() {
-  // サーバーサイドではダミーの値を返す
+  // Return dummy values on the server-side
   if (isServer) {
     return { provider: null, cluster: "devnet" };
   }
@@ -30,7 +30,7 @@ export function useAnchorProvider() {
     const { caipNetwork } = useAppKitNetwork();
     const cluster = NETWORK[caipNetwork?.name as keyof typeof NETWORK] || "devnet";
 
-    // walletProviderが存在する場合のみProviderを作成
+    // Create Provider only when walletProvider exists
     let provider = null;
     if (walletProvider) {
       provider = new AnchorProvider(connection as any, walletProvider as any, {

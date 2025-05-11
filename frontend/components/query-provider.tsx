@@ -2,9 +2,13 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
-export function QueryProvider({ children }: { children: React.ReactNode }) {
+interface QueryProviderProps {
+  children: ReactNode;
+}
+
+export function QueryProvider({ children }: QueryProviderProps) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -12,7 +16,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
           queries: {
             refetchOnWindowFocus: false,
             retry: false,
-            staleTime: 5 * 60 * 1000, // 5分
+            staleTime: 5 * 60 * 1000, // 5 minutes
           },
         },
       }),
@@ -21,8 +25,10 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      {/* 開発環境の場合のみDevtoolsを表示 */}
-      {process.env.NODE_ENV === "development" && <ReactQueryDevtools initialIsOpen={false} />}
+      {/* Only show DevTools in development environment */}
+      {process.env.NODE_ENV === "development" && (
+        <ReactQueryDevtools initialIsOpen={false} />
+      )}
     </QueryClientProvider>
   );
 }

@@ -6,6 +6,7 @@ import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { storeConversation } from "@/lib/api";
+import { useAppKitAccount } from "@reown/appkit/react";
 import { Mic, Square } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -15,69 +16,71 @@ import { toast } from "sonner";
  * @returns
  */
 export default function RecordPage() {
-  // 録音状態を管理するstate
+  // State to manage recording status
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // 録音用のRef
+  // Recording refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  // get wallet address
+  const { address } = useAppKitAccount();
 
-  // 録音開始処理
+  // Start recording function
   const startRecording = async () => {
     try {
-      // マイクへのアクセス許可を取得
+      // Get permission to access the microphone
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      // MediaRecorderの初期化
+      // Initialize MediaRecorder
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
-      // データが利用可能になったときのイベントハンドラ
+      // Event handler for when data becomes available
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
         }
       };
 
-      // 録音停止時のイベントハンドラ
+      // Event handler for when recording stops
       mediaRecorder.onstop = () => {
-        // 録音データをBlobに変換
+        // Convert recording data to Blob
         const audioBlob = new Blob(audioChunksRef.current, {
           type: "audio/wav",
         });
         setAudioBlob(audioBlob);
 
-        // ストリームのトラックを停止
+        // Stop tracks in the stream
         stream.getTracks().forEach((track) => track.stop());
       };
 
-      // 録音開始
+      // Start recording
       mediaRecorder.start();
       setIsRecording(true);
       setRecordingTime(0);
 
-      // 録音時間を更新するタイマー
+      // Timer to update recording time
       timerRef.current = setInterval(() => {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
     } catch (error) {
-      console.error("録音の開始に失敗しました:", error);
-      toast.error("録音の開始に失敗しました");
+      console.error("Error starting recording:", error);
+      toast.error("Error starting recording");
     }
   };
 
-  // 録音停止処理
+  // Stop recording function
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
 
-      // タイマーをクリア
+      // Clear timer
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
@@ -85,36 +88,36 @@ export default function RecordPage() {
     }
   };
 
-  // 録音データを分析するAPI呼び出し
+  // API call to analyze recording data
   const analyzeRecording = async () => {
     if (!audioBlob) return;
 
     setIsAnalyzing(true);
 
     try {
-      // FormDataの作成
+      // Create FormData
       const formData = new FormData();
       formData.append("audio", audioBlob, "recording.wav");
 
       console.log("audio data:", audioBlob);
 
-      // 録音データをファイルオブジェクトに変換
+      // Convert recording data to File object
       const audioFile = new File([audioBlob], "recording.wav", { type: "audio/wav" });
-      // storeConversation APIを呼び出す
-      await storeConversation("user123", audioFile);
+      // Call storeConversation API
+      await storeConversation(address!, audioFile);
 
-      console.log("録音データの分析が完了しました");
-      toast.success("録音データの分析が完了しました");
+      console.log("Recording analysis completed");
+      toast.success("Recording analysis completed");
       
     } catch (error) {
-      console.error("録音の分析中にエラーが発生しました:", error);
-      toast.error("録音の分析中にエラーが発生しました");
+      console.error("Error analyzing recording:", error);
+      toast.error("Error analyzing recording");
     } finally {
       setIsAnalyzing(false);
     }
   };
 
-  // コンポーネントのアンマウント時にタイマーをクリア
+  // Clear timer when component unmounts
   useEffect(() => {
     return () => {
       if (timerRef.current) {
@@ -123,7 +126,7 @@ export default function RecordPage() {
     };
   }, []);
 
-  // 録音時間のフォーマット（mm:ss）
+  // Format recording time (mm:ss)
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -132,20 +135,20 @@ export default function RecordPage() {
 
   return (
     <div className="flex flex-col items-center justify-between min-h-screen p-4 relative">
-      {/* ローディングオーバーレイ */}
+      {/* Loading overlay */}
       <LoadingOverlay 
         isLoading={isAnalyzing} 
-        text="音声を分析中..." 
+        text="Analyzing audio..." 
         fullScreen={false} 
         className="rounded-xl"
       />
 
-      {/* 上部のロゴ/アイコン */}
+      {/* Top logo/icon */}
       <div className="w-24 h-24 mb-8 mt-8 rounded-full bg-gradient-to-r from-green-200 to-yellow-200 flex items-center justify-center">
         <img src="/icons/logo.jpeg" />
       </div>
 
-      {/* 録音コントロール */}
+      {/* Recording controls */}
       <div className="flex items-center justify-center gap-4 mb-8">
         {isRecording ? (
           <Button
@@ -155,7 +158,7 @@ export default function RecordPage() {
             onClick={stopRecording}
           >
             <Square className="w-6 h-6" />
-            <span className="sr-only">録音停止</span>
+            <span className="sr-only">Stop recording</span>
           </Button>
         ) : (
           <Button
@@ -165,7 +168,7 @@ export default function RecordPage() {
             onClick={startRecording}
           >
             <Mic className="w-6 h-6" />
-            <span className="sr-only">録音開始</span>
+            <span className="sr-only">Start recording</span>
           </Button>
         )}
 
@@ -177,19 +180,19 @@ export default function RecordPage() {
         )}
       </div>
 
-      {/* 録音後の分析ボタン */}
+      {/* Analyze button after recording */}
       {audioBlob && !isRecording && (
         <Button className="mb-8" onClick={analyzeRecording} disabled={isAnalyzing}>
           {isAnalyzing ? (
             <>
               <Spinner size="sm" className="mr-2" />
-              分析中...
+              Analyzing...
             </>
-          ) : "分析する"}
+          ) : "Analyze"}
         </Button>
       )}
 
-      {/* 統計情報 */}
+      {/* Statistics */}
       <Card className="w-full max-w-md mb-8">
         <CardContent className="p-4">
           <h2 className="text-lg font-medium mb-2">Stats</h2>

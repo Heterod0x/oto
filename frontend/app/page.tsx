@@ -4,29 +4,29 @@ import { useAppKitAccount } from "@reown/appkit/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-/**
- * Home page component
- * @returns
- */
 export default function Home() {
+  const { address: walletAddress } = useAppKitAccount();
   const router = useRouter();
-  const { isConnected } = useAppKitAccount();
 
-  // ウォレット接続状態に応じて録音画面またはウォレット接続画面を表示
   useEffect(() => {
-    if (isConnected) {
+    if (walletAddress) {
       router.push("/record");
     }
-  }, [isConnected, router]);
+  }, [walletAddress, router]);
 
-  if (isConnected) {
-    return null; // 録音画面にリダイレクト中
-  }
-
+  // Display recording screen or wallet connection screen based on wallet connection status
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4">
-      <h1 className="mb-8 text-2xl font-bold text-center">SignUp / SignIn</h1>
-      <appkit-button />
+    <div className="container flex flex-col items-center justify-center min-h-screen py-12 space-y-8">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold mb-2">Welcome to Oto</h1>
+        <p className="text-xl text-muted-foreground">Connect your wallet to get started</p>
+      </div>
+
+      {walletAddress ? null : ( // Redirecting to recording screen
+        <div className="flex flex-col items-center">
+          <appkit-button />
+        </div>
+      )}
     </div>
   );
 }

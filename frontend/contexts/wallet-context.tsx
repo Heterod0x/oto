@@ -6,7 +6,7 @@ import { ConnectionProvider } from "@solana/wallet-adapter-react";
 import { clusterApiUrl } from "@solana/web3.js";
 import { createContext, useEffect, useState, type ReactNode } from "react";
 
-// ウォレットコンテキストの型定義
+// Wallet context type definition
 interface WalletContextType {
   isConnected: boolean;
   isConnecting: boolean;
@@ -15,7 +15,7 @@ interface WalletContextType {
   disconnect: () => void;
 }
 
-// デフォルト値
+// Default values
 const defaultContext: WalletContextType = {
   isConnected: false,
   isConnecting: false,
@@ -49,16 +49,16 @@ export const modal = createAppKit({
   },
 });
 
-// コンテキストの作成
+// Create context
 export const WalletContext = createContext<WalletContextType>(defaultContext);
 
-// プロバイダーコンポーネント
+// Provider component
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [address, setAddress] = useState<string | null>(null);
 
-  // ローカルストレージからウォレット接続状態を復元
+  // Restore wallet connection state from local storage
   useEffect(() => {
     const storedAddress = localStorage.getItem("walletAddress");
     if (storedAddress) {
@@ -67,31 +67,31 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // ウォレット接続
+  // Wallet connection
   const connect = async () => {
     setIsConnecting(true);
 
     try {
-      // 実際の実装ではウォレット接続ロジックを実装
-      // 例: MetaMask, WalletConnect など
+      // Implement wallet connection logic in actual implementation
+      // Example: MetaMask, WalletConnect, etc.
 
-      // ダミー実装（実際の実装では置き換え）
+      // Dummy implementation (replace in actual implementation)
       await new Promise((resolve) => setTimeout(resolve, 1000));
       const dummyAddress = "0x1234...5678";
 
       setIsConnected(true);
       setAddress(dummyAddress);
 
-      // ローカルストレージに保存
+      // Save to local storage
       localStorage.setItem("walletAddress", dummyAddress);
     } catch (error) {
-      console.error("ウォレット接続エラー:", error);
+      console.error("Wallet connection error:", error);
     } finally {
       setIsConnecting(false);
     }
   };
 
-  // ウォレット切断
+  // Wallet disconnection
   const disconnect = () => {
     setIsConnected(false);
     setAddress(null);

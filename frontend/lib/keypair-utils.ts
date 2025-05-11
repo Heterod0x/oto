@@ -1,31 +1,31 @@
 import { PublicKey } from '@solana/web3.js';
 
 /**
- * 環境変数から読み込んだ秘密鍵の配列をUint8Arrayに変換する
- * @param secretKeyString カンマ区切りの秘密鍵配列を表す文字列
- * @returns Uint8Array形式の秘密鍵
+ * Convert the secret key array read from environment variables to Uint8Array
+ * @param secretKeyString A string representing a comma-separated secret key array
+ * @returns Secret key in Uint8Array format
  */
 export function parseSecretKey(secretKeyString: string): Uint8Array {
   try {
-    // カンマ区切りの文字列を数値配列に変換
+    // Convert comma-separated string to number array
     const secretKeyArray = secretKeyString
       .split(',')
       .map(num => parseInt(num.trim(), 10));
     
-    // 数値配列をUint8Arrayに変換
+    // Convert number array to Uint8Array
     return new Uint8Array(secretKeyArray);
   } catch (error) {
-    console.error('秘密鍵の解析に失敗しました:', error);
+    console.error('Failed to parse secret key:', error);
     throw new Error('Invalid secret key format');
   }
 }
 
 /**
- * 環境変数からアセットキーペア情報を取得する
- * @returns アセットキーペア情報（publicKeyとsecretKey）
+ * Get asset keypair information from environment variables
+ * @returns Asset keypair information (publicKey and secretKey)
  */
 export function getAssetKeypair(): { publicKey: string; secretKey: Uint8Array } {
-  // 環境変数からキーペア情報を取得
+  // Get keypair information from environment variables
   const publicKey = process.env.NEXT_PUBLIC_ASSET_PUBLIC_KEY;
   const secretKeyString = process.env.ASSET_SECRET_KEY;
 
@@ -33,7 +33,7 @@ export function getAssetKeypair(): { publicKey: string; secretKey: Uint8Array } 
     throw new Error('Asset keypair environment variables are not set');
   }
 
-  // 秘密鍵を解析してUint8Arrayに変換
+  // Parse private key and convert to Uint8Array
   const secretKey = parseSecretKey(secretKeyString);
 
   return {
@@ -43,8 +43,8 @@ export function getAssetKeypair(): { publicKey: string; secretKey: Uint8Array } 
 }
 
 /**
- * 環境変数からアセットPublicKeyオブジェクトを取得する
- * @returns PublicKeyオブジェクト
+ * Get asset PublicKey object from environment variables
+ * @returns PublicKey object
  */
 export function getAssetPublicKey(): PublicKey {
   const publicKeyString = process.env.NEXT_PUBLIC_ASSET_PUBLIC_KEY;

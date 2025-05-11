@@ -1,10 +1,11 @@
 "use client";
 
-import { Button } from "@/app/components/ui/button";
-import { useWallet } from "@/app/hooks/use-wallet";
+import { Button } from "@/components/ui/button";
+import { WalletContext } from "@/contexts/wallet-context";
+import { useContext } from "react";
 
-export function ConnectWalletButton() {
-  const { connect, isConnecting } = useWallet();
+export default function ConnectWalletButton() {
+  const { connect, isConnecting } = useContext(WalletContext);
 
   return (
     <Button onClick={connect} disabled={isConnecting} className="w-full max-w-xs">
