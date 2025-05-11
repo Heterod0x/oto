@@ -1,32 +1,35 @@
 "use client";
 
-import { useAppKitAccount } from "@reown/appkit/react";
+import { WalletContext } from "@/contexts/wallet-context";
+import { useAppKitModal } from "@reown/appkit/react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
+import ConnectWalletButton from "../components/connect-wallet-button";
 
-/**
- * Home page component
- * @returns
- */
 export default function Home() {
+  const { isConnected } = useContext(WalletContext);
+  const { modal } = useAppKitModal();
   const router = useRouter();
-  const { isConnected } = useAppKitAccount();
 
-  // ウォレット接続状態に応じて録音画面またはウォレット接続画面を表示
   useEffect(() => {
     if (isConnected) {
       router.push("/record");
     }
   }, [isConnected, router]);
 
-  if (isConnected) {
-    return null; // 録音画面にリダイレクト中
-  }
-
+  // Display recording screen or wallet connection screen based on wallet connection status
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4">
-      <h1 className="mb-8 text-2xl font-bold text-center">SignUp / SignIn</h1>
-      <appkit-button />
+    <div className="container flex flex-col items-center justify-center min-h-screen py-12 space-y-8">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold mb-2">Welcome to Oto</h1>
+        <p className="text-xl text-muted-foreground">Connect your wallet to get started</p>
+      </div>
+
+      {isConnected ? null : ( // Redirecting to recording screen
+        <div className="flex flex-col items-center">
+          <ConnectWalletButton />
+        </div>
+      )}
     </div>
   );
 }
