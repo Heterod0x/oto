@@ -1,6 +1,12 @@
-# oto
+# Oto
 
 ## Overview
+
+## Pitch Silde
+
+## Product Page (Colosseum)
+
+[https://arena.colosseum.org/projects/explore/oto](https://arena.colosseum.org/projects/explore/oto)
 
 ## LP
 
@@ -13,3 +19,7 @@
 ## Deployed Contract
 
 [Solscan - otoUzj3eLyJXSkB4DmfGR63eHBMQ9tqPHJaGX8ySSsY](https://solscan.io/account/otoUzj3eLyJXSkB4DmfGR63eHBMQ9tqPHJaGX8ySSsY?cluster=devnets)
+
+[Base Sepolia - 0xF6C348b8bd2de448CeC56277D6eFf851b6FfCa66](https://sepolia.basescan.org/address/0xF6C348b8bd2de448CeC56277D6eFf851b6FfCa66)
+
+## GitBook
