@@ -3,6 +3,6 @@ from app.domain.conversation.domain_service.transcription.i_transcriber import I
 
 class MockTranscriber(ITranscriber):
     def transcribe(self, audio_data: bytes) -> str:
-        with open("data/consome-example.txt", "r") as f:
+        with open("example-data/emma-watson.txt", "r") as f:
             messages = f.readlines()
-            return messages[0]
+            return "".join(messages)

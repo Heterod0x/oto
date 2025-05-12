@@ -1,6 +1,7 @@
 from agno.memory.v2.db.sqlite import SqliteMemoryDb
 from agno.memory.v2.memory import Memory
 from agno.memory.v2.schema import UserMemory
+from loguru import logger
 
 from app.domain.user_profile.object.user_context import UserContext, UserContextTag
 from app.domain.user_profile.repository.i_user_context_repository import IUserContextRepository
@@ -13,6 +14,7 @@ class SqliteUserContextRepository(IUserContextRepository):
 
     def get_all(self, user_id: str) -> list[UserContext]:
         user_memories = self._memory.get_user_memories(user_id)
+        logger.info(f"user_memories: {user_memories}")
         # TODO: 実装
         return [
             UserContext(content=user_memory.memory, tag=UserContextTag(user_memory.topics[0]))

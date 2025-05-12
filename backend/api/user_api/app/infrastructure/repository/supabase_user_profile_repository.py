@@ -11,7 +11,7 @@ class SupabaseUserProfileRepository(IUserProfileRepository):
 
     def get(self, user_id: str) -> UserProfile:
         response = self.supabase_client.table("user_profile").select("*").eq("user_id", user_id).execute()
-        data = response.data[0]
+        data = response.data[-1]
         profile = UserProfile(
             age=data["age"],
             gender=data["gender"],
