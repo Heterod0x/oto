@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { getConversations } from "@/lib/api";
+import { useAppKitAccount } from "@reown/appkit/react";
 import { Calendar, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -27,6 +28,8 @@ export default function HistoryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const { address } = useAppKitAccount();
+
   // 会話履歴データの取得
   useEffect(() => {
     const fetchConversations = async () => {
@@ -35,7 +38,7 @@ export default function HistoryPage() {
         setError(null);
         
         // APIからデータを取得
-        const responseData = await getConversations("sampleUserId");
+        const responseData = await getConversations(address!);
         console.log("API response data:", responseData);
         
         // データの構造を確認して適切に処理
@@ -61,6 +64,15 @@ export default function HistoryPage() {
               conversationsArray = arrayProperty as Conversation[];
             }
           }
+        } else if (typeof responseData === 'string') {
+          // 文字列の場合、会話として処理
+          conversationsArray = [{
+            id: '1',
+            title: '会話記録',
+            text: responseData,
+            tags: [], // 空の配列を設定
+            date: new Date().toLocaleDateString()
+          }];
         }
         
         setConversations(conversationsArray);
@@ -80,8 +92,8 @@ export default function HistoryPage() {
   const filteredConversations = conversations && Array.isArray(conversations) 
     ? conversations.filter(
         (conv) =>
-          conv.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          conv.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (conv.title && conv.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (conv.text && conv.text.toLowerCase().includes(searchQuery.toLowerCase())) ||
           (Array.isArray(conv.tags) && conv.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))),
       )
     : [];
@@ -186,7 +198,7 @@ export default function HistoryPage() {
                 </p>
                 <div className="flex justify-between items-center">
                   <div className="flex gap-1 flex-wrap">
-                    {conversation.tags.map((tag, index) => (
+                    {conversation.tags && Array.isArray(conversation.tags) && conversation.tags.map((tag, index) => (
                       <Badge key={index} variant="secondary" className="text-xs">
                         {tag}
                       </Badge>
@@ -215,7 +227,7 @@ export default function HistoryPage() {
           <div className="space-y-4">
             <p>{selectedConversation?.text}</p>
             <div className="flex flex-wrap gap-1">
-              {selectedConversation?.tags.map((tag, index) => (
+              {selectedConversation?.tags && Array.isArray(selectedConversation.tags) && selectedConversation.tags.map((tag, index) => (
                 <Badge key={index} variant="secondary">
                   {tag}
                 </Badge>
