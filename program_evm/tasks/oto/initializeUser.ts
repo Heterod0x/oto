@@ -5,16 +5,21 @@ import { getContractAddress } from "../../helpers/contractJsonHelper";
 /**
  * Task to initialize a new user in the Oto contract
  * This task creates a new user with the specified ID and links it to the caller's address
- * 
+ *
  * Parameters:
  * - userId: The unique identifier for the user
  * - ownerAddress: (Optional) The address that will own the user account. If not provided, uses the caller's address
  */
 task("oto:initializeUser", "Initialize a new user in the Oto contract")
   .addParam("userId", "The unique identifier for the user")
-  .addOptionalParam("ownerAddress", "The address that will own the user account (defaults to caller)")
+  .addOptionalParam(
+    "ownerAddress",
+    "The address that will own the user account (defaults to caller)",
+  )
   .setAction(async (taskArgs, hre: HardhatRuntimeEnvironment) => {
-    console.log("################################### [START] ###################################");
+    console.log(
+      "################################### [START] ###################################",
+    );
 
     // Get wallet client
     const [walletClient] = await hre.viem.getWalletClients();
@@ -51,13 +56,20 @@ task("oto:initializeUser", "Initialize a new user in the Oto contract")
 
     // Call initializeUser method
     try {
-      const tx = await oto.write.initializeUser([taskArgs.userId, ownerAddress]);
+      const tx = await oto.write.initializeUser([
+        taskArgs.userId,
+        ownerAddress,
+      ]);
       console.log(`Transaction submitted: ${tx}`);
-      
+
       // Wait for transaction receipt
-      const receipt = await publicClient.waitForTransactionReceipt({ hash: tx });
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: tx,
+      });
       console.log(`Transaction confirmed in block ${receipt.blockNumber}`);
-      console.log(`Status: ${receipt.status === 'success' ? 'Success' : 'Failed'}`);
+      console.log(
+        `Status: ${receipt.status === "success" ? "Success" : "Failed"}`,
+      );
 
       // Verify the user was initialized
       const userInfo = await oto.read.getUserInfo([taskArgs.userId]);
@@ -70,5 +82,7 @@ task("oto:initializeUser", "Initialize a new user in the Oto contract")
       console.error(error);
     }
 
-    console.log("################################### [END] ###################################");
+    console.log(
+      "################################### [END] ###################################",
+    );
   });

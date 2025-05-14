@@ -5,14 +5,19 @@ import { getContractAddress } from "../../helpers/contractJsonHelper";
 /**
  * Task to update the core asset collection address
  * This task allows the contract owner to change the address of the core asset collection
- * 
+ *
  * Parameters:
  * - address: The new address for the core asset collection
  */
-task("oto:updateCoreAssetCollection", "Update the core asset collection address (admin only)")
+task(
+  "oto:updateCoreAssetCollection",
+  "Update the core asset collection address (admin only)",
+)
   .addParam("address", "The new address for the core asset collection")
   .setAction(async (taskArgs, hre: HardhatRuntimeEnvironment) => {
-    console.log("################################### [START] ###################################");
+    console.log(
+      "################################### [START] ###################################",
+    );
 
     // Get wallet client
     const [walletClient] = await hre.viem.getWalletClients();
@@ -45,28 +50,35 @@ task("oto:updateCoreAssetCollection", "Update the core asset collection address 
       // Get current core asset collection
       const currentCollection = await oto.read.coreAssetCollection();
       console.log(`Current core asset collection: ${currentCollection}`);
-      
+
       // New collection address
       console.log(`New core asset collection address: ${taskArgs.address}`);
 
       // Call updateCoreAssetCollection method
       const tx = await oto.write.updateCoreAssetCollection([taskArgs.address]);
       console.log(`Transaction submitted: ${tx}`);
-      
+
       // Wait for transaction receipt
-      const receipt = await publicClient.waitForTransactionReceipt({ hash: tx });
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: tx,
+      });
       console.log(`Transaction confirmed in block ${receipt.blockNumber}`);
-      console.log(`Status: ${receipt.status === 'success' ? 'Success' : 'Failed'}`);
+      console.log(
+        `Status: ${receipt.status === "success" ? "Success" : "Failed"}`,
+      );
 
       // Get updated core asset collection
       const newCollection = await oto.read.coreAssetCollection();
       console.log(`\nUpdated core asset collection: ${newCollection}`);
-      console.log(`Verification: ${newCollection === taskArgs.address ? 'Updated successfully' : 'Update failed'}`);
-      
+      console.log(
+        `Verification: ${newCollection === taskArgs.address ? "Updated successfully" : "Update failed"}`,
+      );
     } catch (error) {
       console.error("Error updating core asset collection:");
       console.error(error);
     }
 
-    console.log("################################### [END] ###################################");
+    console.log(
+      "################################### [END] ###################################",
+    );
   });

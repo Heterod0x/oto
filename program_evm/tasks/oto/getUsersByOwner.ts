@@ -5,14 +5,19 @@ import { getContractAddress } from "../../helpers/contractJsonHelper";
 /**
  * Task to retrieve all user IDs associated with a specific owner address
  * This task returns the list of user IDs that are linked to the specified address
- * 
+ *
  * Parameters:
  * - address: (Optional) The address to query for users. If not provided, uses the caller's address
  */
 task("oto:getUsersByOwner", "Get all users IDs owned by an address")
-  .addOptionalParam("address", "The owner address to query (defaults to caller)")
+  .addOptionalParam(
+    "address",
+    "The owner address to query (defaults to caller)",
+  )
   .setAction(async (taskArgs, hre: HardhatRuntimeEnvironment) => {
-    console.log("################################### [START] ###################################");
+    console.log(
+      "################################### [START] ###################################",
+    );
 
     // Get wallet client
     const [walletClient] = await hre.viem.getWalletClients();
@@ -45,9 +50,11 @@ task("oto:getUsersByOwner", "Get all users IDs owned by an address")
 
       // Call getUsersByOwner method
       const userIds = await oto.read.getUsersByOwner([queryAddress]);
-      
-      console.log(`\nFound ${userIds.length} user(s) for address ${queryAddress}:`);
-      
+
+      console.log(
+        `\nFound ${userIds.length} user(s) for address ${queryAddress}:`,
+      );
+
       // If no users found, display a message
       if (userIds.length === 0) {
         console.log("No users found for this address");
@@ -56,7 +63,7 @@ task("oto:getUsersByOwner", "Get all users IDs owned by an address")
         for (let i = 0; i < userIds.length; i++) {
           const userId = userIds[i];
           const userInfo = await oto.read.getUserInfo([userId]);
-          
+
           console.log(`\nUser #${i + 1}:`);
           console.log(`- User ID: ${userId}`);
           console.log(`- Initialized: ${userInfo[0]}`);
@@ -69,5 +76,7 @@ task("oto:getUsersByOwner", "Get all users IDs owned by an address")
       console.error(error);
     }
 
-    console.log("################################### [END] ###################################");
+    console.log(
+      "################################### [END] ###################################",
+    );
   });

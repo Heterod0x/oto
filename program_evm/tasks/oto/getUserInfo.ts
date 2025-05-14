@@ -6,14 +6,16 @@ import { getContractAddress } from "../../helpers/contractJsonHelper";
  * Task to retrieve detailed information about a specific user
  * This task returns initialization status, points balance, and owner address
  * for the specified user ID
- * 
+ *
  * Parameters:
  * - userId: The ID of the user to query
  */
 task("oto:getUserInfo", "Get detailed information about a user")
   .addParam("userId", "The ID of the user to query")
   .setAction(async (taskArgs, hre: HardhatRuntimeEnvironment) => {
-    console.log("################################### [START] ###################################");
+    console.log(
+      "################################### [START] ###################################",
+    );
 
     const publicClient = await hre.viem.getPublicClient();
     // Get chain ID
@@ -41,7 +43,7 @@ task("oto:getUserInfo", "Get detailed information about a user")
 
       // Call getUserInfo method
       const userInfo = await oto.read.getUserInfo([taskArgs.userId]);
-      
+
       console.log(`\nUser information:`);
       console.log(`- User ID: ${taskArgs.userId}`);
       console.log(`- Initialized: ${userInfo[0]}`);
@@ -52,12 +54,16 @@ task("oto:getUserInfo", "Get detailed information about a user")
       if (userInfo[0]) {
         const ownerBalance = await oto.read.balanceOf([userInfo[2]]);
         const decimals = await oto.read.decimals();
-        console.log(`\nOwner's token balance: ${ownerBalance / (10n ** BigInt(decimals))} OTO`);
+        console.log(
+          `\nOwner's token balance: ${ownerBalance / 10n ** BigInt(decimals)} OTO`,
+        );
       }
     } catch (error) {
       console.error("Error retrieving user information:");
       console.error(error);
     }
 
-    console.log("################################### [END] ###################################");
+    console.log(
+      "################################### [END] ###################################",
+    );
   });
