@@ -280,7 +280,7 @@ export const useContract = () => {
       console.error("Error getting users by owner:", error);
       return [];
     }
-  };  /**
+  }; /**
    * get user claimable token balance method
    * @param userId ユーザーID
    * @param chainId チェーンID（省略時は現在接続中のチェーンIDを使用）
@@ -289,13 +289,13 @@ export const useContract = () => {
     try {
       // チェーンID、指定がない場合は現在接続中のチェーンIDを使用
       const targetChainId = chainId ?? Number(currentChainId);
-      
+
       // チェーンIDの検証
       if (!targetChainId || (targetChainId !== 8453 && targetChainId !== 84532)) {
         console.warn(`Invalid or unsupported chain ID: ${targetChainId}`);
         return BigInt(0);
       }
-      
+
       // Get user info which contains points
       const userInfo = await getUserInfo(userId, targetChainId);
 

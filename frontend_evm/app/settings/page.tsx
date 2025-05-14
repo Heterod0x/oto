@@ -99,7 +99,7 @@ export default function SettingsPage() {
       setIsLoadingData(false);
     }
   }, []);
-  
+
   // クレーム可能な金額を取得
   useEffect(() => {
     // サーバーサイドでは実行しない
@@ -113,7 +113,7 @@ export default function SettingsPage() {
       contractReady &&
       typeof getUserClaimableTokenBalance === "function" &&
       typeof getUserInfo === "function" &&
-      !!chainId && 
+      !!chainId &&
       (chainId === 8453 || chainId === 84532); // サポート対象のチェーンIDのみ許可
 
     // いずれかの条件が満たされていない場合は、ローディングを表示せずに終了
@@ -125,7 +125,7 @@ export default function SettingsPage() {
         hasUserClaimableTokenBalance: typeof getUserClaimableTokenBalance === "function",
         hasGetUserInfo: typeof getUserInfo === "function",
         chainId,
-        isValidChain: chainId === 8453 || chainId === 84532
+        isValidChain: chainId === 8453 || chainId === 84532,
       });
       // ローディング状態を確実に解除
       setIsLoadingData(false);
@@ -210,7 +210,14 @@ export default function SettingsPage() {
       isMounted = false;
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [isConnected, walletAddress, contractReady, getUserClaimableTokenBalance, getUserInfo, chainId]);
+  }, [
+    isConnected,
+    walletAddress,
+    contractReady,
+    getUserClaimableTokenBalance,
+    getUserInfo,
+    chainId,
+  ]);
 
   /**
    * クレーム処理 メソッド
@@ -410,9 +417,7 @@ export default function SettingsPage() {
             className="w-full flex items-center justify-center gap-2"
             variant="default"
             onClick={handleClaim}
-            disabled={
-             Number(claimableAmount) <= 0
-            }
+            disabled={Number(claimableAmount) <= 0}
             isLoading={isClaimLoading}
           >
             <span>トークンをクレーム</span>
