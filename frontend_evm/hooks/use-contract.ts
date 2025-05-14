@@ -128,7 +128,7 @@ export const useContract = () => {
       const data = encodeFunctionData({
         abi: OTO_ABI,
         functionName: "initializeUser",
-        args: [userId, "0x51908F598A5e0d8F1A3bAbFa6DF76F9704daD072"],
+        args: [userId, address],
       });
 
       // Get contract address as hex string

@@ -1,5 +1,7 @@
 # Oto
 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/d3c17ad7-6bee-48d3-abe2-cb239051aa5a/deploy-status)](https://app.netlify.com/projects/oto-evm/deploys)
+
 ## Overview
 
 ## Pitch Silde

@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { getUserProfile } from "@/lib/api";
+import { useAppKitAccount } from "@reown/appkit/react";
 import { Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
 // Import useCallback for memoized functions
@@ -47,11 +48,13 @@ export default function DigitalTwinPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editedProfile, setEditedProfile] = useState<Profile | null>(null);
 
+  const { address } = useAppKitAccount();
+
   // プロフィールデータを取得する関数を定義
   const fetchProfile = useCallback(async () => {
     try {
       // APIからデータを取得 (固定値)
-      const response = await getUserProfile("user123");
+      const response = await getUserProfile(address!);
       console.log("取得したプロフィールデータ:", response);
       // APIからprofileオブジェクトを取得
       if (response && response.profile) {

@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { getUserProfile } from "@/lib/api";
+import { useAppKitAccount } from "@reown/appkit/react";
 import { Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
 // Import useCallback for memoized functions
@@ -32,6 +33,8 @@ interface Profile {
 export default function DigitalTwinPage() {
   // クライアントサイドのレンダリングを確認する状態
   const [isMounted, setIsMounted] = useState(false);
+
+  const { address } = useAppKitAccount();
   
   // プロフィールデータ
   const [profile, setProfile] = useState<Profile>({
@@ -51,7 +54,7 @@ export default function DigitalTwinPage() {
   const fetchProfile = useCallback(async () => {
     try {
       // APIからデータを取得 (固定値)
-      const response = await getUserProfile("user123");
+      const response = await getUserProfile(address!);
       console.log("取得したプロフィールデータ:", response);
       // APIからprofileオブジェクトを取得
       if (response && response.profile) {
