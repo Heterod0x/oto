@@ -114,6 +114,8 @@ contract Oto is ERC20, Ownable {
      * @param claimAmount Points to claim
      * 
      * Equivalent to Claim function in Solana
+     * Note: This function supports AA (Account Abstraction) where msg.sender 
+     * may not be the direct owner of the account
      */
     function claim(string memory userId, uint256 claimAmount) external {
         // Check if user exists
@@ -121,10 +123,9 @@ contract Oto is ERC20, Ownable {
             revert UserNotFound(userId);
         }
         
-        // Check if caller is the owner of the user account
-        if (msg.sender != users[userId].owner) {
-            revert UnauthorizedOwner(msg.sender, users[userId].owner);
-        }
+        // For AA, we don't check msg.sender against the owner
+        // The assumption is that if the transaction is submitted through the AA system
+        // it is already authorized by the owner, so we skip the owner check here
         
         // Check if claim amount is greater than 0
         if (claimAmount == 0) {

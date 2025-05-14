@@ -205,22 +205,32 @@ describe("Oto", () => {
       expect(events[0].args.claimAmount).to.equal(claimAmount);
     });
 
-    it("should not allow non-owners to claim points", async () => {
+    it("should allow any wallet to claim points (for AA support)", async () => {
       const { oto, owner, user1, user2 } = await loadFixture(deployOtoFixture);
       
       const userId = "user1";
       await oto.write.initializeUser([userId, user1.account.address]);
       await oto.write.updatePoint([userId, 100n]);
       
+      // Using a different wallet to claim points (simulating AA transaction)
       const otoAsWrongUser = await hre.viem.getContractAt(
         "Oto",
         oto.address,
         { client: { wallet: user2 } },
       );
       
-      await expect(
-        otoAsWrongUser.write.claim([userId, 50n])
-      ).to.be.rejectedWith("UnauthorizedOwner");
+      // Should succeed now that we've removed the owner check
+      await otoAsWrongUser.write.claim([userId, 50n]);
+      
+      // Verify points were decreased
+      const userInfo = await oto.read.getUserInfo([userId]);
+      expect(userInfo[1]).to.equal(50n); // points
+      
+      // Tokens should still be sent to the registered owner (user1), not the caller (user2)
+      const decimals = await oto.read.decimals();
+      const expectedBalance = 50n * (10n ** BigInt(decimals));
+      expect(await oto.read.balanceOf([user1.account.address])).to.equal(expectedBalance);
+      expect(await oto.read.balanceOf([user2.account.address])).to.equal(0n);
     });
 
     it("should revert when claiming more points than available", async () => {
@@ -257,6 +267,60 @@ describe("Oto", () => {
       await expect(
         otoAsUser.write.claim([userId, 0n])
       ).to.be.rejectedWith("InvalidAmount");
+    });
+    
+    it("should support multiple AA wallet scenarios", async () => {
+      const { oto, owner, user1, user2 } = await loadFixture(deployOtoFixture);
+      
+      // Create two users for testing
+      const userId1 = "user1";
+      const userId2 = "user2";
+      
+      // Initialize users with different owners
+      await oto.write.initializeUser([userId1, user1.account.address]);
+      await oto.write.initializeUser([userId2, user2.account.address]);
+      
+      // Add points to both users
+      await oto.write.updatePoint([userId1, 100n]);
+      await oto.write.updatePoint([userId2, 200n]);
+      
+      // Get contract instances for different wallets
+      const otoAsOwner = oto; // default is already owner
+      const otoAsUser1 = await hre.viem.getContractAt(
+        "Oto",
+        oto.address,
+        { client: { wallet: user1 } },
+      );
+      const otoAsUser2 = await hre.viem.getContractAt(
+        "Oto",
+        oto.address,
+        { client: { wallet: user2 } },
+      );
+      
+      // Scenario 1: Owner claims for user1 (AA proxy scenario)
+      await otoAsOwner.write.claim([userId1, 30n]);
+      
+      // Scenario 2: User1 claims for user2 (another AA proxy scenario)
+      await otoAsUser1.write.claim([userId2, 50n]);
+      
+      // Scenario 3: User2 claims for user1 (third-party AA proxy)
+      await otoAsUser2.write.claim([userId1, 20n]);
+      
+      // Verify final point balances
+      const user1Info = await oto.read.getUserInfo([userId1]);
+      const user2Info = await oto.read.getUserInfo([userId2]);
+      expect(user1Info[1]).to.equal(50n); // 100 - 30 - 20 = 50 points remaining
+      expect(user2Info[1]).to.equal(150n); // 200 - 50 = 150 points remaining
+      
+      // Verify token distributions (tokens always go to the registered owner)
+      const decimals = await oto.read.decimals();
+      const multiplier = 10n ** BigInt(decimals);
+      
+      // User1 should have received tokens from both user1's claims
+      expect(await oto.read.balanceOf([user1.account.address])).to.equal(50n * multiplier); // 30 + 20 = 50 tokens
+      
+      // User2 should have received tokens from user2's claim
+      expect(await oto.read.balanceOf([user2.account.address])).to.equal(50n * multiplier);
     });
   });
 
