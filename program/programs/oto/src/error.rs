@@ -7,4 +7,16 @@ pub enum OtoError {
 
     #[msg("Overflow")]
     Overflow,
+    
+    #[msg("Language mismatch")]
+    LanguageMismatch,
+    
+    #[msg("Date mismatch")]
+    DateMismatch,
+    
+    #[msg("Purchase budget exhausted")]
+    BudgetExhausted,
+    
+    #[msg("Bad buyer signature")]
+    BadBuyerSig,
 }
