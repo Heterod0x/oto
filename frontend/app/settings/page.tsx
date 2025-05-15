@@ -24,6 +24,16 @@ import { toast } from "sonner";
 const isServer = typeof window === "undefined";
 
 /**
+ * トークン量を適切な表示形式に変換する（9桁のデシマルを考慮）
+ * @param amount - 生のトークン量（BigInt or string or number）
+ * @returns フォーマットされたトークン量
+ */
+const formatTokenAmount = (amount: string | number): string => {
+  const amountNum = typeof amount === 'string' ? Number(amount) : amount;
+  return (amountNum / (10 ** 9)).toFixed(9).replace(/\.?0+$/, "");
+};
+
+/**
  * Setting Page Component
  * @returns
  */
@@ -147,6 +157,7 @@ export default function SettingsPage() {
         // コンポーネントがマウントされている場合のみ状態を更新
         if (isMounted) {
           if (data && data.data) {
+            // 元のトークン量を保存（クレーム処理用）
             setClaimableAmount(data.data);
           }
           setIsLoadingData(false);
@@ -200,11 +211,14 @@ export default function SettingsPage() {
       }
 
       // トークンをクレームするメソッドを呼び出す
-      await contractFunctions.claimTokens.mutateAsync({
+      const result = await contractFunctions.claimTokens.mutateAsync({
         userId: address,
         claimAmount: Number(claimableAmount),
       });
 
+      console.log("クレーム成功:", result);
+
+      // 成功メッセージを表示
       toast.success("トークンのクレームに成功しました");
 
       // 残高を更新
@@ -214,6 +228,8 @@ export default function SettingsPage() {
       }
     } catch (error) {
       console.error("トークンのクレームに失敗しました:", error);
+      
+      // エラー時のみエラートーストを表示
       toast.error("トークンのクレームに失敗しました");
     } finally {
       setIsClaimLoading(false);
@@ -364,7 +380,7 @@ export default function SettingsPage() {
 
         <div className="mt-6">
           <div className="text-sm text-muted-foreground mb-2">クレーム可能なトークン</div>
-          <div className="font-medium text-lg mb-3">{claimableAmount} TOKEN</div>
+          <div className="font-medium text-lg mb-3">{formatTokenAmount(claimableAmount)} TOKEN</div>
           <LoadingButton
             className="w-full flex items-center justify-center gap-2"
             variant="default"
