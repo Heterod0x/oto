@@ -33,7 +33,6 @@ export default function SettingsPage() {
   const { walletProvider } = useAppKitProvider<any>("eip155");
   const { chainId } = !isServer ? useAppKitNetworkCore() : { chainId: undefined };
 
-  // サーバーサイドでは実行しない
   const { address: walletAddress } = !isServer ? useAppKitAccount() : { address: null };
 
   // コントラクト機能をコンポーネントのトップレベルで初期化（サーバーサイドでは実行しない）
