@@ -1,4 +1,4 @@
-import { PublicKey } from '@solana/web3.js';
+import { PublicKey } from "@solana/web3.js";
 
 /**
  * Convert the secret key array read from environment variables to Uint8Array
@@ -8,15 +8,13 @@ import { PublicKey } from '@solana/web3.js';
 export function parseSecretKey(secretKeyString: string): Uint8Array {
   try {
     // Convert comma-separated string to number array
-    const secretKeyArray = secretKeyString
-      .split(',')
-      .map(num => parseInt(num.trim(), 10));
-    
+    const secretKeyArray = secretKeyString.split(",").map((num) => parseInt(num.trim(), 10));
+
     // Convert number array to Uint8Array
     return new Uint8Array(secretKeyArray);
   } catch (error) {
-    console.error('Failed to parse secret key:', error);
-    throw new Error('Invalid secret key format');
+    console.error("Failed to parse secret key:", error);
+    throw new Error("Invalid secret key format");
   }
 }
 
@@ -30,7 +28,7 @@ export function getAssetKeypair(): { publicKey: string; secretKey: Uint8Array } 
   const secretKeyString = process.env.ASSET_SECRET_KEY;
 
   if (!publicKey || !secretKeyString) {
-    throw new Error('Asset keypair environment variables are not set');
+    throw new Error("Asset keypair environment variables are not set");
   }
 
   // Parse private key and convert to Uint8Array
@@ -38,7 +36,7 @@ export function getAssetKeypair(): { publicKey: string; secretKey: Uint8Array } 
 
   return {
     publicKey,
-    secretKey
+    secretKey,
   };
 }
 
@@ -48,9 +46,9 @@ export function getAssetKeypair(): { publicKey: string; secretKey: Uint8Array } 
  */
 export function getAssetPublicKey(): PublicKey {
   const publicKeyString = process.env.NEXT_PUBLIC_ASSET_PUBLIC_KEY;
-  
+
   if (!publicKeyString) {
-    throw new Error('Asset public key environment variable is not set');
+    throw new Error("Asset public key environment variable is not set");
   }
 
   return new PublicKey(publicKeyString);

@@ -16,7 +16,7 @@ const isServer = typeof window === "undefined";
 
 /**
  * useAnchorProvider hook
- * @returns 
+ * @returns
  */
 export function useAnchorProvider() {
   // Return dummy values on the server-side

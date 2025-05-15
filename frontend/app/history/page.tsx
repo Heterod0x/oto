@@ -36,18 +36,18 @@ export default function HistoryPage() {
       try {
         setIsLoading(true);
         setError(null);
-        
+
         // APIからデータを取得
         const responseData = await getConversations(address!);
         console.log("API response data:", responseData);
-        
+
         // データの構造を確認して適切に処理
         let conversationsArray: Conversation[] = [];
-        
+
         if (Array.isArray(responseData)) {
           // レスポンスが直接配列の場合
           conversationsArray = responseData;
-        } else if (responseData && typeof responseData === 'object') {
+        } else if (responseData && typeof responseData === "object") {
           // レスポンスがオブジェクトの場合、データが含まれる可能性のあるキーを確認
           if (Array.isArray(responseData.data)) {
             conversationsArray = responseData.data;
@@ -59,22 +59,24 @@ export default function HistoryPage() {
             conversationsArray = responseData.items;
           } else {
             // オブジェクトの場合、値が配列のプロパティを探す
-            const arrayProperty = Object.values(responseData).find(value => Array.isArray(value));
+            const arrayProperty = Object.values(responseData).find((value) => Array.isArray(value));
             if (arrayProperty) {
               conversationsArray = arrayProperty as Conversation[];
             }
           }
-        } else if (typeof responseData === 'string') {
+        } else if (typeof responseData === "string") {
           // 文字列の場合、会話として処理
-          conversationsArray = [{
-            id: '1',
-            title: '会話記録',
-            text: responseData,
-            tags: [], // 空の配列を設定
-            date: new Date().toLocaleDateString()
-          }];
+          conversationsArray = [
+            {
+              id: "1",
+              title: "会話記録",
+              text: responseData,
+              tags: [], // 空の配列を設定
+              date: new Date().toLocaleDateString(),
+            },
+          ];
         }
-        
+
         setConversations(conversationsArray);
         setIsLoading(false);
       } catch (error) {
@@ -89,14 +91,16 @@ export default function HistoryPage() {
   }, []);
 
   // 検索フィルター
-  const filteredConversations = conversations && Array.isArray(conversations) 
-    ? conversations.filter(
-        (conv) =>
-          (conv.title && conv.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          (conv.text && conv.text.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          (Array.isArray(conv.tags) && conv.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))),
-      )
-    : [];
+  const filteredConversations =
+    conversations && Array.isArray(conversations)
+      ? conversations.filter(
+          (conv) =>
+            (conv.title && conv.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (conv.text && conv.text.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (Array.isArray(conv.tags) &&
+              conv.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))),
+        )
+      : [];
 
   // 会話詳細を表示
   const openConversationDetail = (conversation: Conversation) => {
@@ -151,8 +155,8 @@ export default function HistoryPage() {
         ) : error ? (
           <div className="text-center py-8 text-red-500">
             <p>{error}</p>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="mt-4"
               onClick={() => {
                 const fetchConversations = async () => {
@@ -177,12 +181,16 @@ export default function HistoryPage() {
         ) : conversations.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-muted-foreground mb-2">会話履歴がありません</p>
-            <p className="text-sm text-muted-foreground">録音ボタンを押して、会話を記録しましょう</p>
+            <p className="text-sm text-muted-foreground">
+              録音ボタンを押して、会話を記録しましょう
+            </p>
           </div>
         ) : filteredConversations.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-muted-foreground">検索結果が見つかりませんでした</p>
-            <p className="text-sm text-muted-foreground mt-1">検索キーワードを変更してお試しください</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              検索キーワードを変更してお試しください
+            </p>
           </div>
         ) : (
           filteredConversations.map((conversation) => (
@@ -198,11 +206,13 @@ export default function HistoryPage() {
                 </p>
                 <div className="flex justify-between items-center">
                   <div className="flex gap-1 flex-wrap">
-                    {conversation.tags && Array.isArray(conversation.tags) && conversation.tags.map((tag, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
+                    {conversation.tags &&
+                      Array.isArray(conversation.tags) &&
+                      conversation.tags.map((tag, index) => (
+                        <Badge key={index} variant="secondary" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
                   </div>
                   <div className="flex items-center text-xs text-muted-foreground">
                     <Calendar className="h-3 w-3 mr-1" />
@@ -227,11 +237,13 @@ export default function HistoryPage() {
           <div className="space-y-4">
             <p>{selectedConversation?.text}</p>
             <div className="flex flex-wrap gap-1">
-              {selectedConversation?.tags && Array.isArray(selectedConversation.tags) && selectedConversation.tags.map((tag, index) => (
-                <Badge key={index} variant="secondary">
-                  {tag}
-                </Badge>
-              ))}
+              {selectedConversation?.tags &&
+                Array.isArray(selectedConversation.tags) &&
+                selectedConversation.tags.map((tag, index) => (
+                  <Badge key={index} variant="secondary">
+                    {tag}
+                  </Badge>
+                ))}
             </div>
             <div className="text-sm text-muted-foreground">{selectedConversation?.date}</div>
           </div>

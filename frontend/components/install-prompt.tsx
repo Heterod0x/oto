@@ -82,9 +82,7 @@ export default function InstallPrompt() {
             <X size={18} />
           </button>
         </div>
-        <p className="text-sm my-2">
-          Add to your home screen for offline use
-        </p>
+        <p className="text-sm my-2">Add to your home screen for offline use</p>
         <Button onClick={handleInstallClick} className="mt-2 w-full">
           Install
         </Button>

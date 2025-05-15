@@ -17,19 +17,14 @@ const variantClasses = {
   secondary: "border-secondary border-t-transparent",
 };
 
-export function Spinner({
-  size = "md",
-  variant = "primary",
-  className,
-  ...props
-}: SpinnerProps) {
+export function Spinner({ size = "md", variant = "primary", className, ...props }: SpinnerProps) {
   return (
     <div
       className={cn(
         "animate-spin rounded-full",
         sizeClasses[size],
         variantClasses[variant],
-        className
+        className,
       )}
       {...props}
     />

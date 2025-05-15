@@ -21,16 +21,16 @@ const LoadingButton = forwardRef<HTMLButtonElement, LoadingButtonProps>(
         {...props}
       >
         {isLoading && (
-          <Spinner 
-            className="mr-2" 
-            size="sm" 
-            variant={variant === "default" ? "secondary" : "primary"} 
+          <Spinner
+            className="mr-2"
+            size="sm"
+            variant={variant === "default" ? "secondary" : "primary"}
           />
         )}
         {children}
       </Button>
     );
-  }
+  },
 );
 
 LoadingButton.displayName = "LoadingButton";

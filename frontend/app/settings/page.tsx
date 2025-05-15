@@ -11,7 +11,11 @@ import { getAssetKeypair } from "@/lib/keypair-utils";
 import { createCollectionV1 } from "@metaplex-foundation/mpl-core";
 import { createSignerFromKeypair, keypairIdentity, publicKey } from "@metaplex-foundation/umi";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
-import { fromWeb3JsKeypair, toWeb3JsKeypair, toWeb3JsTransaction } from "@metaplex-foundation/umi-web3js-adapters";
+import {
+  fromWeb3JsKeypair,
+  toWeb3JsKeypair,
+  toWeb3JsTransaction,
+} from "@metaplex-foundation/umi-web3js-adapters";
 import { useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
@@ -29,8 +33,8 @@ const isServer = typeof window === "undefined";
  * @returns フォーマットされたトークン量
  */
 const formatTokenAmount = (amount: string | number): string => {
-  const amountNum = typeof amount === 'string' ? Number(amount) : amount;
-  return (amountNum / (10 ** 9)).toFixed(9).replace(/\.?0+$/, "");
+  const amountNum = typeof amount === "string" ? Number(amount) : amount;
+  return (amountNum / 10 ** 9).toFixed(9).replace(/\.?0+$/, "");
 };
 
 /**
@@ -96,8 +100,14 @@ export default function SettingsPage() {
 
   // Otoとユーザーアカウントの初期化状態を確認
   useEffect(() => {
-    if (isServer || !address || !isConnected || !contractReady || 
-        !contractFunctions?.getOtoAccount || !contractFunctions?.getUserAccount) {
+    if (
+      isServer ||
+      !address ||
+      !isConnected ||
+      !contractReady ||
+      !contractFunctions?.getOtoAccount ||
+      !contractFunctions?.getUserAccount
+    ) {
       return;
     }
 
@@ -106,7 +116,7 @@ export default function SettingsPage() {
         // Otoの初期化状態を確認
         const otoAccount = await contractFunctions.getOtoAccount.refetch();
         setIsOtoInitialized(!!otoAccount.data);
-        
+
         if (address) {
           // ユーザーアカウントの初期化状態を確認
           const userAccount = await contractFunctions.getUserAccount(address);
@@ -116,9 +126,15 @@ export default function SettingsPage() {
         console.error("初期化状態の確認に失敗しました:", error);
       }
     };
-    
+
     checkInitializationStatus();
-  }, [isConnected, address, contractReady, contractFunctions?.getOtoAccount, contractFunctions?.getUserAccount]);
+  }, [
+    isConnected,
+    address,
+    contractReady,
+    contractFunctions?.getOtoAccount,
+    contractFunctions?.getUserAccount,
+  ]);
 
   // クレーム可能な金額を取得
   useEffect(() => {
@@ -127,9 +143,9 @@ export default function SettingsPage() {
     }
 
     // 初回レンダリング時にのみローディング状態にする
-    const isDependenciesReady = isConnected && address && contractReady && 
-                               contractFunctions?.getClaimableAmount?.refetch;
-    
+    const isDependenciesReady =
+      isConnected && address && contractReady && contractFunctions?.getClaimableAmount?.refetch;
+
     // いずれかの条件が満たされていない場合は、ローディングを停止
     if (!isDependenciesReady) {
       setIsLoadingData(false);
@@ -140,20 +156,20 @@ export default function SettingsPage() {
     if (claimableAmount !== "0" && !isLoadingData) {
       return;
     }
-    
+
     let isMounted = true;
-    
+
     // クレーム可能額の取得
     const fetchClaimableAmount = async () => {
       // すでにローディング中であれば重複して実行しない
       if (isLoadingData) return;
-      
+
       try {
         setIsLoadingData(true);
         console.log("クレーム可能金額を取得中...");
-        
+
         const data = await contractFunctions.getClaimableAmount.refetch();
-        
+
         // コンポーネントがマウントされている場合のみ状態を更新
         if (isMounted) {
           if (data && data.data) {
@@ -173,7 +189,7 @@ export default function SettingsPage() {
     };
 
     fetchClaimableAmount();
-    
+
     // クリーンアップ関数
     return () => {
       isMounted = false;
@@ -228,7 +244,7 @@ export default function SettingsPage() {
       }
     } catch (error) {
       console.error("トークンのクレームに失敗しました:", error);
-      
+
       // エラー時のみエラートーストを表示
       toast.error("トークンのクレームに失敗しました");
     } finally {
@@ -248,15 +264,13 @@ export default function SettingsPage() {
     try {
       setIsInitOtoLoading(true);
 
-      console.log("MetaplexでNFTコレクションを作成します。")
+      console.log("MetaplexでNFTコレクションを作成します。");
 
-      const umi = createUmi(connection).use(
-        keypairIdentity(fromWeb3JsKeypair(walletProvider))
-      );
+      const umi = createUmi(connection).use(keypairIdentity(fromWeb3JsKeypair(walletProvider)));
 
       console.log("umi:", umi);
-      
-      // get CollectionKeyPair 
+
+      // get CollectionKeyPair
       const { publicKey: collectionPublicKey, secretKey } = getAssetKeypair();
       const collectionMint = createSignerFromKeypair(umi, {
         publicKey: publicKey(collectionPublicKey),
@@ -264,7 +278,7 @@ export default function SettingsPage() {
       });
 
       const collectionAccountExists = await umi.rpc.accountExists(collectionMint.publicKey);
-    
+
       if (!collectionAccountExists) {
         // コレクションの作成
         const umiTx = await createCollectionV1(umi, {
@@ -276,10 +290,12 @@ export default function SettingsPage() {
         // web3js用のTxに変換する
         const web3jsTx = toWeb3JsTransaction(umiTx);
         // トランザクションを送信する
-        const sig = await provider?.sendAndConfirm(web3jsTx as any, [toWeb3JsKeypair(collectionMint)]);
+        const sig = await provider?.sendAndConfirm(web3jsTx as any, [
+          toWeb3JsKeypair(collectionMint),
+        ]);
         console.log("Signature:", sig);
         console.log("NFTコレクションの作成に成功しました:", collectionMint.publicKey.toString());
-      }else{
+      } else {
         console.log("NFTコレクションが存在します:", collectionMint.publicKey.toString());
       }
 
@@ -289,7 +305,7 @@ export default function SettingsPage() {
       if (!otoAccount.data) {
         // Otoの初期化メソッドを呼び出す
         await contractFunctions.initializeOto.mutate({
-          nftCollection: new PublicKey(collectionMint.publicKey)
+          nftCollection: new PublicKey(collectionMint.publicKey),
         });
         toast.success("Otoの初期化に成功しました");
         setIsOtoInitialized(true);
@@ -343,18 +359,15 @@ export default function SettingsPage() {
     } finally {
       setIsInitUserLoading(false);
     }
-  }
+  };
 
   return (
     <div className="container max-w-md mx-auto p-4 pt-8">
       {/* ウォレットカード */}
       <Card className="bg-muted/30 border rounded-xl p-5 mb-6 relative">
         {/* データ読み込み中のローディングオーバーレイ */}
-        <LoadingOverlay 
-          isLoading={isLoadingData} 
-          text="データを読み込み中..." 
-        />
-        
+        <LoadingOverlay isLoading={isLoadingData} text="データを読み込み中..." />
+
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
             <div className="mr-3">
@@ -398,9 +411,7 @@ export default function SettingsPage() {
             className="w-full flex items-center justify-center gap-2"
             variant="default"
             onClick={handleInitOto}
-            disabled={
-              !isConnected || isInitOtoLoading || !contractReady || isOtoInitialized
-            }
+            disabled={!isConnected || isInitOtoLoading || !contractReady || isOtoInitialized}
             isLoading={isInitOtoLoading}
           >
             <span>{isOtoInitialized ? "Oto 初期化済み" : "Init oto"}</span>
@@ -411,7 +422,11 @@ export default function SettingsPage() {
             variant="default"
             onClick={handleInitAccount}
             disabled={
-              !isConnected || isInitUserLoading || !contractReady || isUserInitialized || !isOtoInitialized
+              !isConnected ||
+              isInitUserLoading ||
+              !contractReady ||
+              isUserInitialized ||
+              !isOtoInitialized
             }
             isLoading={isInitUserLoading}
           >

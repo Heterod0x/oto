@@ -55,7 +55,7 @@ export const useContract = () => {
   useEffect(() => {
     /**
      * calculatePDAs method
-     * @returns 
+     * @returns
      */
     const calculatePDAs = async () => {
       if (!program || !programId) return;
@@ -63,18 +63,12 @@ export const useContract = () => {
       console.log("Program ID:", programId.toBase58());
 
       // Oto PDA - correct seeds based on IDL definition
-      const [oto] = PublicKey.findProgramAddressSync(
-        [Buffer.from(OTO_SEED)],
-        programId
-      );
+      const [oto] = PublicKey.findProgramAddressSync([Buffer.from(OTO_SEED)], programId);
       setOtoPDA(oto.toBase58());
       console.log("Oto PDA:", oto.toBase58());
 
       // Mint PDA - correct seeds based on IDL definition
-      const [mint] = PublicKey.findProgramAddressSync(
-        [Buffer.from(MINT_SEED)],
-        programId
-      );
+      const [mint] = PublicKey.findProgramAddressSync([Buffer.from(MINT_SEED)], programId);
       setMintPDA(mint.toBase58());
       console.log("Mint PDA:", mint.toBase58());
     };
@@ -84,7 +78,7 @@ export const useContract = () => {
 
   const getUserId = (address: string) => {
     return address.substring(0, 8);
-  }
+  };
 
   /**
    * Calculate PDA for a specific user
@@ -95,7 +89,7 @@ export const useContract = () => {
     if (!programId) return null;
     console.log("Program ID:", programId.toBase58());
     console.log("User ID:", userId);
-    
+
     // If user ID is too long, use only the first 8 characters
     // Or, if using the wallet address, limit to a certain length
     const shortenedUserId = getUserId(userId);
@@ -104,7 +98,7 @@ export const useContract = () => {
     // PDA - generate correct PDA using USER_SEED and userId
     const [userPDA] = PublicKey.findProgramAddressSync(
       [Buffer.from(USER_SEED), Buffer.from(shortenedUserId)],
-      programId
+      programId,
     );
     return userPDA.toBase58();
   };
@@ -125,7 +119,7 @@ export const useContract = () => {
 
       const userPDA = new PublicKey(userAddress);
       console.log("userPDA", userPDA.toBase58());
-      
+
       // call fetch method with the correct PDA
       return await program.account.user.fetch(userPDA);
     } catch (error: any) {
@@ -166,15 +160,15 @@ export const useContract = () => {
       console.log("Payer:", address);
 
       // Correctly specify the required accounts based on the IDL
-      try{
-      const sig = await program.methods
-        .initializeUser(shortenedUserId, ownerKey)
-        .accounts({
-          payer: new PublicKey(address),
-        })
-        .rpc();
+      try {
+        const sig = await program.methods
+          .initializeUser(shortenedUserId, ownerKey)
+          .accounts({
+            payer: new PublicKey(address),
+          })
+          .rpc();
         console.log(sig);
-      }catch(error){
+      } catch (error) {
         console.error("Failed to initialize user account:", error);
       }
     },
@@ -189,35 +183,27 @@ export const useContract = () => {
       if (!program || !address || !programId) throw new Error("Not initialized");
 
       // Calculate PDAs
-      const [otoPDA] = PublicKey.findProgramAddressSync(
-        [Buffer.from(OTO_SEED)],
-        programId
-      );
-      
-      const [mintPDA] = PublicKey.findProgramAddressSync(
-        [Buffer.from(MINT_SEED)],
-        programId
-      );
+      const [otoPDA] = PublicKey.findProgramAddressSync([Buffer.from(OTO_SEED)], programId);
+
+      const [mintPDA] = PublicKey.findProgramAddressSync([Buffer.from(MINT_SEED)], programId);
 
       console.log("Oto PDA:", otoPDA.toBase58());
       console.log("Mint PDA:", mintPDA.toBase58());
-      
+
       // Calculate metadata address
-      const TOKEN_METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
+      const TOKEN_METADATA_PROGRAM_ID = new PublicKey(
+        "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s",
+      );
       const metadataAddress = PublicKey.findProgramAddressSync(
-        [
-          Buffer.from("metadata"),
-          TOKEN_METADATA_PROGRAM_ID.toBytes(),
-          mintPDA.toBytes(),
-        ],
-        TOKEN_METADATA_PROGRAM_ID
+        [Buffer.from("metadata"), TOKEN_METADATA_PROGRAM_ID.toBytes(), mintPDA.toBytes()],
+        TOKEN_METADATA_PROGRAM_ID,
       )[0];
 
       console.log("Oto PDA to initialize:", otoPDA.toBase58());
       console.log("Mint PDA:", mintPDA.toBase58());
       console.log("NFT Collection:", nftCollection.toBase58());
       console.log("Metadata Address:", metadataAddress.toBase58());
-      
+
       return await program.methods
         .initializeOto()
         .accounts({
@@ -256,7 +242,8 @@ export const useContract = () => {
         .accounts({
           beneficiary: address,
           tokenProgram: TOKEN_PROGRAM_ID,
-        }).rpc();
+        })
+        .rpc();
     },
   });
 
@@ -308,7 +295,7 @@ export const useContract = () => {
       try {
         const userId = address; // Use the current address as the user ID
         console.log("User ID:", userId);
-        
+
         // Get user account information
         let userAccount = await getUserAccount(userId);
 
@@ -318,15 +305,15 @@ export const useContract = () => {
           console.log("User account is not initialized. Returning claimable amount as 0");
           return "0";
         }
-          
+
         // Check if claimableAmount exists
         if (userAccount.claimableAmount) {
-          console.log("userAccount.claimableAmount:", userAccount.claimableAmount)
+          console.log("userAccount.claimableAmount:", userAccount.claimableAmount);
           const amount = userAccount.claimableAmount.toString();
           console.log(`Claimable amount for user ${userId}: ${amount}`);
           return amount;
         }
-        
+
         return "0";
       } catch (error) {
         console.error("Error fetching claimable amount:", error);

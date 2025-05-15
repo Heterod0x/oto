@@ -57,9 +57,7 @@ export default function RootLayout({
           >
             <WalletProvider>
               <div className="flex flex-col min-h-screen">
-                <main className="flex-1 pb-16">
-                  {children}
-                </main>
+                <main className="flex-1 pb-16">{children}</main>
                 <BottomNavigation />
                 <InstallPrompt />
               </div>

@@ -35,7 +35,7 @@ export default function DigitalTwinPage() {
   const [isMounted, setIsMounted] = useState(false);
 
   const { address } = useAppKitAccount();
-  
+
   // プロフィールデータ
   const [profile, setProfile] = useState<Profile>({
     age: 0,
@@ -150,16 +150,18 @@ export default function DigitalTwinPage() {
 
       {/* 趣味アイコン */}
       <div className="flex justify-end gap-2 mb-6">
-        {profile.interests && profile.interests.map((interest: string, index: number) => (
-          <div key={index} className="w-10 h-10 flex items-center justify-center">
-            {interest.toLowerCase().includes("ai") && "🤖"}
-            {interest.toLowerCase().includes("blockchain") && "⛓️"}
-            {interest.toLowerCase().includes("crypto") && "💰"}
-            {interest.toLowerCase().includes("project") && "📊"}
-            {!["ai", "blockchain", "crypto", "project"].some(keyword => 
-              interest.toLowerCase().includes(keyword)) && "🔍"}
-          </div>
-        ))}
+        {profile.interests &&
+          profile.interests.map((interest: string, index: number) => (
+            <div key={index} className="w-10 h-10 flex items-center justify-center">
+              {interest.toLowerCase().includes("ai") && "🤖"}
+              {interest.toLowerCase().includes("blockchain") && "⛓️"}
+              {interest.toLowerCase().includes("crypto") && "💰"}
+              {interest.toLowerCase().includes("project") && "📊"}
+              {!["ai", "blockchain", "crypto", "project"].some((keyword) =>
+                interest.toLowerCase().includes(keyword),
+              ) && "🔍"}
+            </div>
+          ))}
       </div>
 
       {/* プロフィール情報 */}

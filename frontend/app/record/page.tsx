@@ -108,7 +108,6 @@ export default function RecordPage() {
 
       console.log("Recording analysis completed");
       toast.success("Recording analysis completed");
-      
     } catch (error) {
       console.error("Error analyzing recording:", error);
       toast.error("Error analyzing recording");
@@ -136,10 +135,10 @@ export default function RecordPage() {
   return (
     <div className="flex flex-col items-center justify-between min-h-screen p-4 relative">
       {/* Loading overlay */}
-      <LoadingOverlay 
-        isLoading={isAnalyzing} 
-        text="Analyzing audio..." 
-        fullScreen={false} 
+      <LoadingOverlay
+        isLoading={isAnalyzing}
+        text="Analyzing audio..."
+        fullScreen={false}
         className="rounded-xl"
       />
 
@@ -188,7 +187,9 @@ export default function RecordPage() {
               <Spinner size="sm" className="mr-2" />
               Analyzing...
             </>
-          ) : "Analyze"}
+          ) : (
+            "Analyze"
+          )}
         </Button>
       )}
 
