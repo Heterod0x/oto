@@ -36,10 +36,12 @@ analyze_conversation_usecase = AnalyzeConversation(
 
 
 def get_evaluate_audio_usecase():
-    from app.domain.conversation.domain_service.sound_quality.mock_sound_quality_evaluator import \
-        MockSoundQualityEvaluator
-    from app.domain.conversation.domain_service.voice_activity.mock_voice_activity_ratio import \
-        MockVoiceActivityDetector
+    from app.domain.conversation.domain_service.sound_quality.mock_sound_quality_evaluator import (
+        MockSoundQualityEvaluator,
+    )
+    from app.domain.conversation.domain_service.voice_activity.mock_voice_activity_ratio import (
+        MockVoiceActivityDetector,
+    )
 
     return EvaluateAudio(
         conversation_audio_repository=SupabaseConversationAudioRepository(supabase_client),
@@ -89,8 +91,8 @@ def analyze_conversation(user_id: str, conversation_id: str):
 
 
 @app.task
-def evaluate_audio(conversation_id: str):
+def evaluate_audio(user_id: str, conversation_id: str):
     """Task that simulates a long-running process"""
 
-    evaluate_audio_usecase.handle(conversation_id=conversation_id)
+    evaluate_audio_usecase.handle(user_id=user_id, conversation_id=conversation_id)
     logger.info(f"Audio {conversation_id} evaluated")

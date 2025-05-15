@@ -18,5 +18,5 @@ class StoreConversationAudio(UseCase):
         analyze_conversation.delay(user_id=user_id, conversation_id=audio.conversation_id)
         logger.info("Conversation audio stored and analysis task queued")
 
-        evaluate_audio.delay(conversation_id=audio.conversation_id)
+        evaluate_audio.delay(user_id=user_id, conversation_id=audio.conversation_id)
         logger.info("Audio stored and evaluation task queued")

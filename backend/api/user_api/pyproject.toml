@@ -19,4 +19,7 @@ dependencies = [
     "agno>=1.4.2",
     "sqlalchemy>=2.0.40",
     "google-genai>=1.12.1",
+    "solana>=0.36.6",
+    "solder>=0.0.1",
+    "anchorpy>=0.21.0",
 ]
