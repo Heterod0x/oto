@@ -14,9 +14,13 @@
 
 [https://oto-lp.vercel.app/](https://oto-lp.vercel.app/)
 
-## Live demo
+## Live demo(Solana)
 
 [https://oto-gules.vercel.app/](https://oto-gules.vercel.app/)
+
+## Live demo(EVM)
+
+[https://oto-evm.netlify.app/](https://oto-evm.netlify.app/)
 
 ## Deployed Contract
 
