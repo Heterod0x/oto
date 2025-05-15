@@ -11,7 +11,9 @@ import {
 import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import { CoreAssetBuilder } from "./core_asset_builder";
 import { expect } from "chai";
-import { ASSOCIATED_TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddress, getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
+import nacl from "tweetnacl";
+
 describe("oto", () => {
   // Configure
   const provider = anchor.AnchorProvider.env();
@@ -24,6 +26,12 @@ describe("oto", () => {
 
   // Metaplex Core Asset
   const coreAssetBuilder = new CoreAssetBuilder(provider, authority);
+
+  // Token Mint
+  const [mint] = PublicKey.findProgramAddressSync(
+    [Buffer.from("mint")],
+    program.programId
+  );
 
   it("airdrop", async () => {
     let tx = await provider.connection.requestAirdrop(
@@ -48,10 +56,6 @@ describe("oto", () => {
   });
 
   it("initialize oto", async () => {
-    const [mint] = PublicKey.findProgramAddressSync(
-      [Buffer.from("mint")],
-      program.programId
-    );
     const METADATA_SEED = "metadata";
     const TOKEN_METADATA_PROGRAM_ID = new PublicKey(
       "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
@@ -147,4 +151,148 @@ describe("oto", () => {
       expect.fail();
     } catch {}
   });
+  
+  // ================================
+  // storage
+  // ================================
+
+  const dummyFile = Buffer.from("audio-bytes-here");
+  const fileHash = nacl.hash(dummyFile).slice(0, 32);
+
+  const [assetPda] = PublicKey.findProgramAddressSync(
+    [Buffer.from("asset"), user.publicKey.toBuffer(), fileHash],
+    program.programId,
+  );
+
+  it("user register asset", async () => {
+    await program.methods
+      .registerAsset([...fileHash], 20250102, 0)
+      .accounts({
+        user: user.publicKey,
+      })
+      .signers([user])
+      .rpc();
+  })
+
+  const buyer = anchor.web3.Keypair.generate();
+  const relayer = anchor.web3.Keypair.generate();
+
+  it("airdrop for storage", async () => {
+    let tx = await provider.connection.requestAirdrop(
+      buyer.publicKey,
+      LAMPORTS_PER_SOL
+    );
+    await provider.connection.confirmTransaction(tx);
+
+    tx = await provider.connection.requestAirdrop(
+      relayer.publicKey,
+      LAMPORTS_PER_SOL
+    );
+    await provider.connection.confirmTransaction(tx);
+  });
+
+  it("create user for buyer", async () => {
+    await program.methods
+      .initializeUser("buyer_account", buyer.publicKey)
+      .accounts({
+        payer: buyer.publicKey,
+      })
+      .signers([buyer])
+      .rpc();
+  });
+
+  it("give token to buyer", async () => {
+    await program.methods
+      .updatePoint("buyer_account", new BN(100))
+      .accounts({
+        admin: authority.publicKey,
+      })
+      .signers([authority])
+      .rpc();
+  });
+
+  it("claim token by buyer", async () => {
+    await program.methods
+      .claim("buyer_account", new BN(100))
+      .accounts({ 
+        beneficiary: buyer.publicKey,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .signers([buyer])
+      .rpc();
+  });
+
+  const [purchaseRequest] = PublicKey.findProgramAddressSync(
+    [Buffer.from("purchase"), buyer.publicKey.toBuffer(), Buffer.from([0])],
+    program.programId
+  );
+
+  it("register purchase request", async () => {
+    await program.methods
+      .registerPurchaseRequest({
+        buyerPubkey: buyer.publicKey,
+        filterLanguage: 0,
+        startDate: 20250101,
+        endDate: 20250102,
+        unitPrice: new BN(100),
+        maxBudget: new BN(100),
+        nonce: 0,
+      })
+      .accounts({
+        buyer: buyer.publicKey,
+        purchaseRequest: purchaseRequest,
+      })
+      .signers([buyer])
+      .rpc();
+
+      const pr = await program.account.purchaseRequest.fetch(purchaseRequest);
+      expect(pr.buyerPubkey.equals(buyer.publicKey)).to.be.true;
+      expect(pr.filterLanguage).to.be.equal(0);
+      expect(pr.startDate).to.be.equal(20250101);
+      expect(pr.endDate).to.be.equal(20250102);
+      expect(pr.unitPrice.toNumber()).to.be.equal(100);
+      expect(pr.budgetRemaining.toNumber()).to.be.equal(100);
+  });
+
+  const [offerPda] = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from("offer"), purchaseRequest.toBuffer(), fileHash],
+    program.programId,
+  );
+
+  it("apply asset offer", async () => {
+    await program.methods.applyAssetOffer()
+      .accounts({
+        purchaseRequest: purchaseRequest,
+        assetMetadata: assetPda,
+        provider: user.publicKey,
+      })
+      .signers([user])
+      .rpc();
+  });
+
+  it("submit transfer proof", async () => {
+    // must be 64 bytes
+    const buyerSigDummy = Buffer.alloc(64);
+    await program.methods
+      .submitTransferProof([...fileHash], [...buyerSigDummy])
+      .accounts({
+        relayer: relayer.publicKey,
+        purchaseRequest: purchaseRequest,
+        provider: user.publicKey,
+        assetOffer: offerPda,
+      })
+      .signers([relayer])
+      .rpc();
+
+    const pr = await program.account.purchaseRequest.fetch(purchaseRequest);
+    expect(pr.budgetRemaining.toNumber()).to.be.equal(0);
+
+    // get token balance for `mint`
+    const ata = await getAssociatedTokenAddress(
+      mint,
+      user.publicKey,
+    );
+    const tokenBalance = await provider.connection.getTokenAccountBalance(ata);
+    expect(tokenBalance.value.amount).to.be.equal("150"); // pre-claimed-on-basic-claim + claimed-on-proof
+  })
 });

@@ -12,3 +12,6 @@ pub use claim::*;
 
 pub mod constants;
 pub use constants::*;
+
+pub mod storage;
+pub use storage::*;
