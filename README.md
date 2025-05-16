@@ -28,6 +28,8 @@
 
 [Base Sepolia - 0x0a730733Ee85466278Cd31F452165A30971Ecdbd](https://sepolia.basescan.org/address/0x0a730733Ee85466278Cd31F452165A30971Ecdbd)
 
+[Base - 0x2B5914De5D5166eBaa423C92BAb8518c85EAA0cb](https://basescan.org/address/0x2B5914De5D5166eBaa423C92BAb8518c85EAA0cb)
+
 ## GitBook
 
 [https://oto-dev.gitbook.io/oto](https://oto-dev.gitbook.io/oto)

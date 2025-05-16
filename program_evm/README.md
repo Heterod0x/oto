@@ -92,7 +92,7 @@
   - **initializeUser**
 
     ```bash
-    yarn oto:initUser --user-id "user123" --network baseSepolia
+    yarn oto:initUser --user-id "user123" --ownerAddress "user123" --network baseSepolia
     ```
 
   - **updatePoint**
