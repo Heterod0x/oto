@@ -11,10 +11,7 @@ export async function getConversations(userId: string): Promise<any> {
       `${API_BASE_URL}/conversation/?user_id=${encodeURIComponent(userId)}`,
       {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
+      }
     );
 
     if (!response.ok) {
@@ -36,7 +33,10 @@ export async function getConversations(userId: string): Promise<any> {
  * @param audioFile Audio file
  * @returns Save result
  */
-export async function storeConversation(userId: string, audioFile: File): Promise<any> {
+export async function storeConversation(
+  userId: string,
+  audioFile: File
+): Promise<any> {
   try {
     const formData = new FormData();
     formData.append("user_id", userId);
@@ -71,12 +71,15 @@ export async function storeConversation(userId: string, audioFile: File): Promis
  */
 export async function getUserProfile(userId: string): Promise<any> {
   try {
-    const response = await fetch(`${API_BASE_URL}/profile/${encodeURIComponent(userId)}`, {
-      method: "GET",
-      headers: {
-        accept: "application/json",
-      },
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/profile/${encodeURIComponent(userId)}`,
+      {
+        method: "GET",
+        headers: {
+          accept: "application/json",
+        },
+      }
+    );
 
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
