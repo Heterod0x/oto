@@ -32,7 +32,11 @@ class EvaluateAudio(UseCase):
         logger.info(f"Sound quality score: {sound_quality_score}")
 
         # update point
-        voice_activity_point = voice_activity_ratio * 10
-        sound_quality_point = sound_quality_score * 10
+        voice_activity_point = voice_activity_ratio * 100
+        sound_quality_point = sound_quality_score * 100
         total_point = voice_activity_point + sound_quality_point
-        asyncio.run(update_point(user_id, int(total_point)))
+
+        # TODO: ロジックカプセル化
+        shorten_user_id = user_id[:8]
+        logger.info(f"Shorten user id: {shorten_user_id}, total point: {total_point}")
+        asyncio.run(update_point(shorten_user_id, int(total_point)))
