@@ -13,6 +13,8 @@
     "clean": "npx hardhat clean",
     "compile": "npx hardhat compile",
     "test": "npx hardhat test",
+    "test:gas": "GAS_REPORT=true npx hardhat test",
+    "test:gas-file": "GAS_REPORT=true GAS_REPORT_FILE=true npx hardhat test",
     "verify": "npx hardhat ignition verify",
     "coverage": "SOLIDITY_COVERAGE=true npx hardhat coverage",
     "deploy:Lock": "npx hardhat ignition deploy ./ignition/modules/Lock.ts",

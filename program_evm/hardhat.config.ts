@@ -6,7 +6,7 @@ import "./tasks";
 
 dotenv.config();
 
-const { PRIVATE_KEY, BASESCAN_API_KEY } = process.env;
+const { PRIVATE_KEY, BASESCAN_API_KEY, COINMARKETCAP_API_KEY } = process.env;
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -15,9 +15,24 @@ const config: HardhatUserConfig = {
         version: "0.8.27",
         settings: {
           viaIR: true,
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
         },
       },
     ],
+  },
+  gasReporter: {
+    enabled: process.env.GAS_REPORT === "true",
+    // currency: "JPY",
+    coinmarketcap: COINMARKETCAP_API_KEY,
+    token: "ETH",
+    gasPriceApi: "https://api.etherscan.io/api?module=proxy&action=eth_gasPrice",
+    showTimeSpent: true,
+    showMethodSig: true,
+    noColors: false,
+    outputFile: process.env.GAS_REPORT_FILE ? "./gas-report.txt" : undefined,
   },
   networks: {
     hardhat: {
