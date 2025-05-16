@@ -34,10 +34,6 @@
   - **deploy contract**
 
     ```bash
-    yarn deploy:Lock --network baseSepolia
-    ```
-
-    ```bash
     yarn deploy:CoreAssetCollection --network baseSepolia
     ```
 
