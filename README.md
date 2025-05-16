@@ -2,9 +2,14 @@
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/d3c17ad7-6bee-48d3-abe2-cb239051aa5a/deploy-status)](https://app.netlify.com/projects/oto-evm/deploys)
 
+## Vision
+Turning the world’s conversations into data
+
 ## Overview
+There is almost no data of real-life conversations on the internet. This means speech-AI training data is drastically scarcer than text—something we have verified empirically. oto is a project that pairs a wearable voice-capture device with a smartphone app to turn daily conversations around the world into structured data. For speakers of major languages, oto unlocks personalized services—automatic task management, meeting notes, health insights. For under-represented languages and heavy accents, users can monetize their uploads by licensing data to AI firms. These incentives let us map global conversation flow, creating a speech-based Google Trends or Maps.
 
 ## Pitch Silde
+https://www.figma.com/slides/zENm8UTvypmVpUscp14Imc/oto---Pitch-Deck?node-id=5-45&t=3RG8vMWEwdsLl8zv-0
 
 ## Product Page (Colosseum)
 
