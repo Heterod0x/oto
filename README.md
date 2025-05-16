@@ -1,5 +1,4 @@
 # Oto
-
 ![Oto Logo](./docs/branding/logo_white.png)
 ![Oto Thumbnail](./docs/images/thumbnail.png)
 
@@ -10,6 +9,15 @@ Turning the world's conversations into data
 
 ## Overview
 There is almost no data of real-life conversations on the internet. This means speech-AI training data is drastically scarcer than text—something we have verified empirically. oto is a project that pairs a wearable voice-capture device with a smartphone app to turn daily conversations around the world into structured data. For speakers of major languages, oto unlocks personalized services—automatic task management, meeting notes, health insights. For under-represented languages and heavy accents, users can monetize their uploads by licensing data to AI firms. These incentives let us map global conversation flow, creating a speech-based Google Trends or Maps.
+
+## The problem oto solves
+There is a global shortage of voice data for AI training.
+- Out of approximately 7,000 languages worldwide, voice AI supports only around 150—meaning 98% of languages remain unsupported.
+- Even in major languages like English, speech models still perform poorly with accents and dialects.
+- Voice AI systems are still unable to engage in human-level natural conversation.
+All of these limitations stem from a fundamental lack of high-quality, diverse training data.
+One notable initiative is Mozilla Common Voice, which treats voice as a public good. However, it still falls short in terms of dataset volume and diversity.
+We aim to address this problem by building on the public-good model and introducing DePIN-style token incentives to accelerate the creation and sharing of diverse, real-world voice data at scale.
 
 ## Pitch Silde
 https://www.figma.com/slides/zENm8UTvypmVpUscp14Imc/oto---Pitch-Deck?node-id=5-45&t=3RG8vMWEwdsLl8zv-0
