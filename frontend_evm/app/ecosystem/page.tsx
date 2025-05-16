@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 import Link from "next/link";
 
-// アプリケーションの型定義
+// Application type definition
 interface App {
   id: string;
   name: string;
@@ -13,7 +13,7 @@ interface App {
 }
 
 export default function EcosystemPage() {
-  // ダミーアプリケーションデータ
+  // Dummy application data
   const apps: App[] = [
     {
       id: "1",

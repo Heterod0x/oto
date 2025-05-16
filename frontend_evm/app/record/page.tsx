@@ -22,6 +22,9 @@ export default function RecordPage() {
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
+  // Maximum recording time (seconds)
+  const MAX_RECORDING_TIME = 120; // 2 minutes
+
   // Recording refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -49,6 +52,7 @@ export default function RecordPage() {
 
       // Event handler for when recording stops
       mediaRecorder.onstop = () => {
+        console.log("MediaRecorder stopped, creating Blob from chunks");
         // Convert recording data to Blob
         const audioBlob = new Blob(audioChunksRef.current, {
           type: "audio/wav",
@@ -60,13 +64,47 @@ export default function RecordPage() {
       };
 
       // Start recording
-      mediaRecorder.start();
+      // Reduce the maximum size of chunks recorded at once for faster processing
+      mediaRecorder.start(100); // Record data every 100ms
       setIsRecording(true);
+      setAudioBlob(null); // 新しい録音を開始するときに前回のBlobをクリア
       setRecordingTime(0);
 
-      // Timer to update recording time
+      // Timer to update recording time and check for max duration
       timerRef.current = setInterval(() => {
-        setRecordingTime((prev) => prev + 1);
+        setRecordingTime((prev) => {
+          const newTime = prev + 1;
+          
+          // Stop recording when maximum recording time is reached
+          if (newTime >= MAX_RECORDING_TIME) {
+            // If data already exists, prepare the Blob ahead of time
+            if (audioChunksRef.current.length > 0) {
+              const blob = new Blob(audioChunksRef.current, { type: "audio/wav" });
+              setAudioBlob(blob);
+            }
+            
+            // Stop recording
+            stopRecording();
+            toast.info("Recording has been stopped as it reached 2 minutes");
+            setIsRecording(false);
+            
+            // Run multiple processes to check if Blob is set
+            const ensureAudioBlob = () => {
+              if (audioChunksRef.current.length > 0) {
+                console.log("Creating audio blob after max time reached");
+                const blob = new Blob(audioChunksRef.current, { type: "audio/wav" });
+                setAudioBlob(blob);
+              }
+            };
+            
+            // 複数のタイミングで試行して確実に設定する
+            setTimeout(ensureAudioBlob, 500);
+            setTimeout(ensureAudioBlob, 1000);
+            setTimeout(ensureAudioBlob, 2000);
+          }
+          
+          return newTime;
+        });
       }, 1000);
     } catch (error) {
       console.error("Error starting recording:", error);
@@ -77,13 +115,36 @@ export default function RecordPage() {
   // Stop recording function
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
+      try {
+        // Fire dataavailable event before stopping to ensure data is captured
+        if (mediaRecorderRef.current.state !== "inactive") {
+          // Use MediaRecorder.requestData if supported
+          if (typeof mediaRecorderRef.current.requestData === "function") {
+            mediaRecorderRef.current.requestData();
+          }
+          // Stop recording
+          mediaRecorderRef.current.stop();
+        }
+        
+        setIsRecording(false);
 
-      // Clear timer
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
+        // Clear timer
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+
+        // Fallback process in case audioBlob is not set after recording stops
+        // Use a longer delay to avoid timing issues
+        setTimeout(() => {
+          if (!audioBlob && audioChunksRef.current.length > 0) {
+            console.log("Fallback: Creating audio blob from chunks");
+            const blob = new Blob(audioChunksRef.current, { type: "audio/wav" });
+            setAudioBlob(blob);
+          }
+        }, 1000);
+      } catch (error) {
+        console.error("Error stopping recording:", error);
       }
     }
   };
@@ -174,7 +235,7 @@ export default function RecordPage() {
         {isRecording && (
           <div className="px-4 py-2 bg-red-100 rounded-full flex items-center gap-2">
             <span className="animate-pulse">●</span>
-            <span>{formatTime(recordingTime)}</span>
+            <span>{formatTime(recordingTime)} / {formatTime(MAX_RECORDING_TIME)}</span>
           </div>
         )}
       </div>

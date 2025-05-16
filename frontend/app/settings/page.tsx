@@ -24,13 +24,13 @@ import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-// サーバーサイドレンダリング中であるかを検出
+// Detect if running on server-side
 const isServer = typeof window === "undefined";
 
 /**
- * トークン量を適切な表示形式に変換する（9桁のデシマルを考慮）
- * @param amount - 生のトークン量（BigInt or string or number）
- * @returns フォーマットされたトークン量
+ * Convert token amount to appropriate display format (considering 9 decimal places)
+ * @param amount - Raw token amount (BigInt or string or number)
+ * @returns Formatted token amount
  */
 const formatTokenAmount = (amount: string | number): string => {
   const amountNum = typeof amount === "string" ? Number(amount) : amount;
@@ -60,36 +60,36 @@ export default function SettingsPage() {
   const { provider } = useAnchorProvider();
   const { walletProvider } = useAppKitProvider<any>("solana");
 
-  // サーバーサイドでは実行しない
+  // Don't execute on the server side
   const { address: walletAddress } = !isServer ? useAppKitAccount() : { address: null };
 
-  // コントラクト機能をコンポーネントのトップレベルで初期化（サーバーサイドでは実行しない）
+  // Initialize contract functions at the component top level (not executed on server-side)
   const contractFunctions = useContract();
 
-  // コントラクトの初期化とウォレット情報の取得
+  // Initialize contract and get wallet information
   useEffect(() => {
     /**
-     * ウォレット情報の初期化メソッド
+     * Method to initialize wallet information
      */
     const initializeWallet = async () => {
       try {
-        console.log("ウォレットアドレス:", walletAddress);
+        console.log("Wallet address:", walletAddress);
 
         if (walletAddress) {
           setAddress(walletAddress);
           setIsConnected(true);
-          // アドレスの表示形式を整形（最初と最後の数文字のみ表示）
+          // Format the address display (showing only first and last few characters)
           try {
             const formatted = `${walletAddress.slice(0, 4)}...${walletAddress.slice(-6)}`;
             setDisplayAddress(formatted);
           } catch (error) {
-            setDisplayAddress("接続中...");
+            setDisplayAddress("Connecting...");
           }
         }
 
         setContractReady(true);
       } catch (error) {
-        console.error("ウォレットの初期化に失敗しました:", error);
+        console.error("Failed to initialize wallet:", error);
       }
     };
 
@@ -98,7 +98,7 @@ export default function SettingsPage() {
     }
   }, [walletAddress]);
 
-  // Otoとユーザーアカウントの初期化状態を確認
+  // Check the initialization status of Oto and user accounts
   useEffect(() => {
     if (
       isServer ||
@@ -113,17 +113,17 @@ export default function SettingsPage() {
 
     const checkInitializationStatus = async () => {
       try {
-        // Otoの初期化状態を確認
+        // Check if Oto is initialized
         const otoAccount = await contractFunctions.getOtoAccount.refetch();
         setIsOtoInitialized(!!otoAccount.data);
 
         if (address) {
-          // ユーザーアカウントの初期化状態を確認
+          // Check if user account is initialized
           const userAccount = await contractFunctions.getUserAccount(address);
           setIsUserInitialized(!!userAccount);
         }
       } catch (error) {
-        console.error("初期化状態の確認に失敗しました:", error);
+        console.error("Failed to check initialization status:", error);
       }
     };
 
@@ -136,52 +136,52 @@ export default function SettingsPage() {
     contractFunctions?.getUserAccount,
   ]);
 
-  // クレーム可能な金額を取得
+  // Get the claimable amount
   useEffect(() => {
     if (isServer) {
       return;
     }
 
-    // 初回レンダリング時にのみローディング状態にする
+    // Only set loading state on initial render
     const isDependenciesReady =
       isConnected && address && contractReady && contractFunctions?.getClaimableAmount?.refetch;
 
-    // いずれかの条件が満たされていない場合は、ローディングを停止
+    // If any of the conditions are not met, stop loading
     if (!isDependenciesReady) {
       setIsLoadingData(false);
       return;
     }
 
-    // すでにクレーム可能金額がある場合は何もしない（重複呼び出しを防止）
+    // If claimable amount already exists, do nothing (prevent duplicate calls)
     if (claimableAmount !== "0" && !isLoadingData) {
       return;
     }
 
     let isMounted = true;
 
-    // クレーム可能額の取得
+    // Fetch claimable amount
     const fetchClaimableAmount = async () => {
-      // すでにローディング中であれば重複して実行しない
+      // Don't execute if already loading
       if (isLoadingData) return;
 
       try {
         setIsLoadingData(true);
-        console.log("クレーム可能金額を取得中...");
+        console.log("Fetching claimable token amount...");
 
         const data = await contractFunctions.getClaimableAmount.refetch();
 
-        // コンポーネントがマウントされている場合のみ状態を更新
+        // Only update state if the component is still mounted
         if (isMounted) {
           if (data && data.data) {
-            // 元のトークン量を保存（クレーム処理用）
+            // Save original token amount (for claim processing)
             setClaimableAmount(data.data);
           }
           setIsLoadingData(false);
         }
       } catch (error) {
-        console.error("クレーム可能金額の取得に失敗しました:", error);
-        toast.error("クレーム可能金額の取得に失敗しました");
-        // コンポーネントがマウントされている場合のみ状態を更新
+        console.error("Failed to fetch claimable amount:", error);
+        toast.error("Failed to fetch claimable amount");
+        // Only update state if the component is still mounted
         if (isMounted) {
           setIsLoadingData(false);
         }
@@ -190,28 +190,28 @@ export default function SettingsPage() {
 
     fetchClaimableAmount();
 
-    // クリーンアップ関数
+    // Cleanup function
     return () => {
       isMounted = false;
     };
-  }, [isConnected, address, contractReady]); // contractFunctionsを依存配列から削除
+  }, [isConnected, address, contractReady]); // Remove contractFunctions from dependency array
 
   /**
-   * クレーム処理 メソッド
+   * Token claim processing method
    * @returns
    */
   const handleClaim = async () => {
     if (!address || !isConnected) {
-      toast.error("ウォレットを接続してください");
+      toast.error("Please connect your wallet");
       return;
     }
 
     try {
       setIsClaimLoading(true);
 
-      // クレーム可能金額が0の場合は処理しない
+      // Don't process if claimable amount is 0
       if (Number(claimableAmount) <= 0) {
-        toast.error("クレーム可能なトークンがありません");
+        toast.error("No tokens available to claim");
         setIsClaimLoading(false);
         return;
       }
@@ -221,50 +221,50 @@ export default function SettingsPage() {
         !contractFunctions.claimTokens ||
         !contractFunctions.claimTokens.mutateAsync
       ) {
-        toast.error("クレーム機能が初期化されていません");
+        toast.error("Claim function is not initialized");
         setIsClaimLoading(false);
         return;
       }
 
-      // トークンをクレームするメソッドを呼び出す
+      // Call the method to claim tokens
       const result = await contractFunctions.claimTokens.mutateAsync({
         userId: address,
         claimAmount: Number(claimableAmount),
       });
 
-      console.log("クレーム成功:", result);
+      console.log("Claim successful:", result);
 
-      // 成功メッセージを表示
-      toast.success("トークンのクレームに成功しました");
+      // Show success message
+      toast.success("Token claim successful");
 
-      // 残高を更新
+      // Update balance
       if (contractFunctions.getClaimableAmount && contractFunctions.getClaimableAmount.refetch) {
         await contractFunctions.getClaimableAmount.refetch();
         setClaimableAmount("0");
       }
     } catch (error) {
-      console.error("トークンのクレームに失敗しました:", error);
+      console.error("Failed to claim tokens:", error);
 
-      // エラー時のみエラートーストを表示
-      toast.error("トークンのクレームに失敗しました");
+      // Show error toast only when an error occurs
+      toast.error("Failed to claim tokens");
     } finally {
       setIsClaimLoading(false);
     }
   };
 
   /**
-   * Otoを初期化するメソッド
+   * Method to initialize Oto
    */
   const handleInitOto = async () => {
     if (!address || !isConnected) {
-      toast.error("ウォレットを接続してください");
+      toast.error("Please connect your wallet");
       return;
     }
 
     try {
       setIsInitOtoLoading(true);
 
-      console.log("MetaplexでNFTコレクションを作成します。");
+      console.log("Creating NFT collection with Metaplex.");
 
       const umi = createUmi(connection).use(keypairIdentity(fromWeb3JsKeypair(walletProvider)));
 
@@ -280,50 +280,50 @@ export default function SettingsPage() {
       const collectionAccountExists = await umi.rpc.accountExists(collectionMint.publicKey);
 
       if (!collectionAccountExists) {
-        // コレクションの作成
+        // Create collection
         const umiTx = await createCollectionV1(umi, {
           collection: collectionMint,
           name: "Oto VAsset Collection",
           uri: "",
           updateAuthority: umi.identity.publicKey,
         }).buildWithLatestBlockhash(umi);
-        // web3js用のTxに変換する
+        // Convert to web3js transaction
         const web3jsTx = toWeb3JsTransaction(umiTx);
-        // トランザクションを送信する
+        // Send transaction
         const sig = await provider?.sendAndConfirm(web3jsTx as any, [
           toWeb3JsKeypair(collectionMint),
         ]);
         console.log("Signature:", sig);
-        console.log("NFTコレクションの作成に成功しました:", collectionMint.publicKey.toString());
+        console.log("Successfully created NFT collection:", collectionMint.publicKey.toString());
       } else {
-        console.log("NFTコレクションが存在します:", collectionMint.publicKey.toString());
+        console.log("NFT collection already exists:", collectionMint.publicKey.toString());
       }
 
-      console.log("Otoの初期化を開始します");
+      console.log("Starting Oto initialization");
 
       const otoAccount = await contractFunctions.getOtoAccount.refetch();
       if (!otoAccount.data) {
-        // Otoの初期化メソッドを呼び出す
+        // Call the Oto initialization method
         await contractFunctions.initializeOto.mutate({
           nftCollection: new PublicKey(collectionMint.publicKey),
         });
-        toast.success("Otoの初期化に成功しました");
+        toast.success("Oto initialization successful");
         setIsOtoInitialized(true);
       } else {
-        console.log("Otoが既に初期化されています");
-        toast.info("Otoは既に初期化されています");
+        console.log("Oto is already initialized");
+        toast.info("Oto is already initialized");
         setIsOtoInitialized(true);
       }
     } catch (error) {
-      console.error("Otoの初期化に失敗しました:", error);
-      toast.error("Otoの初期化に失敗しました");
+      console.error("Failed to initialize Oto:", error);
+      toast.error("Failed to initialize Oto");
     } finally {
       setIsInitOtoLoading(false);
     }
   };
 
   /**
-   * ユーザーアカウントを初期化するメソッド
+   * Method to initialize user account
    */
   const handleInitAccount = async () => {
     try {
@@ -331,31 +331,31 @@ export default function SettingsPage() {
 
       const otoAccount = await contractFunctions.getOtoAccount.refetch();
       if (!otoAccount.data) {
-        toast.error("Otoが初期化されていません。まずOtoを初期化してください。");
+        toast.error("Oto is not initialized. Please initialize Oto first.");
         setIsInitUserLoading(false);
         return;
       }
 
       const userAccount = await contractFunctions.getUserAccount(address);
       if (userAccount) {
-        console.log("ユーザーアカウントが既に初期化されています");
-        toast.info("ユーザーアカウントは既に初期化されています");
+        console.log("User account is already initialized");
+        toast.info("User account is already initialized");
         setIsUserInitialized(true);
         setIsInitUserLoading(false);
         return;
       }
 
-      console.log("ユーザーアカウントの初期化を開始します");
-      console.log("[testing purpose] アドレス[0:8]をユーザーIDとして初期化します", address);
+      console.log("Starting user account initialization");
+      console.log("[testing purpose] Initializing with address[0:8] as user ID", address);
 
       await contractFunctions.initializeUser.mutate({
         userId: address,
       });
-      toast.success("ユーザーアカウントの初期化に成功しました");
+      toast.success("User account initialization successful");
       setIsUserInitialized(true);
     } catch (error) {
-      console.error("ユーザーアカウントの初期化に失敗しました:", error);
-      toast.error("ユーザーアカウントの初期化に失敗しました");
+      console.error("Failed to initialize user account:", error);
+      toast.error("Failed to initialize user account");
     } finally {
       setIsInitUserLoading(false);
     }
@@ -363,10 +363,10 @@ export default function SettingsPage() {
 
   return (
     <div className="container max-w-md mx-auto p-4 pt-8">
-      {/* ウォレットカード */}
+      {/* Wallet card */}
       <Card className="bg-muted/30 border rounded-xl p-5 mb-6 relative">
-        {/* データ読み込み中のローディングオーバーレイ */}
-        <LoadingOverlay isLoading={isLoadingData} text="データを読み込み中..." />
+        {/* Loading overlay while data is being loaded */}
+        <LoadingOverlay isLoading={isLoadingData} text="Loading data..." />
 
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
@@ -392,7 +392,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="mt-6">
-          <div className="text-sm text-muted-foreground mb-2">クレーム可能なトークン</div>
+          <div className="text-sm text-muted-foreground mb-2">Claimable Tokens</div>
           <div className="font-medium text-lg mb-3">{formatTokenAmount(claimableAmount)} TOKEN</div>
           <LoadingButton
             className="w-full flex items-center justify-center gap-2"
@@ -403,7 +403,7 @@ export default function SettingsPage() {
             }
             isLoading={isClaimLoading}
           >
-            <span>トークンをクレーム</span>
+            <span>Claim Tokens</span>
             <Send size={16} />
           </LoadingButton>
           <br />
@@ -414,7 +414,7 @@ export default function SettingsPage() {
             disabled={!isConnected || isInitOtoLoading || !contractReady || isOtoInitialized}
             isLoading={isInitOtoLoading}
           >
-            <span>{isOtoInitialized ? "Oto 初期化済み" : "Init oto"}</span>
+            <span>{isOtoInitialized ? "Oto Initialized" : "Init oto"}</span>
           </LoadingButton>
           <br />
           <LoadingButton
@@ -430,17 +430,17 @@ export default function SettingsPage() {
             }
             isLoading={isInitUserLoading}
           >
-            <span>{isUserInitialized ? "ユーザー初期化済み" : "Init user"}</span>
+            <span>{isUserInitialized ? "User Initialized" : "Init user"}</span>
           </LoadingButton>
         </div>
       </Card>
 
-      {/* アプリ設定 */}
+      {/* App Settings */}
       <Card className="border rounded-xl p-5">
         <h2 className="text-xl font-semibold mb-4">App Settings</h2>
 
         <div className="space-y-6">
-          {/* ウォレット情報 */}
+          {/* Wallet Information */}
           <div className="space-y-2">
             <h3 className="font-medium">Wallet</h3>
             <div className="rounded-lg border p-4 space-y-4">

@@ -12,7 +12,7 @@ import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-// サーバーサイドレンダリング中であるかを検出
+// Detect if we're in server-side rendering
 const isServer = typeof window === "undefined";
 
 /**
@@ -35,18 +35,18 @@ export default function SettingsPage() {
 
   const { address: walletAddress } = !isServer ? useAppKitAccount() : { address: null };
 
-  // コントラクト機能をコンポーネントのトップレベルで初期化（サーバーサイドでは実行しない）
+  // Initialize contract functions at the component's top level (not executed on server-side)
   const { initializeUser, claimToken, getUserInfo, getUserClaimableTokenBalance } = useContract();
 
-  // ユーザーの初期化状態を確認
+  // Check user initialization status
   useEffect(() => {
     if (isServer) {
       return;
     }
 
-    // サポート対象外のチェーンIDの場合も早期リターン
+    // Early return for unsupported chain IDs
     if (chainId !== 8453 && chainId !== 84532) {
-      console.log("サポートされていないチェーンID:", chainId);
+      console.log("Unsupported chain ID:", chainId);
       return;
     }
 
@@ -55,28 +55,28 @@ export default function SettingsPage() {
 
     const checkInitializationStatus = async () => {
       try {
-        // 3秒のタイムアウトを設定
+        // Set 3 second timeout
         timeoutId = setTimeout(() => {
           if (isMounted) {
-            console.log("初期化状態確認がタイムアウトしました");
-            // デフォルトで未初期化と見なす
+            console.log("Initialization status check timed out");
+            // Consider as uninitialized by default
             setIsUserInitialized(false);
           }
         }, 3000);
 
-        // ユーザー情報を取得して初期化状態を確認
-        console.log("ユーザー初期化状態を確認中...");
+        // Get user information and check initialization status
+        console.log("Checking user initialization status...");
         const userInfo = await getUserInfo(walletAddress!);
 
         if (isMounted) {
           if (timeoutId) clearTimeout(timeoutId);
-          console.log("ユーザー情報:", userInfo);
+          console.log("User info:", userInfo);
           setIsUserInitialized(!!userInfo && userInfo.initialized);
           setClaimableAmount(userInfo?.points.toString() || "0");
         }
       } catch (error) {
-        console.error("初期化状態の確認に失敗しました:", error);
-        // エラーが発生しても初期化されていないと判断
+        console.error("Failed to check initialization status:", error);
+        // Consider as uninitialized even if an error occurs
         if (isMounted) {
           if (timeoutId) clearTimeout(timeoutId);
           setIsUserInitialized(false);
@@ -99,25 +99,25 @@ export default function SettingsPage() {
     }
   }, []);
 
-  // クレーム可能な金額を取得
+  // Retrieve claimable token amount
   useEffect(() => {
-    // サーバーサイドでは実行しない
+    // Do not execute on server-side
     if (isServer) {
       return;
     }
 
-    // 依存関係が揃っていることを確認
+    // Verify all dependencies are ready
     const isDependenciesReady =
       isConnected &&
       contractReady &&
       typeof getUserClaimableTokenBalance === "function" &&
       typeof getUserInfo === "function" &&
       !!chainId &&
-      (chainId === 8453 || chainId === 84532); // サポート対象のチェーンIDのみ許可
+      (chainId === 8453 || chainId === 84532); // Allow only supported chain IDs
 
-    // いずれかの条件が満たされていない場合は、ローディングを表示せずに終了
+    // If any of the conditions are not met, exit without showing loading
     if (!isDependenciesReady) {
-      console.log("依存関係が揃っていません:", {
+      console.log("Dependencies are not ready:", {
         isConnected,
         hasAddress: !!walletAddress,
         contractReady,
@@ -126,7 +126,7 @@ export default function SettingsPage() {
         chainId,
         isValidChain: chainId === 8453 || chainId === 84532,
       });
-      // ローディング状態を確実に解除
+      // Make sure to clear loading state
       setIsLoadingData(false);
       return;
     }
@@ -134,33 +134,33 @@ export default function SettingsPage() {
     let isMounted = true;
     let timeoutId: NodeJS.Timeout | null = null;
 
-    // クレーム可能額の取得
+    // Fetch claimable amount
     const fetchClaimableAmount = async () => {
-      // すでにローディング中であれば重複して実行しない
+      // Don't execute multiple times if already loading
       if (isLoadingData) return;
 
       try {
-        // ローディング状態にする
+        // Set loading state
         setIsLoadingData(true);
-        console.log("クレーム可能金額を取得中... チェーンID:", chainId);
+        console.log("Fetching claimable amount... Chain ID:", chainId);
 
-        // 5秒後に強制的にローディングを解除するタイマー（短めに設定）
+        // Timer to forcibly clear loading after 5 seconds (short timeout)
         timeoutId = setTimeout(() => {
           if (isMounted) {
-            console.log("クレーム可能金額の取得がタイムアウトしました");
+            console.log("Fetching claimable amount timed out");
             setIsLoadingData(false);
-            // ユーザー体験を損なわないためにエラーメッセージは表示しない
-            // toast.error("データの読み込みがタイムアウトしました");
+            // Do not show error message to avoid hurting user experience
+            // toast.error("Data loading timed out");
           }
         }, 5000);
 
         try {
-          // ユーザー情報を取得
+          // Get user information
           const userInfo = await getUserInfo(walletAddress!);
 
-          // ユーザーが初期化されていない場合は0を設定して早期に終了
+          // If user is not initialized, set balance to 0 and exit early
           if (!userInfo || !userInfo.initialized) {
-            console.log("ユーザーは初期化されていないため、残高は0です");
+            console.log("User is not initialized, so balance is 0");
             if (isMounted) {
               setClaimableAmount("0");
               setIsLoadingData(false);
@@ -169,18 +169,18 @@ export default function SettingsPage() {
             return;
           }
 
-          // クレーム可能なトークン残高を取得（すでにユーザー情報があるためそれを使用）
-          const balance = userInfo.points; // 直接userInfoから取得
+          // Get claimable token balance (using user info since we already have it)
+          const balance = userInfo.points; // Get directly from userInfo
 
-          // コンポーネントがマウントされている場合のみ状態を更新
+          // Only update state if the component is still mounted
           if (isMounted) {
-            console.log("取得した残高:", balance.toString());
+            console.log("Retrieved balance:", balance.toString());
             setClaimableAmount(balance.toString());
             setIsLoadingData(false);
             if (timeoutId) clearTimeout(timeoutId);
           }
         } catch (error) {
-          console.error("ユーザー情報の取得中にエラーが発生しました:", error);
+          console.error("Error occurred while retrieving user information:", error);
           if (isMounted) {
             setClaimableAmount("0");
             setIsLoadingData(false);
@@ -188,14 +188,14 @@ export default function SettingsPage() {
           }
         }
       } catch (error) {
-        console.error("クレーム可能金額の取得に失敗しました:", error);
-        // コンポーネントがマウントされている場合のみ状態を更新
+        console.error("Failed to retrieve claimable amount:", error);
+        // Only update state if the component is still mounted
         if (isMounted) {
-          // エラーが発生した場合は0を設定
+          // Set to 0 in case of an error
           setClaimableAmount("0");
-          // エラーが発生した場合でもローディングを停止
+          // Stop loading even if an error occurred
           setIsLoadingData(false);
-          // タイムアウトタイマーをクリア
+          // Clear timeout timer
           if (timeoutId) clearTimeout(timeoutId);
         }
       }
@@ -219,161 +219,161 @@ export default function SettingsPage() {
   ]);
 
   /**
-   * クレーム処理 メソッド
+   * Token claim method
    * @returns
    */
   const handleClaim = async () => {
     if (!walletAddress) {
-      toast.error("ウォレットを接続してください");
+      toast.error("Please connect your wallet");
       return;
     }
 
     try {
       setIsClaimLoading(true);
 
-      // ネットワーク状態を確認
-      console.log("現在のネットワーク:", chainId);
+      // Check network status
+      console.log("Current network:", chainId);
       if (chainId !== 8453 && chainId !== 84532) {
         toast.error(
-          "サポートされていないネットワークです。Base または Base Sepolia に切り替えてください。",
+          "Unsupported network. Please switch to Base or Base Sepolia.",
         );
         setIsClaimLoading(false);
         return;
       }
 
-      // クレーム可能金額が0の場合は処理しない
+      // Don't process if claimable amount is 0
       if (Number(claimableAmount) <= 0) {
-        toast.error("クレーム可能なトークンがありません");
+        toast.error("No tokens available to claim");
         setIsClaimLoading(false);
         return;
       }
 
       if (typeof claimToken !== "function") {
-        toast.error("クレーム機能が初期化されていません");
+        toast.error("Claim function is not initialized");
         setIsClaimLoading(false);
         return;
       }
 
-      // トークンをクレームするメソッドを呼び出す（チェーンIDは省略可能）
+      // Call the method to claim tokens (chainID is optional)
       const claimPromise = claimToken(walletAddress, BigInt(claimableAmount));
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("クレーム処理がタイムアウトしました")), 30000);
+        setTimeout(() => reject(new Error("Claim process timed out")), 30000);
       });
 
       const hash = await Promise.race([claimPromise, timeoutPromise]);
 
       if (hash) {
-        toast.success("トークンのクレームに成功しました");
+        toast.success("Successfully claimed tokens");
 
-        // 残高をゼロに設定
+        // Set balance to zero
         setClaimableAmount("0");
 
-        // 少し待ってから残高を再確認
+        // Wait a bit before checking balance again
         setTimeout(async () => {
           if (typeof getUserClaimableTokenBalance === "function") {
             try {
-              // ローディング状態を短時間だけ表示
+              // Show loading state for a short time
               setIsLoadingData(true);
               const newBalance = await getUserClaimableTokenBalance(walletAddress);
               setClaimableAmount(newBalance.toString());
             } catch (error) {
-              console.error("クレーム後の残高取得に失敗しました:", error);
+              console.error("Failed to get balance after claim:", error);
             } finally {
-              // どの場合でもローディング状態を解除
+              // Clear loading state in any case
               setIsLoadingData(false);
             }
           }
         }, 3000);
       } else {
-        toast.error("トランザクションの送信に失敗しました");
+        toast.error("Failed to send transaction");
       }
     } catch (error) {
-      console.error("トークンのクレームに失敗しました:", error);
-      toast.error("トークンのクレームに失敗しました");
+      console.error("Failed to claim tokens:", error);
+      toast.error("Failed to claim tokens");
     } finally {
       setIsClaimLoading(false);
     }
   };
 
   /**
-   * ユーザーアカウントを初期化するメソッド
+   * Method to initialize user account
    */
   const handleInitAccount = async () => {
     if (!walletAddress || !chainId) {
-      toast.error("ウォレットを接続してください");
+      toast.error("Please connect your wallet");
       return;
     }
 
     try {
       setIsInitUserLoading(true);
 
-      // ネットワーク状態を確認
-      console.log("現在のネットワーク:", chainId);
+      // Check network status
+      console.log("Current network:", chainId);
       if (chainId !== 8453 && chainId !== 84532) {
         toast.error(
-          "サポートされていないネットワークです。Base または Base Sepolia に切り替えてください。",
+          "Unsupported network. Please switch to Base or Base Sepolia.",
         );
         setIsInitUserLoading(false);
         return;
       }
 
-      // ユーザーが初期化済みかどうか確認
-      console.log("ユーザー情報を確認中...", walletAddress);
+      // Check if user is already initialized
+      console.log("Checking user information...", walletAddress);
 
       try {
         const userInfo = await getUserInfo(walletAddress);
         if (userInfo && userInfo.initialized) {
-          console.log("ユーザーアカウントが既に初期化されています");
-          toast.info("ユーザーアカウントは既に初期化されています");
+          console.log("User account is already initialized");
+          toast.info("User account is already initialized");
           setIsUserInitialized(true);
           setIsInitUserLoading(false);
           return;
         }
       } catch (checkError) {
         console.warn(
-          "ユーザー情報の確認中にエラーが発生しましたが、初期化を続行します:",
+          "Error occurred while checking user information, but continuing with initialization:",
           checkError,
         );
       }
 
-      console.log("ユーザーアカウントの初期化を開始します:", walletAddress);
+      console.log("Starting user account initialization:", walletAddress);
 
-      // 30秒のタイムアウトを設定
+      // Set 30 second timeout
       const initPromise = initializeUser(walletAddress);
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("初期化処理がタイムアウトしました")), 30000);
+        setTimeout(() => reject(new Error("Initialization process timed out")), 30000);
       });
 
       const hash = await Promise.race([initPromise, timeoutPromise]);
-      console.log("初期化トランザクション:", hash);
+      console.log("Initialization transaction:", hash);
 
       if (hash) {
-        toast.success("ユーザーアカウントの初期化に成功しました");
+        toast.success("Successfully initialized user account");
         setIsUserInitialized(true);
 
-        // 少し待ってからクレーム可能金額を再取得
+        // Wait a bit before retrieving claimable amount again
         setTimeout(async () => {
           if (typeof getUserClaimableTokenBalance === "function") {
             try {
-              // ローディング状態を更新
+              // Update loading state
               setIsLoadingData(true);
               const newBalance = await getUserClaimableTokenBalance(walletAddress);
               setClaimableAmount(newBalance.toString());
             } catch (error) {
-              console.error("初期化後の残高取得に失敗しました:", error);
-              toast.error("残高の更新に失敗しました。ページを再読み込みしてください。");
+              console.error("Failed to get balance after initialization:", error);
+              toast.error("Failed to update balance. Please reload the page.");
             } finally {
-              // どの場合でもローディング状態を解除
+              // Clear loading state in any case
               setIsLoadingData(false);
             }
           }
         }, 3000);
       } else {
-        toast.error("トランザクションの送信に失敗しました");
+        toast.error("Failed to send transaction");
       }
     } catch (error) {
-      console.error("ユーザーアカウントの初期化に失敗しました:", error);
-      toast.error("ユーザーアカウントの初期化に失敗しました");
+      console.error("Failed to initialize user account:", error);
+      toast.error("Failed to initialize user account");
     } finally {
       setIsInitUserLoading(false);
     }
@@ -381,10 +381,10 @@ export default function SettingsPage() {
 
   return (
     <div className="container max-w-md mx-auto p-4 pt-8">
-      {/* ウォレットカード */}
+      {/* Wallet card */}
       <Card className="bg-muted/30 border rounded-xl p-5 mb-6 relative">
-        {/* データ読み込み中のローディングオーバーレイ */}
-        {isLoadingData && <LoadingOverlay isLoading={true} text="データを読み込み中..." />}
+        {/* Loading overlay while data is being loaded */}
+        {isLoadingData && <LoadingOverlay isLoading={true} text="Loading data..." />}
 
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
@@ -410,7 +410,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="mt-6">
-          <div className="text-sm text-muted-foreground mb-2">クレーム可能なトークン</div>
+          <div className="text-sm text-muted-foreground mb-2">Claimable tokens</div>
           <div className="font-medium text-lg mb-3">{claimableAmount} TOKEN</div>
           <LoadingButton
             className="w-full flex items-center justify-center gap-2"
@@ -419,7 +419,7 @@ export default function SettingsPage() {
             disabled={Number(claimableAmount) <= 0}
             isLoading={isClaimLoading}
           >
-            <span>トークンをクレーム</span>
+            <span>Claim tokens</span>
             <Send size={16} />
           </LoadingButton>
           <br />
@@ -430,7 +430,7 @@ export default function SettingsPage() {
             disabled={isUserInitialized}
             isLoading={isInitUserLoading}
           >
-            <span>{isUserInitialized ? "ユーザー初期化済み" : "ユーザーを初期化"}</span>
+            <span>{isUserInitialized ? "User initialized" : "Initialize user"}</span>
           </LoadingButton>
         </div>
       </Card>

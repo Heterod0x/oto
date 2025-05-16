@@ -22,6 +22,9 @@ export default function RecordPage() {
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
+  // Maximum recording time (seconds)
+  const MAX_RECORDING_TIME = 120; // 2 minutes
+
   // Recording refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -64,9 +67,28 @@ export default function RecordPage() {
       setIsRecording(true);
       setRecordingTime(0);
 
-      // Timer to update recording time
+      // Timer to update recording time and check for max duration
       timerRef.current = setInterval(() => {
-        setRecordingTime((prev) => prev + 1);
+        setRecordingTime((prev) => {
+          const newTime = prev + 1;
+          
+          // Stop recording when the maximum time is reached
+          if (newTime >= MAX_RECORDING_TIME) {
+            stopRecording();
+            toast.info("Recording stopped as it reached the 2-minute limit");
+            setIsRecording(false);
+            // Process to ensure audioBlob is set properly
+            setTimeout(() => {
+              // Add a slight delay to ensure the Analyze button appears
+              if (!audioBlob && audioChunksRef.current.length > 0) {
+                const blob = new Blob(audioChunksRef.current, { type: "audio/wav" });
+                setAudioBlob(blob);
+              }
+            }, 500);
+          }
+          
+          return newTime;
+        });
       }, 1000);
     } catch (error) {
       console.error("Error starting recording:", error);
@@ -85,6 +107,14 @@ export default function RecordPage() {
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
+
+      // Fallback process if audioBlob is not set after stopping recording
+      setTimeout(() => {
+        if (!audioBlob && audioChunksRef.current.length > 0) {
+          const blob = new Blob(audioChunksRef.current, { type: "audio/wav" });
+          setAudioBlob(blob);
+        }
+      }, 500);
     }
   };
 
@@ -174,7 +204,7 @@ export default function RecordPage() {
         {isRecording && (
           <div className="px-4 py-2 bg-red-100 rounded-full flex items-center gap-2">
             <span className="animate-pulse">●</span>
-            <span>{formatTime(recordingTime)}</span>
+            <span>{formatTime(recordingTime)} / {formatTime(MAX_RECORDING_TIME)}</span>
           </div>
         )}
       </div>

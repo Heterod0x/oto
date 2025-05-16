@@ -11,7 +11,7 @@ import { useAppKitAccount } from "@reown/appkit/react";
 import { Calendar, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 
-// 会話履歴の型定義
+// Conversation history type definition
 interface Conversation {
   id: string;
   title: string;
@@ -21,7 +21,7 @@ interface Conversation {
 }
 
 export default function HistoryPage() {
-  // 会話履歴データ
+  // Conversation history data
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
@@ -30,25 +30,25 @@ export default function HistoryPage() {
 
   const { address } = useAppKitAccount();
 
-  // 会話履歴データの取得
+  // Fetch conversation history data
   useEffect(() => {
     const fetchConversations = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        // APIからデータを取得
+        // Get data from API
         const responseData = await getConversations(address!);
         console.log("API response data:", responseData);
 
-        // データの構造を確認して適切に処理
+        // Check the data structure and process appropriately
         let conversationsArray: Conversation[] = [];
 
         if (Array.isArray(responseData)) {
-          // レスポンスが直接配列の場合
+          // If response is directly an array
           conversationsArray = responseData;
         } else if (responseData && typeof responseData === "object") {
-          // レスポンスがオブジェクトの場合、データが含まれる可能性のあるキーを確認
+          // If response is an object, check keys that might contain data
           if (Array.isArray(responseData.data)) {
             conversationsArray = responseData.data;
           } else if (Array.isArray(responseData.conversations)) {
@@ -58,20 +58,20 @@ export default function HistoryPage() {
           } else if (Array.isArray(responseData.items)) {
             conversationsArray = responseData.items;
           } else {
-            // オブジェクトの場合、値が配列のプロパティを探す
+            // If it's an object, find properties that are arrays
             const arrayProperty = Object.values(responseData).find((value) => Array.isArray(value));
             if (arrayProperty) {
               conversationsArray = arrayProperty as Conversation[];
             }
           }
         } else if (typeof responseData === "string") {
-          // 文字列の場合、会話として処理
+          // If it's a string, process as a conversation
           conversationsArray = [
             {
               id: "1",
-              title: "会話記録",
+              title: "Conversation Record",
               text: responseData,
-              tags: [], // 空の配列を設定
+              tags: [], // Set empty array
               date: new Date().toLocaleDateString(),
             },
           ];
@@ -80,8 +80,8 @@ export default function HistoryPage() {
         setConversations(conversationsArray);
         setIsLoading(false);
       } catch (error) {
-        console.error("会話履歴の取得に失敗しました:", error);
-        setError("会話履歴の取得に失敗しました");
+        console.error("Failed to retrieve conversation history:", error);
+        setError("Failed to retrieve conversation history");
         setConversations([]);
         setIsLoading(false);
       }

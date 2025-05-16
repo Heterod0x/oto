@@ -4,11 +4,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,7 +20,7 @@ import { useEffect, useState } from "react";
 // Import useCallback for memoized functions
 import { useCallback } from "react";
 
-// プロフィールの型定義
+// Profile type definition
 interface Profile {
   age: number;
   gender: string;
@@ -31,10 +31,10 @@ interface Profile {
 }
 
 export default function DigitalTwinPage() {
-  // クライアントサイドのレンダリングを確認する状態
+  // State to verify client-side rendering
   const [isMounted, setIsMounted] = useState(false);
 
-  // プロフィールデータ
+  // Profile data
   const [profile, setProfile] = useState<Profile>({
     age: 0,
     gender: "",
@@ -50,49 +50,49 @@ export default function DigitalTwinPage() {
 
   const { address } = useAppKitAccount();
 
-  // プロフィールデータを取得する関数を定義
+  // Define function to fetch profile data
   const fetchProfile = useCallback(async () => {
     try {
-      // APIからデータを取得 (固定値)
+      // Fetch data from API (fixed values)
       const response = await getUserProfile(address!);
-      console.log("取得したプロフィールデータ:", response);
-      // APIからprofileオブジェクトを取得
+      console.log("Retrieved profile data:", response);
+      // Get profile object from API
       if (response && response.profile) {
         setProfile(response.profile);
       } else {
-        console.error("プロフィールデータが正しい形式ではありません");
+        console.error("Profile data is not in the correct format");
       }
       setIsLoading(false);
     } catch (error) {
-      console.error("プロフィールの取得に失敗しました:", error);
+      console.error("Failed to retrieve profile:", error);
       setIsLoading(false);
     }
   }, []);
 
-  // コンポーネントがマウントされたことを確認
+  // Confirm component has been mounted
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // クライアントサイドでのみデータを取得
+  // Fetch data only on the client side
   useEffect(() => {
     if (isMounted) {
       fetchProfile();
     }
   }, [isMounted, fetchProfile]);
 
-  // プロフィール編集ダイアログを開く
+  // Open profile edit dialog
   const openEditDialog = () => {
     setEditedProfile({ ...profile });
     setIsEditDialogOpen(true);
   };
 
-  // プロフィールを更新
+  // Update profile
   const updateProfile = async () => {
     if (!editedProfile) return;
 
     try {
-      // APIにデータを送信（現在は実装されていないためコメントアウト）
+      // Send data to API (currently commented out as not implemented)
       // await fetch('/api/profile', {
       //   method: 'PUT',
       //   headers: {
@@ -101,15 +101,15 @@ export default function DigitalTwinPage() {
       //   body: JSON.stringify({ profile: editedProfile }),
       // });
 
-      // 成功したら状態を更新
+      // Update state after success
       setProfile(editedProfile);
       setIsEditDialogOpen(false);
     } catch (error) {
-      console.error("プロフィールの更新に失敗しました:", error);
+      console.error("Failed to update profile:", error);
     }
   };
 
-  // 興味・関心の入力を処理
+  // Process interests input
   const handleInterestsChange = (value: string) => {
     if (!editedProfile) return;
 
@@ -120,14 +120,14 @@ export default function DigitalTwinPage() {
     setEditedProfile({ ...editedProfile, interests: interestsArray });
   };
 
-  // サーバーサイドレンダリングまたはハイドレーション中は何も表示しない
+  // Don't display anything during server-side rendering or hydration
   if (!isMounted) {
     return null;
   }
 
-  // クライアントサイドでのみローディング状態を表示
+  // Show loading state only on the client side
   if (isLoading) {
-    return <div className="flex justify-center items-center min-h-screen">読み込み中...</div>;
+    return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
   }
 
   return (
@@ -140,15 +140,15 @@ export default function DigitalTwinPage() {
         </Button>
       </div>
 
-      {/* アバター画像（ハッカソン期間中は不要） */}
+      {/* Avatar image (not needed during hackathon period) */}
       <div className="flex justify-center mb-6">
         <div className="w-40 h-40 bg-gray-200 rounded-full flex items-center justify-center text-gray-500">
-          {/* アバター画像の代わりにプレースホルダー */}
+          {/* Placeholder instead of avatar image */}
           <span className="text-6xl">👤</span>
         </div>
       </div>
 
-      {/* 趣味アイコン */}
+      {/* Hobby icons */}
       <div className="flex justify-end gap-2 mb-6">
         {profile.interests &&
           profile.interests.map((interest: string, index: number) => (
@@ -164,7 +164,7 @@ export default function DigitalTwinPage() {
           ))}
       </div>
 
-      {/* プロフィール情報 */}
+      {/* Profile information */}
       <div className="flex flex-wrap gap-2 mb-4">
         <Badge variant="outline" className="px-4 py-2 text-sm">
           {profile.age} yo
@@ -180,7 +180,7 @@ export default function DigitalTwinPage() {
         </Badge>
       )}
 
-      {/* 性格 */}
+      {/* Personality */}
       <Card className="mb-4">
         <CardContent className="p-4">
           <h2 className="text-sm font-medium mb-2">Personality</h2>
@@ -188,7 +188,7 @@ export default function DigitalTwinPage() {
         </CardContent>
       </Card>
 
-      {/* 自己紹介 */}
+      {/* Self introduction */}
       <Card className="mb-8">
         <CardContent className="p-4">
           <h2 className="text-sm font-medium mb-2">Self Introduction</h2>
@@ -196,18 +196,18 @@ export default function DigitalTwinPage() {
         </CardContent>
       </Card>
 
-      {/* 編集ダイアログ */}
+      {/* Edit dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>プロフィールを編集</DialogTitle>
+            <DialogTitle>Edit Profile</DialogTitle>
           </DialogHeader>
 
           {editedProfile && (
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label htmlFor="age">年齢</Label>
+                  <Label htmlFor="age">Age</Label>
                   <Input
                     id="age"
                     type="number"
@@ -221,7 +221,7 @@ export default function DigitalTwinPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="gender">性別</Label>
+                  <Label htmlFor="gender">Gender</Label>
                   <Input
                     id="gender"
                     value={editedProfile.gender}
@@ -236,7 +236,7 @@ export default function DigitalTwinPage() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="interests">興味・関心（カンマ区切り）</Label>
+                <Label htmlFor="interests">Interests (comma separated)</Label>
                 <Input
                   id="interests"
                   value={editedProfile.interests.join(", ")}
@@ -245,7 +245,7 @@ export default function DigitalTwinPage() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="favorite_foods">好きな食べ物</Label>
+                <Label htmlFor="favorite_foods">Favorite Foods</Label>
                 <Input
                   id="favorite_foods"
                   value={editedProfile.favorite_foods || ""}
@@ -259,7 +259,7 @@ export default function DigitalTwinPage() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="personality">性格</Label>
+                <Label htmlFor="personality">Personality</Label>
                 <Textarea
                   id="personality"
                   rows={3}
@@ -274,7 +274,7 @@ export default function DigitalTwinPage() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="self_introduction">自己紹介</Label>
+                <Label htmlFor="self_introduction">Self Introduction</Label>
                 <Textarea
                   id="self_introduction"
                   rows={5}
@@ -292,9 +292,9 @@ export default function DigitalTwinPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              キャンセル
+              Cancel
             </Button>
-            <Button onClick={updateProfile}>保存</Button>
+            <Button onClick={updateProfile}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
