@@ -1,5 +1,5 @@
 // Backend API BASE URL
-export const API_BASE_URL = "https://5.104.83.184";
+export const API_BASE_URL = "https://c077816c97e1.ngrok.app";
 // Contract address(base sepolia)
 export const CONTRACT_BASE_SEPOLIA_ADDRESS = "0x0a730733Ee85466278Cd31F452165A30971Ecdbd";
 // Contract address(base)
