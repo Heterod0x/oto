@@ -25,11 +25,9 @@ app.conf.update(
 )
 
 openai_client = OpenAI()
-mock_transcriber = MockTranscriber()
 analyze_conversation_usecase = AnalyzeConversation(
     conversation_audio_repository=SupabaseConversationAudioRepository(supabase_client),
-    # transcriber=OpenAITranscriber(openai_handler=OpenAIHandler(openai_client)),
-    transcriber=mock_transcriber,
+    transcriber=OpenAITranscriber(openai_handler=OpenAIHandler(openai_client)),
     conversation_factory=ConversationFactory(),
     conversation_repository=SupabaseConversationRepository(supabase_client),
 )
