@@ -1,10 +1,6 @@
+import { AuthTokenClaims } from "@privy-io/server-auth";
 import type { NextApiRequest, NextApiResponse } from "next";
-
-import { PrivyClient, AuthTokenClaims } from "@privy-io/server-auth";
-
-const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
-const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET;
-const client = new PrivyClient(PRIVY_APP_ID!, PRIVY_APP_SECRET!);
+import { verifyAuthToken } from "../../lib/privy-server";
 
 export type AuthenticateSuccessResponse = {
   claims: AuthTokenClaims;
@@ -27,7 +23,7 @@ async function handler(
   if (!authToken) return res.status(401).json({ error: "Missing auth token" });
 
   try {
-    const claims = await client.verifyAuthToken(authToken);
+    const claims = await verifyAuthToken(authToken);
     return res.status(200).json({ claims });
   } catch (e: any) {
     return res.status(401).json({ error: e.message });

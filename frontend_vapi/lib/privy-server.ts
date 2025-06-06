@@ -1,4 +1,3 @@
-import { getAccessToken } from "@privy-io/react-auth";
 import { AuthTokenClaims, PrivyClient } from "@privy-io/server-auth";
 import type { NextApiRequest, NextApiResponse } from "next";
 
@@ -32,6 +31,16 @@ export const fetchAndVerifyAuthorization = async (
 };
 
 /**
+ * Verify an auth token
+ * @param authToken - The auth token to verify
+ * @returns The verified claims
+ */
+export const verifyAuthToken = async (authToken: string): Promise<AuthTokenClaims> => {
+  const client = createPrivyClient();
+  return client.verifyAuthToken(authToken);
+};
+
+/**
  * create PrivyClient Instance method
  * @returns 
  */
@@ -46,19 +55,3 @@ export const createPrivyClient = () => {
     }
   );
 };
-
-/**
- * verifyToken method to check if the user is authenticated
- * @returns 
- */
-export async function verifyToken() {
-  const url = "/api/verify";
-  const accessToken = await getAccessToken();
-  const result = await fetch(url, {
-    headers: {
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined),
-    },
-  });
-
-  return await result.json();
-}

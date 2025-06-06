@@ -3,7 +3,7 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import WalletList from "../components/WalletList";
-import { verifyToken } from "../lib/privy";
+import { verifyToken } from "../lib/privy-client";
 
 
 export default function DashboardPage() {
