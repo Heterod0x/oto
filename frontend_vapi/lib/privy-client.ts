@@ -2,16 +2,14 @@ import { getAccessToken } from "@privy-io/react-auth";
 
 /**
  * verifyToken method to check if the user is authenticated (client-side only)
- * @returns 
+ * @returns Access token if available, null otherwise
  */
 export async function verifyToken() {
-  const url = "/api/verify";
-  const accessToken = await getAccessToken();
-  const result = await fetch(url, {
-    headers: {
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined),
-    },
-  });
-
-  return await result.json();
+  try {
+    const accessToken = await getAccessToken();
+    return accessToken ? { token: accessToken } : null;
+  } catch (error) {
+    console.error("Failed to get access token:", error);
+    return null;
+  }
 }
