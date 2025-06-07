@@ -32,7 +32,7 @@ export function LoadingSpinner({
         className
       )}
       role="status"
-      aria-label="読み込み中"
+      aria-label="Loading"
     />
   );
 }
@@ -45,7 +45,7 @@ interface LoadingOverlayProps {
 
 export function LoadingOverlay({ 
   isVisible, 
-  message = '処理中...', 
+  message = 'Processing...', 
   className 
 }: LoadingOverlayProps) {
   if (!isVisible) return null;

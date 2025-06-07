@@ -1,6 +1,6 @@
 /**
  * API Client for VAPI integration
- * エージェントとの音声通話およびタスク処理用のAPIクライアント
+ * API client for voice calls with agents and task processing
  */
 
 export interface Task {
@@ -24,7 +24,7 @@ export interface ConversationSession {
 }
 
 /**
- * ストリーミング対応のAPIクライアント
+ * API client with streaming support
  */
 export class VAPIClient {
   private baseURL: string;
@@ -35,14 +35,14 @@ export class VAPIClient {
   }
 
   /**
-   * アクセストークンを設定
+   * Set access token
    */
   setAccessToken(token: string) {
     this.accessToken = token;
   }
 
   /**
-   * ヘッダーを取得
+   * Get request headers
    */
   private getHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
@@ -57,7 +57,7 @@ export class VAPIClient {
   }
 
   /**
-   * 音声ストリーミングセッションを開始
+   * Start voice streaming session
    */
   async startVoiceSession(): Promise<{ sessionId: string; wsUrl: string }> {
     try {
@@ -78,7 +78,7 @@ export class VAPIClient {
   }
 
   /**
-   * 音声ストリーミングセッションを終了
+   * End voice streaming session
    */
   async endVoiceSession(sessionId: string): Promise<ConversationSession> {
     try {
@@ -99,7 +99,7 @@ export class VAPIClient {
   }
 
   /**
-   * タスクリストをストリーミングで取得
+   * Get task list via streaming
    */
   async streamTasks(sessionId: string, onTask: (task: Task) => void, onComplete: () => void): Promise<void> {
     try {
@@ -159,7 +159,7 @@ export class VAPIClient {
   }
 
   /**
-   * タスクをGoogleカレンダーに追加
+   * Add task to Google Calendar
    */
   async addToGoogleCalendar(task: Task): Promise<{ success: boolean; eventId?: string }> {
     try {
@@ -181,7 +181,7 @@ export class VAPIClient {
   }
 
   /**
-   * タスクをiOSカレンダーに追加（WebAPIを使用）
+   * Add task to iOS calendar (using Web API)
    */
   async addToIosCalendar(task: Task): Promise<{ success: boolean; eventId?: string }> {
     try {
@@ -203,7 +203,7 @@ export class VAPIClient {
   }
 
   /**
-   * WebSocket接続を確立（音声ストリーミング用）
+   * Establish WebSocket connection (for voice streaming)
    */
   createWebSocketConnection(wsUrl: string): WebSocket {
     const ws = new WebSocket(wsUrl);
@@ -224,5 +224,5 @@ export class VAPIClient {
   }
 }
 
-// シングルトンインスタンス
+// Singleton instance
 export const apiClient = new VAPIClient();

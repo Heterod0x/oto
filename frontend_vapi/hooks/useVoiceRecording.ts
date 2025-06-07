@@ -18,8 +18,8 @@ export interface UseVoiceRecordingReturn {
 }
 
 /**
- * 音声録音とストリーミング用のカスタムフック
- * ブラウザのWeb Audio APIを使用してリアルタイム音声ストリーミングを実現
+ * Custom hook for voice recording and streaming
+ * Realizes real-time voice streaming using browser's Web Audio API
  */
 export function useVoiceRecording({
   onStreamData,
@@ -39,7 +39,7 @@ export function useVoiceRecording({
   const animationFrameRef = useRef<number | null>(null);
 
   /**
-   * マイクの権限を要求
+   * Request microphone permission
    */
   const requestPermission = useCallback(async (): Promise<boolean> => {
     try {
@@ -52,7 +52,7 @@ export function useVoiceRecording({
         },
       });
 
-      // テスト用に一時的に取得したストリームを停止
+      // Stop temporarily acquired stream for testing
       stream.getTracks().forEach(track => track.stop());
       setHasPermission(true);
       return true;
@@ -65,7 +65,7 @@ export function useVoiceRecording({
   }, [sampleRate, echoCancellation, noiseSuppression, onError]);
 
   /**
-   * 音量レベルの監視
+   * Monitor volume level
    */
   const monitorVolume = useCallback(() => {
     if (!analyzerRef.current) return;
@@ -79,7 +79,7 @@ export function useVoiceRecording({
 
       analyzer.getByteFrequencyData(dataArray);
       
-      // 音量の平均値を計算
+      // Calculate average volume
       const sum = dataArray.reduce((a, b) => a + b, 0);
       const average = sum / bufferLength;
       const normalizedVolume = Math.min(100, (average / 255) * 100);
@@ -93,7 +93,7 @@ export function useVoiceRecording({
   }, [isRecording]);
 
   /**
-   * 録音開始
+   * Start recording
    */
   const startRecording = useCallback(async () => {
     try {
@@ -104,7 +104,7 @@ export function useVoiceRecording({
         }
       }
 
-      // メディアストリームを取得
+      // Get media stream
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           sampleRate,
@@ -131,7 +131,7 @@ export function useVoiceRecording({
 
       mediaRecorderRef.current = mediaRecorder;
 
-      // データの受信処理（ストリーミング）
+      // Data reception processing (streaming)
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0 && onStreamData) {
           onStreamData(event.data);
@@ -143,11 +143,11 @@ export function useVoiceRecording({
         onError?.(new Error('Recording failed'));
       };
 
-      // 100ms間隔でデータを送信（ストリーミング用）
+      // Send data every 100ms (for streaming)
       mediaRecorder.start(100);
       setIsRecording(true);
 
-      // 音量監視開始
+      // Start volume monitoring
       monitorVolume();
 
     } catch (error) {
@@ -157,7 +157,7 @@ export function useVoiceRecording({
   }, [hasPermission, requestPermission, sampleRate, echoCancellation, noiseSuppression, onStreamData, onError, monitorVolume]);
 
   /**
-   * 録音停止
+   * Stop recording
    */
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording) {
@@ -165,19 +165,19 @@ export function useVoiceRecording({
       setIsRecording(false);
     }
 
-    // ストリーム停止
+    // Stop stream
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
 
-    // Audio Context クリーンアップ
+    // Audio Context cleanup
     if (audioContextRef.current) {
       audioContextRef.current.close();
       audioContextRef.current = null;
     }
 
-    // アニメーションフレームをキャンセル
+    // Cancel animation frame
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
@@ -186,19 +186,19 @@ export function useVoiceRecording({
     setVolume(0);
   }, [isRecording]);
 
-  // コンポーネントアンマウント時のクリーンアップ
+  // Component unmount cleanup
   useEffect(() => {
     return () => {
       stopRecording();
     };
   }, [stopRecording]);
 
-  // 初期化時に権限チェック
+  // Permission check on initialization
   useEffect(() => {
     navigator.permissions.query({ name: 'microphone' as PermissionName }).then((result) => {
       setHasPermission(result.state === 'granted');
     }).catch(() => {
-      // 権限APIが利用できない場合は初期値のまま
+      // Keep initial value if Permissions API is not available
     });
   }, []);
 

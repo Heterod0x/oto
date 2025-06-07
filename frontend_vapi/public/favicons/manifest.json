@@ -13,19 +13,19 @@
     {"src": "/favicons/android-chrome-512x512.png", "type": "image/png", "sizes": "512x512"}
   ],
   "categories": ["productivity", "business", "utilities"],
-  "lang": "ja-JP",
+  "lang": "en-US",
   "shortcuts": [
     {
-      "name": "新しい会話",
-      "short_name": "会話",
-      "description": "エージェントとの新しい音声会話を開始",
+      "name": "New Conversation",
+      "short_name": "Chat",
+      "description": "Start a new voice conversation with agent",
       "url": "/agent",
       "icons": [{"src": "/favicons/android-chrome-192x192.png", "sizes": "192x192"}]
     },
     {
-      "name": "タスク管理",
-      "short_name": "タスク",
-      "description": "抽出されたタスクを確認・管理",
+      "name": "Task Management",
+      "short_name": "Tasks",
+      "description": "View and manage extracted tasks",
       "url": "/tasks",
       "icons": [{"src": "/favicons/android-chrome-192x192.png", "sizes": "192x192"}]
     }

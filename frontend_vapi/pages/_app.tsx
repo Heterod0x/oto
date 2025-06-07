@@ -3,6 +3,7 @@ import type { AppProps } from "next/app";
 import Head from "next/head";
 import { useState } from "react";
 import { PWAInstallPrompt } from "../components/PWAInstallPrompt";
+import { ToastProvider } from "../components/Toast";
 import "../styles/globals.css";
 
 function MyApp({ Component, pageProps }: AppProps) {
@@ -57,10 +58,12 @@ function MyApp({ Component, pageProps }: AppProps) {
           },
         }}
       >
-        <Component {...pageProps} />
-        {showInstallPrompt && (
-          <PWAInstallPrompt onClose={() => setShowInstallPrompt(false)} />
-        )}
+        <ToastProvider>
+          <Component {...pageProps} />
+          {showInstallPrompt && (
+            <PWAInstallPrompt onClose={() => setShowInstallPrompt(false)} />
+          )}
+        </ToastProvider>
       </PrivyProvider>
     </>
   );

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 /**
- * モバイルデバイスを検出するフック
+ * Hook to detect mobile device
  */
 export function useIsMobile(breakpoint: number = 768) {
   const [isMobile, setIsMobile] = useState(false);
@@ -11,13 +11,13 @@ export function useIsMobile(breakpoint: number = 768) {
       setIsMobile(window.innerWidth < breakpoint);
     };
 
-    // 初期チェック
+    // Initial check
     checkIsMobile();
 
-    // リサイズイベントリスナー
+    // Resize event listener
     window.addEventListener('resize', checkIsMobile);
 
-    // クリーンアップ
+    // Cleanup
     return () => {
       window.removeEventListener('resize', checkIsMobile);
     };
@@ -27,7 +27,7 @@ export function useIsMobile(breakpoint: number = 768) {
 }
 
 /**
- * PWAインストール機能を提供するフック
+ * Hook to provide PWA install functionality
  */
 export function usePWAInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -35,7 +35,7 @@ export function usePWAInstall() {
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
-      // デフォルトのインストールプロンプトを防ぐ
+      // Prevent default install prompt
       e.preventDefault();
       setDeferredPrompt(e);
       setIsInstallable(true);
@@ -51,10 +51,10 @@ export function usePWAInstall() {
   const installPWA = async () => {
     if (!deferredPrompt) return false;
 
-    // インストールプロンプトを表示
+    // Show install prompt
     deferredPrompt.prompt();
 
-    // ユーザーの選択を待つ
+    // Wait for user's choice
     const { outcome } = await deferredPrompt.userChoice;
 
     if (outcome === 'accepted') {

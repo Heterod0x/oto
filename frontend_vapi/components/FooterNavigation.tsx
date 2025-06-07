@@ -8,33 +8,33 @@ export interface FooterNavigationProps {
 }
 
 /**
- * フッターナビゲーションコンポーネント
- * 画面間の遷移用フローティングナビゲーション
+ * Footer navigation component
+ * Floating navigation for screen transitions
  */
 export function FooterNavigation({ className }: FooterNavigationProps) {
   const router = useRouter();
   const { logout } = usePrivy();
   const currentPath = router.pathname;
 
-  // ナビゲーションアイテムの定義
+  // Navigation items definition
   const navigationItems = [
     {
       id: 'agent',
-      label: 'エージェント',
+      label: 'Agent',
       icon: Mic,
       path: '/agent',
       isActive: currentPath === '/agent',
     },
     {
       id: 'tasks',
-      label: 'タスク',
+      label: 'Tasks',
       icon: FileText,
       path: '/tasks',
       isActive: currentPath === '/tasks',
     },
     {
       id: 'logout',
-      label: 'ログアウト',
+      label: 'Logout',
       icon: LogOut,
       path: '/logout',
       isActive: false,
@@ -43,7 +43,7 @@ export function FooterNavigation({ className }: FooterNavigationProps) {
 
   const handleNavigation = (path: string, id: string) => {
     if (id === 'logout') {
-      // Privyのlogoutメソッドを呼び出し
+      // Call Privy's logout method
       logout();
       return;
     }

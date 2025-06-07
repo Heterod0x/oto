@@ -11,7 +11,7 @@ export function SystemStatus({ className, showInDevelopment = true }: SystemStat
   const { isOnline, connectionType } = useNetworkStatus();
   const batteryInfo = useBatteryStatus();
 
-  // 本番環境では表示しない（showInDevelopmentがfalseの場合）
+  // Don't display in production (when showInDevelopment is false)
   if (process.env.NODE_ENV === 'production' && !showInDevelopment) {
     return null;
   }
@@ -22,7 +22,7 @@ export function SystemStatus({ className, showInDevelopment = true }: SystemStat
       "flex items-center gap-3",
       className
     )}>
-      {/* ネットワーク状態 */}
+      {/* Network status */}
       <div className="flex items-center gap-1">
         {isOnline ? (
           <Wifi className="h-3 w-3 text-green-400" />
@@ -30,11 +30,11 @@ export function SystemStatus({ className, showInDevelopment = true }: SystemStat
           <WifiOff className="h-3 w-3 text-red-400" />
         )}
         <span className={isOnline ? 'text-green-400' : 'text-red-400'}>
-          {isOnline ? connectionType : 'オフライン'}
+          {isOnline ? connectionType : 'Offline'}
         </span>
       </div>
 
-      {/* バッテリー状態 */}
+      {/* Battery status */}
       {batteryInfo && (
         <div className="flex items-center gap-1">
           {batteryInfo.level < 0.2 ? (
@@ -49,7 +49,7 @@ export function SystemStatus({ className, showInDevelopment = true }: SystemStat
         </div>
       )}
 
-      {/* 開発環境インジケーター */}
+      {/* Development environment indicator */}
       {process.env.NODE_ENV === 'development' && (
         <div className="flex items-center gap-1">
           <Signal className="h-3 w-3 text-blue-400" />

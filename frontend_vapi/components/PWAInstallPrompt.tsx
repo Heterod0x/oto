@@ -33,10 +33,10 @@ export function PWAInstallPrompt({ onClose }: PWAInstallPromptProps) {
         </div>
         <div className="flex-1">
           <h3 className="font-semibold text-gray-900 text-sm">
-            アプリをインストール
+            Install App
           </h3>
           <p className="text-gray-600 text-xs mt-1">
-            ホーム画面に追加してすぐにアクセス
+            Add to home screen for quick access
           </p>
           <div className="flex gap-2 mt-3">
             <Button
@@ -44,7 +44,7 @@ export function PWAInstallPrompt({ onClose }: PWAInstallPromptProps) {
               onClick={handleInstall}
               className="text-xs"
             >
-              インストール
+              Install
             </Button>
             <Button
               variant="ghost"
@@ -52,7 +52,7 @@ export function PWAInstallPrompt({ onClose }: PWAInstallPromptProps) {
               onClick={handleDismiss}
               className="text-xs"
             >
-              後で
+              Later
             </Button>
           </div>
         </div>

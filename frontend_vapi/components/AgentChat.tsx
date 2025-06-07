@@ -11,19 +11,19 @@ export interface AgentChatProps {
 }
 
 /**
- * エージェントとの対話画面コンポーネント
- * 音声録音とストリーミング機能を提供
+ * Agent Chat Screen Component
+ * Provides voice recording and streaming functionality
  */
 export function AgentChat({ className }: AgentChatProps) {
   const router = useRouter();
   
-  // 状態管理
+  // State management
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [websocket, setWebsocket] = useState<WebSocket | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 音声録音フック
+  // Voice recording hook
   const {
     isRecording,
     startRecording,
@@ -33,61 +33,60 @@ export function AgentChat({ className }: AgentChatProps) {
     volume,
   } = useVoiceRecording({
     onStreamData: (audioBlob) => {
-      // 音声データをWebSocket経由でストリーミング送信
+      // Stream audio data via WebSocket
       if (websocket && websocket.readyState === WebSocket.OPEN) {
         websocket.send(audioBlob);
       }
     },
-    onError: (error) => {
-      setError(`録音エラー: ${error.message}`);
+    onError: (error) => {        setError(`Recording error: ${error.message}`);
     },
   });
 
   /**
-   * 音声セッション開始（デモモード対応）
+   * Start voice session (demo mode support)
    */
   const handleStartRecording = useCallback(async () => {
     try {
       setError(null);
       setIsConnecting(true);
 
-      // デモモードの場合は実際の録音なしでシミュレート
+      // Demo mode: simulate without actual recording
       console.log('Demo mode: Starting voice session simulation');
       
-      // 2秒後に録音状態をシミュレート
+      // Simulate recording state after 2 seconds
       setTimeout(() => {
         setIsConnecting(false);
         startRecording();
       }, 2000);
 
     } catch (error) {
-      console.error('録音開始エラー:', error);
-      setError(`録音開始に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+      console.error('Recording start error:', error);
+      setError(`Failed to start recording: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setIsConnecting(false);
     }
   }, [startRecording]);
 
   /**
-   * 音声セッション終了（デモモード対応）
+   * End voice session (demo mode support)
    */
   const handleStopRecording = useCallback(async () => {
     try {
-      // 録音停止
+      // Stop recording
       stopRecording();
 
-      // デモモード: 2秒後にタスク画面に遷移
+      // Demo mode: navigate to task screen after 2 seconds
       setTimeout(() => {
         router.push('/tasks');
       }, 1000);
 
     } catch (error) {
-      console.error('録音停止エラー:', error);
-      setError(`録音停止に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+      console.error('Recording stop error:', error);
+      setError(`Failed to stop recording: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }, [stopRecording, router]);
 
   /**
-   * キーボードイベントハンドラー（スペースバーで録音開始/停止）
+   * Keyboard event handler (spacebar to start/stop recording)
    */
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
@@ -108,7 +107,7 @@ export function AgentChat({ className }: AgentChatProps) {
   }, [isRecording, isConnecting, handleStartRecording, handleStopRecording]);
 
   /**
-   * コンポーネントアンマウント時のクリーンアップ
+   * Component unmount cleanup
    */
   useEffect(() => {
     return () => {
@@ -121,7 +120,7 @@ export function AgentChat({ className }: AgentChatProps) {
     };
   }, [websocket, isRecording, stopRecording]);
 
-  // 音量インジケーターのスタイル
+  // Volume indicator styles
   const volumeStyle = {
     transform: `scale(${1 + volume / 100})`,
     opacity: isRecording ? 0.3 + (volume / 100) * 0.7 : 1,
@@ -129,25 +128,25 @@ export function AgentChat({ className }: AgentChatProps) {
 
   return (
     <div className={cn("flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-violet-50 to-indigo-100 p-6", className)}>
-      {/* ヘッダー */}
+      {/* Header */}
       <div className="text-center mb-12">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          エージェントとの対話
+          Chat with Agent
         </h1>
         <p className="text-gray-600">
-          マイクボタンを押して会話を開始してください
+          Press the mic button to start conversation
         </p>
       </div>
 
-      {/* メインコントロールエリア */}
+      {/* Main control area */}
       <div className="relative mb-8">
-        {/* 音量可視化リング */}
+        {/* Volume visualization ring */}
         {isRecording && (
           <div className="absolute inset-0 rounded-full border-4 border-violet-300 animate-pulse" 
                style={volumeStyle} />
         )}
         
-        {/* メイン録音ボタン */}
+        {/* Main recording button */}
         <Button
           size="lg"
           variant={isRecording ? "destructive" : "default"}
@@ -162,10 +161,10 @@ export function AgentChat({ className }: AgentChatProps) {
           disabled={isConnecting}
           aria-label={
             isConnecting 
-              ? "接続中です" 
+              ? "Connecting..." 
               : isRecording 
-                ? "録音を停止" 
-                : "録音を開始"
+                ? "Stop recording" 
+                : "Start recording"
           }
           aria-pressed={isRecording}
         >
@@ -179,24 +178,24 @@ export function AgentChat({ className }: AgentChatProps) {
         </Button>
       </div>
 
-      {/* ステータステキスト */}
+      {/* Status text */}
       <div className="text-center mb-6">
         {isConnecting ? (
-          <p className="text-violet-600 font-medium">接続中...</p>
+          <p className="text-violet-600 font-medium">Connecting...</p>
         ) : isRecording ? (
           <div className="space-y-2">
             <p className="text-red-600 font-medium flex items-center justify-center gap-2">
               <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-              録音中
+              Recording
             </p>
-            <p className="text-sm text-gray-500">もう一度ボタンを押すと録音を停止します</p>
+            <p className="text-sm text-gray-500">Press the button again to stop recording</p>
           </div>
         ) : (
-          <p className="text-gray-600">ボタンを押して録音を開始</p>
+          <p className="text-gray-600">Press the button to start recording</p>
         )}
       </div>
 
-      {/* 音量レベル表示 */}
+      {/* Volume level display */}
       {isRecording && (
         <div className="w-64 bg-gray-200 rounded-full h-2 mb-6">
           <div 
@@ -206,33 +205,32 @@ export function AgentChat({ className }: AgentChatProps) {
         </div>
       )}
 
-      {/* エラー表示 */}
+      {/* Error display */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg max-w-md text-center">
-          <p className="text-sm">{error}</p>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="mt-2 text-red-600 hover:text-red-700"
-            onClick={() => setError(null)}
-          >
-            閉じる
-          </Button>
+          <p className="text-sm">{error}</p>            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-2 text-red-600 hover:text-red-700"
+              onClick={() => setError(null)}
+            >
+              Close
+            </Button>
         </div>
       )}
 
-      {/* ヘルプテキスト */}
+      {/* Help text */}
       <div className="mt-12 text-center max-w-md">
         <div className="bg-white/50 backdrop-blur-sm rounded-lg p-4 border border-white/20">
           <h3 className="font-semibold text-gray-900 mb-2 flex items-center justify-center gap-2">
             <Volume2 size={16} />
-            使い方
+            How to use
           </h3>
           <ul className="text-sm text-gray-600 space-y-1 text-left">
-            <li>• マイクボタンまたはスペースキーで録音開始</li>
-            <li>• エージェントと自然に会話</li>
-            <li>• 再度ボタンを押して録音終了</li>
-            <li>• 自動的にタスク画面に移動</li>
+            <li>• Press mic button or spacebar to start recording</li>
+            <li>• Have a natural conversation with the agent</li>
+            <li>• Press the button again to stop recording</li>
+            <li>• Automatically navigate to tasks screen</li>
           </ul>
         </div>
       </div>
