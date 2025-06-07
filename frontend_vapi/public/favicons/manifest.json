@@ -1,7 +1,42 @@
 {
-  "name": "Privy Auth Demo",
+  "name": "VAPI Voice Agent",
+  "short_name": "VAPI Agent",
+  "description": "AI-powered voice conversations with task extraction and calendar integration",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#7c3aed",
+  "orientation": "portrait",
+  "scope": "/",
   "icons": [
     {"src": "/favicons/android-chrome-192x192.png", "type": "image/png", "sizes": "192x192"},
     {"src": "/favicons/android-chrome-512x512.png", "type": "image/png", "sizes": "512x512"}
-  ]
+  ],
+  "categories": ["productivity", "business", "utilities"],
+  "lang": "ja-JP",
+  "shortcuts": [
+    {
+      "name": "新しい会話",
+      "short_name": "会話",
+      "description": "エージェントとの新しい音声会話を開始",
+      "url": "/agent",
+      "icons": [{"src": "/favicons/android-chrome-192x192.png", "sizes": "192x192"}]
+    },
+    {
+      "name": "タスク管理",
+      "short_name": "タスク",
+      "description": "抽出されたタスクを確認・管理",
+      "url": "/tasks",
+      "icons": [{"src": "/favicons/android-chrome-192x192.png", "sizes": "192x192"}]
+    }
+  ],
+  "share_target": {
+    "action": "/tasks",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
 }

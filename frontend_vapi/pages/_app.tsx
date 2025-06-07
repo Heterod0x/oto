@@ -1,9 +1,13 @@
-import "../styles/globals.css";
+import { PrivyProvider } from "@privy-io/react-auth";
 import type { AppProps } from "next/app";
 import Head from "next/head";
-import { PrivyProvider } from "@privy-io/react-auth";
+import { useState } from "react";
+import { PWAInstallPrompt } from "../components/PWAInstallPrompt";
+import "../styles/globals.css";
 
 function MyApp({ Component, pageProps }: AppProps) {
+  const [showInstallPrompt, setShowInstallPrompt] = useState(true);
+
   return (
     <>
       <Head>
@@ -37,8 +41,13 @@ function MyApp({ Component, pageProps }: AppProps) {
         <link rel="apple-touch-icon" href="/favicons/apple-touch-icon.png" />
         <link rel="manifest" href="/favicons/manifest.json" />
 
-        <title>Privy Auth Starter</title>
-        <meta name="description" content="Privy Auth Starter" />
+        <title>VAPI Voice Agent</title>
+        <meta name="description" content="AI-powered voice conversations with task extraction and calendar integration" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+        <meta name="theme-color" content="#3b82f6" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="VAPI Agent" />
       </Head>
       <PrivyProvider
         appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID || ""}
@@ -49,6 +58,9 @@ function MyApp({ Component, pageProps }: AppProps) {
         }}
       >
         <Component {...pageProps} />
+        {showInstallPrompt && (
+          <PWAInstallPrompt onClose={() => setShowInstallPrompt(false)} />
+        )}
       </PrivyProvider>
     </>
   );
