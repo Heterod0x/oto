@@ -31,12 +31,8 @@ export default function LoginPage() {
         <div className="flex bg-gradient-to-br from-blue-50 to-indigo-100 flex-1 p-6 justify-center items-center">
           <div className="max-w-md w-full">
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                VAPI Voice Agent
-              </h1>
-              <p className="text-gray-600">
-                Experience seamless voice conversations with AI
-              </p>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">VAPI Voice Agent</h1>
+              <p className="text-gray-600">Experience seamless voice conversations with AI</p>
             </div>
             <div className="flex justify-center mb-8">
               <Portal style={{ maxWidth: "200px", height: "auto" }} />

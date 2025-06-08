@@ -1,4 +1,11 @@
-"use strict";(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[4362],{84362:(l,a,e)=>{e.r(a),e.d(a,{moreSvg:()=>s});var i=e(2776);let s=(0,i.JW)`<svg fill="none" viewBox="0 0 41 40">
+"use strict";
+(self.webpackChunk_N_E = self.webpackChunk_N_E || []).push([
+  [4362],
+  {
+    84362: (l, a, e) => {
+      e.r(a), e.d(a, { moreSvg: () => s });
+      var i = e(2776);
+      let s = (0, i.JW)`<svg fill="none" viewBox="0 0 41 40">
   <path
     style="fill: var(--wui-color-fg-100);"
     fill-opacity=".05"
@@ -8,4 +15,7 @@
     fill="#949E9E"
     d="M15.6 20.31a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM23.1 20.31a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM28.1 22.81a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"
   />
-</svg>`}}]);
+</svg>`;
+    },
+  },
+]);

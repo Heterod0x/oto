@@ -1,4 +1,11 @@
-"use strict";(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[2959],{62959:(l,a,e)=>{e.r(a),e.d(a,{networkPlaceholderSvg:()=>v});var r=e(2776);let v=(0,r.JW)`<svg fill="none" viewBox="0 0 22 20">
+"use strict";
+(self.webpackChunk_N_E = self.webpackChunk_N_E || []).push([
+  [2959],
+  {
+    62959: (l, a, e) => {
+      e.r(a), e.d(a, { networkPlaceholderSvg: () => v });
+      var r = e(2776);
+      let v = (0, r.JW)`<svg fill="none" viewBox="0 0 22 20">
   <path
     fill="currentColor"
     fill-rule="evenodd"
@@ -11,4 +18,7 @@
     d="M4.63 9.43a1.5 1.5 0 1 0 1.5-2.6 1.5 1.5 0 0 0-1.5 2.6Zm.32-1.55a.5.5 0 0 1 .68-.19.5.5 0 0 1 .18.68.5.5 0 0 1-.68.19.5.5 0 0 1-.18-.68ZM17.94 8.88a1.5 1.5 0 1 1-2.6-1.5 1.5 1.5 0 1 1 2.6 1.5ZM16.9 7.69a.5.5 0 0 0-.68.19.5.5 0 0 0 .18.68.5.5 0 0 0 .68-.19.5.5 0 0 0-.18-.68ZM9.75 17.75a1.5 1.5 0 1 1 2.6 1.5 1.5 1.5 0 1 1-2.6-1.5Zm1.05 1.18a.5.5 0 0 0 .68-.18.5.5 0 0 0-.18-.68.5.5 0 0 0-.68.18.5.5 0 0 0 .18.68Z"
     clip-rule="evenodd"
   />
-</svg>`}}]);
+</svg>`;
+    },
+  },
+]);

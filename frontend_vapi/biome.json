@@ -35,7 +35,8 @@
       "build",
       "public",
       "**/*.config.js",
-      "**/*.config.ts"
+      "**/*.config.ts",
+      "out/*"
     ]
   },
   "formatter": {
@@ -44,7 +45,7 @@
     "indentWidth": 2,
     "lineWidth": 100,
     "lineEnding": "lf",
-    "ignore": ["node_modules", ".next", "dist", "build", "public"]
+    "ignore": ["node_modules", ".next", "dist", "build", "public", "out/*"]
   },
   "javascript": {
     "formatter": {

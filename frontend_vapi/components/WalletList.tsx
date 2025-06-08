@@ -1,8 +1,8 @@
 import {
-    useCreateWallet,
-    useSolanaWallets,
-    useUser,
-    WalletWithMetadata,
+  useCreateWallet,
+  useSolanaWallets,
+  useUser,
+  WalletWithMetadata,
 } from "@privy-io/react-auth";
 import { useCallback, useMemo, useState } from "react";
 import WalletCard from "./WalletCard";
@@ -28,9 +28,9 @@ export default function WalletList() {
         (account) =>
           account.type === "wallet" &&
           account.walletClientType === "privy" &&
-          account.chainType === "ethereum"
+          account.chainType === "ethereum",
       ) as WalletWithMetadata[]) ?? [],
-    [user]
+    [user],
   );
 
   /**
@@ -42,9 +42,9 @@ export default function WalletList() {
         (account) =>
           account.type === "wallet" &&
           account.walletClientType === "privy" &&
-          account.chainType === "solana"
+          account.chainType === "solana",
       ) as WalletWithMetadata[]) ?? [],
-    [user]
+    [user],
   );
 
   /**
@@ -67,16 +67,14 @@ export default function WalletList() {
         setIsCreating(false);
       }
     },
-    [createEthereumWallet, createSolanaWallet]
+    [createEthereumWallet, createSolanaWallet],
   );
 
   return (
     <div className="space-y-4">
       {ethereumEmbeddedWallets.length === 0 ? (
         <div className="p-4 border border-gray-200 rounded-lg text-center">
-          <p className="text-gray-600 mb-4">
-            No Ethereum embedded wallets found.
-          </p>
+          <p className="text-gray-600 mb-4">No Ethereum embedded wallets found.</p>
           <button
             onClick={() => handleCreateWallet("ethereum")}
             disabled={isCreating}
@@ -94,9 +92,7 @@ export default function WalletList() {
       )}
       {solanaEmbeddedWallets.length === 0 ? (
         <div className="p-4 border border-gray-200 rounded-lg text-center">
-          <p className="text-gray-600 mb-4">
-            No Solana embedded wallets found.
-          </p>
+          <p className="text-gray-600 mb-4">No Solana embedded wallets found.</p>
           <button
             onClick={() => handleCreateWallet("solana")}
             disabled={isCreating}

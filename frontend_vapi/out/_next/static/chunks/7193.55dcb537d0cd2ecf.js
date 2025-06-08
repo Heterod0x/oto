@@ -1,4 +1,11 @@
-"use strict";(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[7193],{7193:(l,c,i)=>{i.r(c),i.d(c,{discordSvg:()=>f});var e=i(2776);let f=(0,e.JW)`<svg fill="none" viewBox="0 0 40 40">
+"use strict";
+(self.webpackChunk_N_E = self.webpackChunk_N_E || []).push([
+  [7193],
+  {
+    7193: (l, c, i) => {
+      i.r(c), i.d(c, { discordSvg: () => f });
+      var e = i(2776);
+      let f = (0, e.JW)`<svg fill="none" viewBox="0 0 40 40">
   <g clip-path="url(#a)">
     <g clip-path="url(#b)">
       <circle cx="20" cy="19.89" r="20" fill="#5865F2" />
@@ -14,4 +21,7 @@
     <clipPath id="a"><rect width="40" height="40" fill="#fff" rx="20" /></clipPath>
     <clipPath id="b"><path fill="#fff" d="M0 0h40v40H0z" /></clipPath>
   </defs>
-</svg>`}}]);
+</svg>`;
+    },
+  },
+]);

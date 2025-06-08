@@ -66,7 +66,7 @@ export default function WalletCard({ wallet }: WalletCardProps) {
         setIsLoading(false);
       }
     },
-    [addSessionSigners]
+    [addSessionSigners],
   );
 
   /**
@@ -85,7 +85,7 @@ export default function WalletCard({ wallet }: WalletCardProps) {
         setIsLoading(false);
       }
     },
-    [removeSessionSigners]
+    [removeSessionSigners],
   );
 
   /**
@@ -135,15 +135,13 @@ export default function WalletCard({ wallet }: WalletCardProps) {
           headers: {
             Authorization: `Bearer ${authToken}`,
           },
-        }
+        },
       );
 
       const data = response.data;
 
       if (response.status === 200) {
-        console.log(
-          "Message signed on server! Signature: " + data.data.signature
-        );
+        console.log("Message signed on server! Signature: " + data.data.signature);
       } else {
         throw new Error(data.error || "Failed to sign message");
       }
@@ -157,8 +155,8 @@ export default function WalletCard({ wallet }: WalletCardProps) {
   return (
     <div className="flex flex-col gap-4 p-4 border border-gray-200 rounded-lg">
       <div className="text-sm text-violet-700">
-        {wallet.walletClientType === "privy" ? "Embedded " : ""}Wallet:{" "}
-        {wallet.address.slice(0, 6)}...
+        {wallet.walletClientType === "privy" ? "Embedded " : ""}Wallet: {wallet.address.slice(0, 6)}
+        ...
         {wallet.address.slice(-4)}
       </div>
 
@@ -189,9 +187,7 @@ export default function WalletCard({ wallet }: WalletCardProps) {
       </div>
 
       {hasSessionSigners && (
-        <div className="mt-2 text-sm text-gray-600">
-          This wallet has active session signers
-        </div>
+        <div className="mt-2 text-sm text-gray-600">This wallet has active session signers</div>
       )}
 
       <div className="flex flex-row gap-2">
@@ -211,9 +207,7 @@ export default function WalletCard({ wallet }: WalletCardProps) {
           onClick={handleClientSign}
           disabled={isClientSigning}
           className={`text-sm py-2 px-4 rounded-md text-white ${
-            isClientSigning
-              ? "bg-green-400 cursor-not-allowed"
-              : "bg-green-600 hover:bg-green-700"
+            isClientSigning ? "bg-green-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
           }`}
         >
           {isClientSigning ? "Signing..." : "Sign message from client"}

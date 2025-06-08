@@ -1,6 +1,6 @@
-import { AlertTriangle, Home, RefreshCw } from 'lucide-react';
-import React from 'react';
-import { Button } from './ui/button';
+import { AlertTriangle, Home, RefreshCw } from "lucide-react";
+import React from "react";
+import { Button } from "./ui/button";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -27,7 +27,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
+    console.error("Error caught by boundary:", error, errorInfo);
     this.setState({
       error,
       errorInfo,
@@ -51,27 +51,22 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             <div className="bg-red-100 p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
               <AlertTriangle className="h-8 w-8 text-red-600" />
             </div>
-            
-            <h1 className="text-xl font-bold text-gray-900 mb-2">
-              An unexpected error occurred
-            </h1>
-            
+
+            <h1 className="text-xl font-bold text-gray-900 mb-2">An unexpected error occurred</h1>
+
             <p className="text-gray-600 mb-6">
-              A problem occurred in the application. Please reload the page or wait a moment and try again.
+              A problem occurred in the application. Please reload the page or wait a moment and try
+              again.
             </p>
 
             <div className="space-y-3">
-              <Button
-                onClick={this.resetError}
-                className="w-full"
-                variant="default"
-              >
+              <Button onClick={this.resetError} className="w-full" variant="default">
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Retry
               </Button>
-              
+
               <Button
-                onClick={() => window.location.href = '/'}
+                onClick={() => (window.location.href = "/")}
                 className="w-full"
                 variant="outline"
               >
@@ -80,7 +75,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
               </Button>
             </div>
 
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {process.env.NODE_ENV === "development" && this.state.error && (
               <details className="mt-6 text-left">
                 <summary className="text-sm text-gray-500 cursor-pointer mb-2">
                   Developer Details
@@ -103,7 +98,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 // Higher-order component for wrapping components with error boundary
 export function withErrorBoundary<P extends object>(
   Component: React.ComponentType<P>,
-  fallback?: React.ComponentType<{ error: Error; resetError: () => void }>
+  fallback?: React.ComponentType<{ error: Error; resetError: () => void }>,
 ) {
   const WrappedComponent = (props: P) => (
     <ErrorBoundary fallback={fallback}>

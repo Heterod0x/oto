@@ -1,4 +1,11 @@
-"use strict";(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[1501],{81501:(a,l,t)=>{t.r(l),t.d(l,{playStoreSvg:()=>h});var f=t(2776);let h=(0,f.JW)` <svg
+"use strict";
+(self.webpackChunk_N_E = self.webpackChunk_N_E || []).push([
+  [1501],
+  {
+    81501: (a, l, t) => {
+      t.r(l), t.d(l, { playStoreSvg: () => h });
+      var f = t(2776);
+      let h = (0, f.JW)` <svg
   width="36"
   height="36"
   fill="none"
@@ -29,4 +36,7 @@
     stroke="#fff"
     stroke-opacity=".05"
   />
-</svg>`}}]);
+</svg>`;
+    },
+  },
+]);

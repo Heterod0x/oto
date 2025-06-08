@@ -1,4 +1,11 @@
-"use strict";(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[7138],{7138:(a,l,e)=>{e.r(l),e.d(l,{walletPlaceholderSvg:()=>c});var v=e(2776);let c=(0,v.JW)`
+"use strict";
+(self.webpackChunk_N_E = self.webpackChunk_N_E || []).push([
+  [7138],
+  {
+    7138: (a, l, e) => {
+      e.r(l), e.d(l, { walletPlaceholderSvg: () => c });
+      var v = e(2776);
+      let c = (0, v.JW)`
   <svg fill="none" viewBox="0 0 48 44">
     <path
       style="fill: var(--wui-color-bg-300);"
@@ -11,4 +18,7 @@
       clip-rule="evenodd"
     />
   </svg>
-`}}]);
+`;
+    },
+  },
+]);

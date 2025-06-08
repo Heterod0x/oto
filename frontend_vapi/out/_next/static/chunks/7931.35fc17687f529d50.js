@@ -1,4 +1,11 @@
-"use strict";(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[7931],{47931:(l,h,f)=>{f.r(h),f.d(h,{facebookSvg:()=>i});var c=f(2776);let i=(0,c.JW)`<svg fill="none" viewBox="0 0 40 40">
+"use strict";
+(self.webpackChunk_N_E = self.webpackChunk_N_E || []).push([
+  [7931],
+  {
+    47931: (l, h, f) => {
+      f.r(h), f.d(h, { facebookSvg: () => i });
+      var c = f(2776);
+      let i = (0, c.JW)`<svg fill="none" viewBox="0 0 40 40">
   <g clip-path="url(#a)">
     <g clip-path="url(#b)">
       <circle cx="20" cy="19.89" r="20" fill="#1877F2" />
@@ -23,4 +30,7 @@
     <clipPath id="b"><path fill="#fff" d="M0 0h40v40H0z" /></clipPath>
     <clipPath id="c"><path fill="#fff" d="M8 7.89h24v24H8z" /></clipPath>
   </defs>
-</svg>`}}]);
+</svg>`;
+    },
+  },
+]);

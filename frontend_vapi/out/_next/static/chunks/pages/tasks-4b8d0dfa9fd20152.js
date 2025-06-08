@@ -1,1 +1,555 @@
-(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[5782],{13130:(e,t,a)=>{e.exports=a(43435)},35253:(e,t,a)=>{(window.__NEXT_P=window.__NEXT_P||[]).push(["/tasks",function(){return a(96751)}])},54024:(e,t,a)=>{"use strict";a.d(t,{A:()=>s});let s=(0,a(86651).A)("mic",[["path",{d:"M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z",key:"131961"}],["path",{d:"M19 10v2a7 7 0 0 1-14 0v-2",key:"1vc78b"}],["line",{x1:"12",x2:"12",y1:"19",y2:"22",key:"x3vr5v"}]])},65513:(e,t,a)=>{"use strict";a.d(t,{i:()=>h});var s=a(94458),r=a(43836),o=a(54024),i=a(86651);let n=(0,i.A)("file-text",[["path",{d:"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z",key:"1rqfz7"}],["path",{d:"M14 2v4a2 2 0 0 0 2 2h4",key:"tnqrlb"}],["path",{d:"M10 9H8",key:"b1mrlr"}],["path",{d:"M16 13H8",key:"t4e002"}],["path",{d:"M16 17H8",key:"z1uh3a"}]]),c=(0,i.A)("log-out",[["path",{d:"m16 17 5-5-5-5",key:"1bji2h"}],["path",{d:"M21 12H9",key:"dn1m92"}],["path",{d:"M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4",key:"1uf3rs"}]]);var l=a(13130),d=a(41343);function h(e){let{className:t}=e,a=(0,l.useRouter)(),{logout:i}=(0,r.H)(),h=a.pathname,m=[{id:"agent",label:"Agent",icon:o.A,path:"/agent",isActive:"/agent"===h},{id:"tasks",label:"Tasks",icon:n,path:"/tasks",isActive:"/tasks"===h},{id:"logout",label:"Logout",icon:c,path:"/logout",isActive:!1}],x=(e,t)=>{if("logout"===t)return void i();a.push(e)};return(0,s.jsx)("footer",{className:(0,d.cn)("fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-sm border-t border-gray-200 safe-area-inset-bottom",t),children:(0,s.jsx)("nav",{className:"flex items-center justify-around px-4 py-2 max-w-md mx-auto",children:m.map(e=>{let t=e.icon;return(0,s.jsxs)("button",{onClick:()=>x(e.path,e.id),className:(0,d.cn)("flex flex-col items-center gap-1 p-3 rounded-xl transition-all duration-200","hover:bg-gray-100 active:scale-95",e.isActive?"bg-violet-100 text-violet-600":"text-gray-600 hover:text-gray-900"),children:[(0,s.jsx)(t,{size:20,className:(0,d.cn)("transition-transform duration-200",e.isActive&&"scale-110")}),(0,s.jsx)("span",{className:"text-xs font-medium",children:e.label})]},e.id)})})})}},92411:(e,t,a)=>{"use strict";a.d(t,{k:()=>i});var s=a(94458),r=a(68658),o=a(41343);let i=r.memo(function(e){let{size:t="md",className:a,color:r="primary"}=e;return(0,s.jsx)("div",{className:(0,o.cn)("border-2 rounded-full animate-spin",{sm:"w-4 h-4",md:"w-6 h-6",lg:"w-8 h-8"}[t],{primary:"border-violet-600 border-t-transparent",white:"border-white border-t-transparent",gray:"border-gray-400 border-t-transparent"}[r],a),role:"status","aria-label":"Loading"})})},96751:(e,t,a)=>{"use strict";a.r(t),a.d(t,{default:()=>k});var s=a(94458),r=a(43836),o=a(68337),i=a.n(o),n=a(13130),c=a(68658),l=a(65513),d=a(86651);let h=(0,d.A)("plus",[["path",{d:"M5 12h14",key:"1ays0h"}],["path",{d:"M12 5v14",key:"s699le"}]]),m=(0,d.A)("clock",[["circle",{cx:"12",cy:"12",r:"10",key:"1mglay"}],["polyline",{points:"12 6 12 12 16 14",key:"68esgv"}]]),x=(0,d.A)("calendar",[["path",{d:"M8 2v4",key:"1cmpym"}],["path",{d:"M16 2v4",key:"4m81vk"}],["rect",{width:"18",height:"18",x:"3",y:"4",rx:"2",key:"1hopcy"}],["path",{d:"M3 10h18",key:"8toen8"}]]);var p=a(2272);class u{setAccessToken(e){this.accessToken=e}getHeaders(){let e={"Content-Type":"application/json"};return this.accessToken&&(e.Authorization="Bearer ".concat(this.accessToken)),e}async startVoiceSession(){try{let e=await fetch("".concat(this.baseURL,"/api/voice/session/start"),{method:"POST",headers:this.getHeaders()});if(!e.ok)throw Error("Failed to start voice session: ".concat(e.statusText));return await e.json()}catch(e){throw console.error("Error starting voice session:",e),e}}async endVoiceSession(e){try{let t=await fetch("".concat(this.baseURL,"/api/voice/session/").concat(e,"/end"),{method:"POST",headers:this.getHeaders()});if(!t.ok)throw Error("Failed to end voice session: ".concat(t.statusText));return await t.json()}catch(e){throw console.error("Error ending voice session:",e),e}}async streamTasks(e,t,a){try{var s;let r=await fetch("".concat(this.baseURL,"/api/tasks/stream/").concat(e),{method:"GET",headers:{...this.getHeaders(),Accept:"text/event-stream"}});if(!r.ok)throw Error("Failed to stream tasks: ".concat(r.statusText));let o=null==(s=r.body)?void 0:s.getReader();if(!o)throw Error("Failed to get response reader");let i=new TextDecoder,n="";for(;;){let{done:e,value:s}=await o.read();if(e){a();break}let r=(n+=i.decode(s,{stream:!0})).split("\n");for(let e of(n=r.pop()||"",r))if(e.startsWith("data: "))try{let s=e.slice(6);if("[DONE]"===s)return void a();let r=JSON.parse(s);t(r)}catch(e){console.error("Error parsing task data:",e)}}}catch(e){throw console.error("Error streaming tasks:",e),e}}async addToGoogleCalendar(e){try{let t=await fetch("".concat(this.baseURL,"/api/calendar/google/add"),{method:"POST",headers:this.getHeaders(),body:JSON.stringify({task:e})});if(!t.ok)throw Error("Failed to add to Google Calendar: ".concat(t.statusText));return await t.json()}catch(e){throw console.error("Error adding to Google Calendar:",e),e}}async addToIosCalendar(e){try{let t=await fetch("".concat(this.baseURL,"/api/calendar/ios/add"),{method:"POST",headers:this.getHeaders(),body:JSON.stringify({task:e})});if(!t.ok)throw Error("Failed to add to iOS Calendar: ".concat(t.statusText));return await t.json()}catch(e){throw console.error("Error adding to iOS Calendar:",e),e}}createWebSocketConnection(e){let t=new WebSocket(e);return t.onopen=()=>{console.log("WebSocket connected for voice streaming")},t.onerror=e=>{console.error("WebSocket error:",e)},t.onclose=()=>{console.log("WebSocket connection closed")},t}constructor(e=p.env.NEXT_PUBLIC_API_BASE_URL||"http://localhost:3001"){this.accessToken=null,this.baseURL=e}}new u;var g=a(92411),y=a(62457),v=a(72370);function b(e){let{className:t}=e,[a,r]=(0,c.useState)([]),[o,i]=(0,c.useState)(!0),[l,d]=(0,c.useState)(null),{showToast:p}=(0,y.dj)(),b=(0,n.useRouter)(),k=new u;(0,c.useEffect)(()=>{f()},[]);let f=async()=>{try{i(!0),d(null),r([])}catch(e){console.error("Failed to load tasks:",e),d("Failed to load tasks")}finally{i(!1)}},w=async e=>{try{let t=a.find(t=>t.id===e);if(!t)return;let s={...t,completed:!t.completed};r(t=>t.map(t=>t.id===e?s:t)),p({type:(s.completed,"success"),title:s.completed?"Task marked as completed":"Task marked as incomplete"})}catch(e){console.error("Failed to update task:",e),p({type:"error",title:"Failed to update task"})}},j=async(e,t)=>{try{"google"===t?await k.addToGoogleCalendar(e):await k.addToIosCalendar(e),p({type:"success",title:"Added to ".concat("google"===t?"Google":"iOS"," Calendar")})}catch(e){console.error("Failed to add to calendar:",e),p({type:"error",title:"Failed to add to calendar"})}},N=e=>{switch(e){case"high":return"bg-red-100 text-red-800 border-red-200";case"medium":return"bg-yellow-100 text-yellow-800 border-yellow-200";case"low":return"bg-green-100 text-green-800 border-green-200";default:return"bg-gray-100 text-gray-800 border-gray-200"}},T=e=>new Date(e).toLocaleDateString("en-US",{year:"numeric",month:"short",day:"numeric"});return o?(0,s.jsx)("div",{className:"flex justify-center items-center min-h-96",children:(0,s.jsx)(g.k,{size:"lg"})}):l?(0,s.jsx)("div",{className:"p-6",children:(0,s.jsxs)("div",{className:"text-center py-12",children:[(0,s.jsx)("p",{className:"text-red-600 mb-4",children:l}),(0,s.jsx)(v.$,{onClick:f,variant:"outline",children:"Retry"})]})}):(0,s.jsx)("div",{className:"p-6 ".concat(t||""),children:(0,s.jsxs)("div",{className:"max-w-4xl mx-auto",children:[(0,s.jsxs)("div",{className:"mb-6",children:[(0,s.jsx)("h1",{className:"text-3xl font-bold text-gray-900 mb-2",children:"Task List"}),(0,s.jsx)("p",{className:"text-gray-600",children:"View and manage tasks extracted from voice conversations"})]}),0===a.length?(0,s.jsxs)("div",{className:"text-center py-12 bg-white rounded-lg shadow-sm",children:[(0,s.jsx)("div",{className:"text-gray-400 mb-4",children:(0,s.jsx)(h,{size:48,className:"mx-auto"})}),(0,s.jsx)("h3",{className:"text-lg font-medium text-gray-900 mb-2",children:"No tasks yet"}),(0,s.jsx)("p",{className:"text-gray-600 mb-6",children:"Start a conversation with the agent to create tasks"}),(0,s.jsxs)(v.$,{onClick:()=>b.push("/agent"),className:"bg-violet-600 hover:bg-violet-700 text-white",children:[(0,s.jsx)(h,{size:20,className:"mr-2"}),"Start conversation with agent"]})]}):(0,s.jsx)("div",{className:"space-y-4",children:a.map(e=>(0,s.jsx)("div",{className:"bg-white rounded-lg shadow-sm border transition-all duration-200 ".concat(e.completed?"opacity-75":"hover:shadow-md"),children:(0,s.jsxs)("div",{className:"p-6",children:[(0,s.jsxs)("div",{className:"flex items-start justify-between mb-3",children:[(0,s.jsxs)("div",{className:"flex items-start gap-3 flex-1",children:[(0,s.jsx)("input",{type:"checkbox",checked:e.completed,onChange:()=>w(e.id),className:"mt-1 h-4 w-4 text-violet-600 rounded border-gray-300 focus:ring-violet-500"}),(0,s.jsxs)("div",{className:"flex-1",children:[(0,s.jsx)("h3",{className:"text-lg font-medium mb-1 ".concat(e.completed?"line-through text-gray-500":"text-gray-900"),children:e.title}),(0,s.jsx)("p",{className:"text-sm mb-3 ".concat(e.completed?"text-gray-400":"text-gray-600"),children:e.description})]})]}),(0,s.jsx)("span",{className:"inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ".concat(N(e.priority)),children:"high"===e.priority?"High":"medium"===e.priority?"Med":"low"===e.priority?"Low":"-"})]}),(0,s.jsxs)("div",{className:"flex items-center justify-between text-sm text-gray-500",children:[(0,s.jsxs)("div",{className:"flex items-center gap-4",children:[(0,s.jsxs)("div",{className:"flex items-center gap-1",children:[(0,s.jsx)(m,{size:14}),(0,s.jsxs)("span",{children:["Created: ",T(e.createdAt)]})]}),e.dueDate&&(0,s.jsxs)("div",{className:"flex items-center gap-1",children:[(0,s.jsx)(x,{size:14}),(0,s.jsxs)("span",{children:["Due: ",T(e.dueDate)]})]}),(0,s.jsx)("span",{className:"px-2 py-1 bg-gray-100 rounded text-xs",children:e.type})]}),!e.completed&&(0,s.jsxs)("div",{className:"flex gap-2",children:[(0,s.jsx)(v.$,{size:"sm",variant:"outline",onClick:()=>j(e,"google"),className:"text-xs",children:"Google Calendar"}),(0,s.jsx)(v.$,{size:"sm",variant:"outline",onClick:()=>j(e,"ios"),className:"text-xs",children:"iOS Calendar"})]})]})]})},e.id))})]})})}function k(){let e=(0,n.useRouter)(),{authenticated:t}=(0,r.H)();return((0,c.useEffect)(()=>{t||e.push("/")},[t,e]),t)?(0,s.jsxs)(s.Fragment,{children:[(0,s.jsxs)(i(),{children:[(0,s.jsx)("title",{children:"Tasks \xb7 VAPI"}),(0,s.jsx)("meta",{name:"description",content:"View and manage your extracted tasks"}),(0,s.jsx)("meta",{name:"viewport",content:"width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"})]}),(0,s.jsxs)("div",{className:"min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pb-20",children:[(0,s.jsx)(b,{}),(0,s.jsx)(l.i,{})]})]}):null}}},e=>{var t=t=>e(e.s=t);e.O(0,[636,6593,8792],()=>t(35253)),_N_E=e.O()}]);
+(self.webpackChunk_N_E = self.webpackChunk_N_E || []).push([
+  [5782],
+  {
+    13130: (e, t, a) => {
+      e.exports = a(43435);
+    },
+    35253: (e, t, a) => {
+      (window.__NEXT_P = window.__NEXT_P || []).push([
+        "/tasks",
+        function () {
+          return a(96751);
+        },
+      ]);
+    },
+    54024: (e, t, a) => {
+      "use strict";
+      a.d(t, { A: () => s });
+      let s = (0, a(86651).A)("mic", [
+        ["path", { d: "M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z", key: "131961" }],
+        ["path", { d: "M19 10v2a7 7 0 0 1-14 0v-2", key: "1vc78b" }],
+        ["line", { x1: "12", x2: "12", y1: "19", y2: "22", key: "x3vr5v" }],
+      ]);
+    },
+    65513: (e, t, a) => {
+      "use strict";
+      a.d(t, { i: () => h });
+      var s = a(94458),
+        r = a(43836),
+        o = a(54024),
+        i = a(86651);
+      let n = (0, i.A)("file-text", [
+          [
+            "path",
+            { d: "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z", key: "1rqfz7" },
+          ],
+          ["path", { d: "M14 2v4a2 2 0 0 0 2 2h4", key: "tnqrlb" }],
+          ["path", { d: "M10 9H8", key: "b1mrlr" }],
+          ["path", { d: "M16 13H8", key: "t4e002" }],
+          ["path", { d: "M16 17H8", key: "z1uh3a" }],
+        ]),
+        c = (0, i.A)("log-out", [
+          ["path", { d: "m16 17 5-5-5-5", key: "1bji2h" }],
+          ["path", { d: "M21 12H9", key: "dn1m92" }],
+          ["path", { d: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4", key: "1uf3rs" }],
+        ]);
+      var l = a(13130),
+        d = a(41343);
+      function h(e) {
+        let { className: t } = e,
+          a = (0, l.useRouter)(),
+          { logout: i } = (0, r.H)(),
+          h = a.pathname,
+          m = [
+            { id: "agent", label: "Agent", icon: o.A, path: "/agent", isActive: "/agent" === h },
+            { id: "tasks", label: "Tasks", icon: n, path: "/tasks", isActive: "/tasks" === h },
+            { id: "logout", label: "Logout", icon: c, path: "/logout", isActive: !1 },
+          ],
+          x = (e, t) => {
+            if ("logout" === t) return void i();
+            a.push(e);
+          };
+        return (0, s.jsx)("footer", {
+          className: (0, d.cn)(
+            "fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-sm border-t border-gray-200 safe-area-inset-bottom",
+            t,
+          ),
+          children: (0, s.jsx)("nav", {
+            className: "flex items-center justify-around px-4 py-2 max-w-md mx-auto",
+            children: m.map((e) => {
+              let t = e.icon;
+              return (0, s.jsxs)(
+                "button",
+                {
+                  onClick: () => x(e.path, e.id),
+                  className: (0, d.cn)(
+                    "flex flex-col items-center gap-1 p-3 rounded-xl transition-all duration-200",
+                    "hover:bg-gray-100 active:scale-95",
+                    e.isActive
+                      ? "bg-violet-100 text-violet-600"
+                      : "text-gray-600 hover:text-gray-900",
+                  ),
+                  children: [
+                    (0, s.jsx)(t, {
+                      size: 20,
+                      className: (0, d.cn)(
+                        "transition-transform duration-200",
+                        e.isActive && "scale-110",
+                      ),
+                    }),
+                    (0, s.jsx)("span", { className: "text-xs font-medium", children: e.label }),
+                  ],
+                },
+                e.id,
+              );
+            }),
+          }),
+        });
+      }
+    },
+    92411: (e, t, a) => {
+      "use strict";
+      a.d(t, { k: () => i });
+      var s = a(94458),
+        r = a(68658),
+        o = a(41343);
+      let i = r.memo(function (e) {
+        let { size: t = "md", className: a, color: r = "primary" } = e;
+        return (0, s.jsx)("div", {
+          className: (0, o.cn)(
+            "border-2 rounded-full animate-spin",
+            { sm: "w-4 h-4", md: "w-6 h-6", lg: "w-8 h-8" }[t],
+            {
+              primary: "border-violet-600 border-t-transparent",
+              white: "border-white border-t-transparent",
+              gray: "border-gray-400 border-t-transparent",
+            }[r],
+            a,
+          ),
+          role: "status",
+          "aria-label": "Loading",
+        });
+      });
+    },
+    96751: (e, t, a) => {
+      "use strict";
+      a.r(t), a.d(t, { default: () => k });
+      var s = a(94458),
+        r = a(43836),
+        o = a(68337),
+        i = a.n(o),
+        n = a(13130),
+        c = a(68658),
+        l = a(65513),
+        d = a(86651);
+      let h = (0, d.A)("plus", [
+          ["path", { d: "M5 12h14", key: "1ays0h" }],
+          ["path", { d: "M12 5v14", key: "s699le" }],
+        ]),
+        m = (0, d.A)("clock", [
+          ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
+          ["polyline", { points: "12 6 12 12 16 14", key: "68esgv" }],
+        ]),
+        x = (0, d.A)("calendar", [
+          ["path", { d: "M8 2v4", key: "1cmpym" }],
+          ["path", { d: "M16 2v4", key: "4m81vk" }],
+          ["rect", { width: "18", height: "18", x: "3", y: "4", rx: "2", key: "1hopcy" }],
+          ["path", { d: "M3 10h18", key: "8toen8" }],
+        ]);
+      var p = a(2272);
+      class u {
+        setAccessToken(e) {
+          this.accessToken = e;
+        }
+        getHeaders() {
+          let e = { "Content-Type": "application/json" };
+          return this.accessToken && (e.Authorization = "Bearer ".concat(this.accessToken)), e;
+        }
+        async startVoiceSession() {
+          try {
+            let e = await fetch("".concat(this.baseURL, "/api/voice/session/start"), {
+              method: "POST",
+              headers: this.getHeaders(),
+            });
+            if (!e.ok) throw Error("Failed to start voice session: ".concat(e.statusText));
+            return await e.json();
+          } catch (e) {
+            throw (console.error("Error starting voice session:", e), e);
+          }
+        }
+        async endVoiceSession(e) {
+          try {
+            let t = await fetch("".concat(this.baseURL, "/api/voice/session/").concat(e, "/end"), {
+              method: "POST",
+              headers: this.getHeaders(),
+            });
+            if (!t.ok) throw Error("Failed to end voice session: ".concat(t.statusText));
+            return await t.json();
+          } catch (e) {
+            throw (console.error("Error ending voice session:", e), e);
+          }
+        }
+        async streamTasks(e, t, a) {
+          try {
+            var s;
+            let r = await fetch("".concat(this.baseURL, "/api/tasks/stream/").concat(e), {
+              method: "GET",
+              headers: { ...this.getHeaders(), Accept: "text/event-stream" },
+            });
+            if (!r.ok) throw Error("Failed to stream tasks: ".concat(r.statusText));
+            let o = null == (s = r.body) ? void 0 : s.getReader();
+            if (!o) throw Error("Failed to get response reader");
+            let i = new TextDecoder(),
+              n = "";
+            for (;;) {
+              let { done: e, value: s } = await o.read();
+              if (e) {
+                a();
+                break;
+              }
+              let r = (n += i.decode(s, { stream: !0 })).split("\n");
+              for (let e of ((n = r.pop() || ""), r))
+                if (e.startsWith("data: "))
+                  try {
+                    let s = e.slice(6);
+                    if ("[DONE]" === s) return void a();
+                    let r = JSON.parse(s);
+                    t(r);
+                  } catch (e) {
+                    console.error("Error parsing task data:", e);
+                  }
+            }
+          } catch (e) {
+            throw (console.error("Error streaming tasks:", e), e);
+          }
+        }
+        async addToGoogleCalendar(e) {
+          try {
+            let t = await fetch("".concat(this.baseURL, "/api/calendar/google/add"), {
+              method: "POST",
+              headers: this.getHeaders(),
+              body: JSON.stringify({ task: e }),
+            });
+            if (!t.ok) throw Error("Failed to add to Google Calendar: ".concat(t.statusText));
+            return await t.json();
+          } catch (e) {
+            throw (console.error("Error adding to Google Calendar:", e), e);
+          }
+        }
+        async addToIosCalendar(e) {
+          try {
+            let t = await fetch("".concat(this.baseURL, "/api/calendar/ios/add"), {
+              method: "POST",
+              headers: this.getHeaders(),
+              body: JSON.stringify({ task: e }),
+            });
+            if (!t.ok) throw Error("Failed to add to iOS Calendar: ".concat(t.statusText));
+            return await t.json();
+          } catch (e) {
+            throw (console.error("Error adding to iOS Calendar:", e), e);
+          }
+        }
+        createWebSocketConnection(e) {
+          let t = new WebSocket(e);
+          return (
+            (t.onopen = () => {
+              console.log("WebSocket connected for voice streaming");
+            }),
+            (t.onerror = (e) => {
+              console.error("WebSocket error:", e);
+            }),
+            (t.onclose = () => {
+              console.log("WebSocket connection closed");
+            }),
+            t
+          );
+        }
+        constructor(e = p.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001") {
+          (this.accessToken = null), (this.baseURL = e);
+        }
+      }
+      new u();
+      var g = a(92411),
+        y = a(62457),
+        v = a(72370);
+      function b(e) {
+        let { className: t } = e,
+          [a, r] = (0, c.useState)([]),
+          [o, i] = (0, c.useState)(!0),
+          [l, d] = (0, c.useState)(null),
+          { showToast: p } = (0, y.dj)(),
+          b = (0, n.useRouter)(),
+          k = new u();
+        (0, c.useEffect)(() => {
+          f();
+        }, []);
+        let f = async () => {
+            try {
+              i(!0), d(null), r([]);
+            } catch (e) {
+              console.error("Failed to load tasks:", e), d("Failed to load tasks");
+            } finally {
+              i(!1);
+            }
+          },
+          w = async (e) => {
+            try {
+              let t = a.find((t) => t.id === e);
+              if (!t) return;
+              let s = { ...t, completed: !t.completed };
+              r((t) => t.map((t) => (t.id === e ? s : t))),
+                p({
+                  type: (s.completed, "success"),
+                  title: s.completed ? "Task marked as completed" : "Task marked as incomplete",
+                });
+            } catch (e) {
+              console.error("Failed to update task:", e),
+                p({ type: "error", title: "Failed to update task" });
+            }
+          },
+          j = async (e, t) => {
+            try {
+              "google" === t ? await k.addToGoogleCalendar(e) : await k.addToIosCalendar(e),
+                p({
+                  type: "success",
+                  title: "Added to ".concat("google" === t ? "Google" : "iOS", " Calendar"),
+                });
+            } catch (e) {
+              console.error("Failed to add to calendar:", e),
+                p({ type: "error", title: "Failed to add to calendar" });
+            }
+          },
+          N = (e) => {
+            switch (e) {
+              case "high":
+                return "bg-red-100 text-red-800 border-red-200";
+              case "medium":
+                return "bg-yellow-100 text-yellow-800 border-yellow-200";
+              case "low":
+                return "bg-green-100 text-green-800 border-green-200";
+              default:
+                return "bg-gray-100 text-gray-800 border-gray-200";
+            }
+          },
+          T = (e) =>
+            new Date(e).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            });
+        return o
+          ? (0, s.jsx)("div", {
+              className: "flex justify-center items-center min-h-96",
+              children: (0, s.jsx)(g.k, { size: "lg" }),
+            })
+          : l
+            ? (0, s.jsx)("div", {
+                className: "p-6",
+                children: (0, s.jsxs)("div", {
+                  className: "text-center py-12",
+                  children: [
+                    (0, s.jsx)("p", { className: "text-red-600 mb-4", children: l }),
+                    (0, s.jsx)(v.$, { onClick: f, variant: "outline", children: "Retry" }),
+                  ],
+                }),
+              })
+            : (0, s.jsx)("div", {
+                className: "p-6 ".concat(t || ""),
+                children: (0, s.jsxs)("div", {
+                  className: "max-w-4xl mx-auto",
+                  children: [
+                    (0, s.jsxs)("div", {
+                      className: "mb-6",
+                      children: [
+                        (0, s.jsx)("h1", {
+                          className: "text-3xl font-bold text-gray-900 mb-2",
+                          children: "Task List",
+                        }),
+                        (0, s.jsx)("p", {
+                          className: "text-gray-600",
+                          children: "View and manage tasks extracted from voice conversations",
+                        }),
+                      ],
+                    }),
+                    0 === a.length
+                      ? (0, s.jsxs)("div", {
+                          className: "text-center py-12 bg-white rounded-lg shadow-sm",
+                          children: [
+                            (0, s.jsx)("div", {
+                              className: "text-gray-400 mb-4",
+                              children: (0, s.jsx)(h, { size: 48, className: "mx-auto" }),
+                            }),
+                            (0, s.jsx)("h3", {
+                              className: "text-lg font-medium text-gray-900 mb-2",
+                              children: "No tasks yet",
+                            }),
+                            (0, s.jsx)("p", {
+                              className: "text-gray-600 mb-6",
+                              children: "Start a conversation with the agent to create tasks",
+                            }),
+                            (0, s.jsxs)(v.$, {
+                              onClick: () => b.push("/agent"),
+                              className: "bg-violet-600 hover:bg-violet-700 text-white",
+                              children: [
+                                (0, s.jsx)(h, { size: 20, className: "mr-2" }),
+                                "Start conversation with agent",
+                              ],
+                            }),
+                          ],
+                        })
+                      : (0, s.jsx)("div", {
+                          className: "space-y-4",
+                          children: a.map((e) =>
+                            (0, s.jsx)(
+                              "div",
+                              {
+                                className:
+                                  "bg-white rounded-lg shadow-sm border transition-all duration-200 ".concat(
+                                    e.completed ? "opacity-75" : "hover:shadow-md",
+                                  ),
+                                children: (0, s.jsxs)("div", {
+                                  className: "p-6",
+                                  children: [
+                                    (0, s.jsxs)("div", {
+                                      className: "flex items-start justify-between mb-3",
+                                      children: [
+                                        (0, s.jsxs)("div", {
+                                          className: "flex items-start gap-3 flex-1",
+                                          children: [
+                                            (0, s.jsx)("input", {
+                                              type: "checkbox",
+                                              checked: e.completed,
+                                              onChange: () => w(e.id),
+                                              className:
+                                                "mt-1 h-4 w-4 text-violet-600 rounded border-gray-300 focus:ring-violet-500",
+                                            }),
+                                            (0, s.jsxs)("div", {
+                                              className: "flex-1",
+                                              children: [
+                                                (0, s.jsx)("h3", {
+                                                  className: "text-lg font-medium mb-1 ".concat(
+                                                    e.completed
+                                                      ? "line-through text-gray-500"
+                                                      : "text-gray-900",
+                                                  ),
+                                                  children: e.title,
+                                                }),
+                                                (0, s.jsx)("p", {
+                                                  className: "text-sm mb-3 ".concat(
+                                                    e.completed ? "text-gray-400" : "text-gray-600",
+                                                  ),
+                                                  children: e.description,
+                                                }),
+                                              ],
+                                            }),
+                                          ],
+                                        }),
+                                        (0, s.jsx)("span", {
+                                          className:
+                                            "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ".concat(
+                                              N(e.priority),
+                                            ),
+                                          children:
+                                            "high" === e.priority
+                                              ? "High"
+                                              : "medium" === e.priority
+                                                ? "Med"
+                                                : "low" === e.priority
+                                                  ? "Low"
+                                                  : "-",
+                                        }),
+                                      ],
+                                    }),
+                                    (0, s.jsxs)("div", {
+                                      className:
+                                        "flex items-center justify-between text-sm text-gray-500",
+                                      children: [
+                                        (0, s.jsxs)("div", {
+                                          className: "flex items-center gap-4",
+                                          children: [
+                                            (0, s.jsxs)("div", {
+                                              className: "flex items-center gap-1",
+                                              children: [
+                                                (0, s.jsx)(m, { size: 14 }),
+                                                (0, s.jsxs)("span", {
+                                                  children: ["Created: ", T(e.createdAt)],
+                                                }),
+                                              ],
+                                            }),
+                                            e.dueDate &&
+                                              (0, s.jsxs)("div", {
+                                                className: "flex items-center gap-1",
+                                                children: [
+                                                  (0, s.jsx)(x, { size: 14 }),
+                                                  (0, s.jsxs)("span", {
+                                                    children: ["Due: ", T(e.dueDate)],
+                                                  }),
+                                                ],
+                                              }),
+                                            (0, s.jsx)("span", {
+                                              className: "px-2 py-1 bg-gray-100 rounded text-xs",
+                                              children: e.type,
+                                            }),
+                                          ],
+                                        }),
+                                        !e.completed &&
+                                          (0, s.jsxs)("div", {
+                                            className: "flex gap-2",
+                                            children: [
+                                              (0, s.jsx)(v.$, {
+                                                size: "sm",
+                                                variant: "outline",
+                                                onClick: () => j(e, "google"),
+                                                className: "text-xs",
+                                                children: "Google Calendar",
+                                              }),
+                                              (0, s.jsx)(v.$, {
+                                                size: "sm",
+                                                variant: "outline",
+                                                onClick: () => j(e, "ios"),
+                                                className: "text-xs",
+                                                children: "iOS Calendar",
+                                              }),
+                                            ],
+                                          }),
+                                      ],
+                                    }),
+                                  ],
+                                }),
+                              },
+                              e.id,
+                            ),
+                          ),
+                        }),
+                  ],
+                }),
+              });
+      }
+      function k() {
+        let e = (0, n.useRouter)(),
+          { authenticated: t } = (0, r.H)();
+        return ((0, c.useEffect)(() => {
+          t || e.push("/");
+        }, [t, e]),
+        t)
+          ? (0, s.jsxs)(s.Fragment, {
+              children: [
+                (0, s.jsxs)(i(), {
+                  children: [
+                    (0, s.jsx)("title", { children: "Tasks \xb7 VAPI" }),
+                    (0, s.jsx)("meta", {
+                      name: "description",
+                      content: "View and manage your extracted tasks",
+                    }),
+                    (0, s.jsx)("meta", {
+                      name: "viewport",
+                      content:
+                        "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
+                    }),
+                  ],
+                }),
+                (0, s.jsxs)("div", {
+                  className: "min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pb-20",
+                  children: [(0, s.jsx)(b, {}), (0, s.jsx)(l.i, {})],
+                }),
+              ],
+            })
+          : null;
+      }
+    },
+  },
+  (e) => {
+    var t = (t) => e((e.s = t));
+    e.O(0, [636, 6593, 8792], () => t(35253)), (_N_E = e.O());
+  },
+]);

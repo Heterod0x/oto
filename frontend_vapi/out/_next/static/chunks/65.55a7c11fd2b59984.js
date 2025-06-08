@@ -1,4 +1,11 @@
-"use strict";(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[65],{60065:(C,e,l)=>{l.r(e),l.d(e,{sendSvg:()=>n});var s=l(2776);let n=(0,s.JW)`<svg fill="none" viewBox="0 0 21 20">
+"use strict";
+(self.webpackChunk_N_E = self.webpackChunk_N_E || []).push([
+  [65],
+  {
+    60065: (C, e, l) => {
+      l.r(e), l.d(e, { sendSvg: () => n });
+      var s = l(2776);
+      let n = (0, s.JW)`<svg fill="none" viewBox="0 0 21 20">
   <path
     fill="currentColor"
     fill-rule="evenodd"
@@ -12,4 +19,7 @@
     viewBox="0 0 21 20"
     fill="none"
   ></svg></svg
->`}}]);
+>`;
+    },
+  },
+]);

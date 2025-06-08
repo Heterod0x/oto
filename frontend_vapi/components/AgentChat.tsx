@@ -1,10 +1,10 @@
-import { Mic, MicOff, Volume2 } from 'lucide-react';
-import { useRouter } from 'next/router';
-import { useCallback, useEffect, useState } from 'react';
-import { useVoiceRecording } from '../hooks/useVoiceRecording';
-import { cn } from '../lib/utils';
-import { LoadingSpinner } from './LoadingSpinner';
-import { Button } from './ui/button';
+import { Mic, MicOff, Volume2 } from "lucide-react";
+import { useRouter } from "next/router";
+import { useCallback, useEffect, useState } from "react";
+import { useVoiceRecording } from "../hooks/useVoiceRecording";
+import { cn } from "../lib/utils";
+import { LoadingSpinner } from "./LoadingSpinner";
+import { Button } from "./ui/button";
 
 export interface AgentChatProps {
   className?: string;
@@ -16,7 +16,7 @@ export interface AgentChatProps {
  */
 export function AgentChat({ className }: AgentChatProps) {
   const router = useRouter();
-  
+
   // State management
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [websocket, setWebsocket] = useState<WebSocket | null>(null);
@@ -24,23 +24,18 @@ export function AgentChat({ className }: AgentChatProps) {
   const [error, setError] = useState<string | null>(null);
 
   // Voice recording hook
-  const {
-    isRecording,
-    startRecording,
-    stopRecording,
-    hasPermission,
-    requestPermission,
-    volume,
-  } = useVoiceRecording({
-    onStreamData: (audioBlob) => {
-      // Stream audio data via WebSocket
-      if (websocket && websocket.readyState === WebSocket.OPEN) {
-        websocket.send(audioBlob);
-      }
-    },
-    onError: (error) => {        setError(`Recording error: ${error.message}`);
-    },
-  });
+  const { isRecording, startRecording, stopRecording, hasPermission, requestPermission, volume } =
+    useVoiceRecording({
+      onStreamData: (audioBlob) => {
+        // Stream audio data via WebSocket
+        if (websocket && websocket.readyState === WebSocket.OPEN) {
+          websocket.send(audioBlob);
+        }
+      },
+      onError: (error) => {
+        setError(`Recording error: ${error.message}`);
+      },
+    });
 
   /**
    * Start voice session (demo mode support)
@@ -51,17 +46,18 @@ export function AgentChat({ className }: AgentChatProps) {
       setIsConnecting(true);
 
       // Demo mode: simulate without actual recording
-      console.log('Demo mode: Starting voice session simulation');
-      
+      console.log("Demo mode: Starting voice session simulation");
+
       // Simulate recording state after 2 seconds
       setTimeout(() => {
         setIsConnecting(false);
         startRecording();
       }, 2000);
-
     } catch (error) {
-      console.error('Recording start error:', error);
-      setError(`Failed to start recording: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error("Recording start error:", error);
+      setError(
+        `Failed to start recording: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
       setIsConnecting(false);
     }
   }, [startRecording]);
@@ -76,12 +72,13 @@ export function AgentChat({ className }: AgentChatProps) {
 
       // Demo mode: navigate to task screen after 2 seconds
       setTimeout(() => {
-        router.push('/tasks');
+        router.push("/tasks");
       }, 1000);
-
     } catch (error) {
-      console.error('Recording stop error:', error);
-      setError(`Failed to stop recording: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error("Recording stop error:", error);
+      setError(
+        `Failed to stop recording: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }, [stopRecording, router]);
 
@@ -90,7 +87,7 @@ export function AgentChat({ className }: AgentChatProps) {
    */
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
-      if (event.code === 'Space' && !isConnecting) {
+      if (event.code === "Space" && !isConnecting) {
         event.preventDefault();
         if (isRecording) {
           handleStopRecording();
@@ -100,9 +97,9 @@ export function AgentChat({ className }: AgentChatProps) {
       }
     };
 
-    window.addEventListener('keydown', handleKeyPress);
+    window.addEventListener("keydown", handleKeyPress);
     return () => {
-      window.removeEventListener('keydown', handleKeyPress);
+      window.removeEventListener("keydown", handleKeyPress);
     };
   }, [isRecording, isConnecting, handleStartRecording, handleStopRecording]);
 
@@ -127,44 +124,43 @@ export function AgentChat({ className }: AgentChatProps) {
   };
 
   return (
-    <div className={cn("flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-violet-50 to-indigo-100 p-6", className)}>
+    <div
+      className={cn(
+        "flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-violet-50 to-indigo-100 p-6",
+        className,
+      )}
+    >
       {/* Header */}
       <div className="text-center mb-12">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Chat with Agent
-        </h1>
-        <p className="text-gray-600">
-          Press the mic button to start conversation
-        </p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Chat with Agent</h1>
+        <p className="text-gray-600">Press the mic button to start conversation</p>
       </div>
 
       {/* Main control area */}
       <div className="relative mb-8">
         {/* Volume visualization ring */}
         {isRecording && (
-          <div className="absolute inset-0 rounded-full border-4 border-violet-300 animate-pulse" 
-               style={volumeStyle} />
+          <div
+            className="absolute inset-0 rounded-full border-4 border-violet-300 animate-pulse"
+            style={volumeStyle}
+          />
         )}
-        
+
         {/* Main recording button */}
         <Button
           size="lg"
           variant={isRecording ? "destructive" : "default"}
           className={cn(
             "w-24 h-24 rounded-full shadow-lg transition-all duration-300",
-            isRecording 
-              ? "bg-red-500 hover:bg-red-600 scale-110" 
+            isRecording
+              ? "bg-red-500 hover:bg-red-600 scale-110"
               : "bg-violet-600 hover:bg-violet-700",
-            isConnecting && "opacity-75 cursor-not-allowed"
+            isConnecting && "opacity-75 cursor-not-allowed",
           )}
           onClick={isRecording ? handleStopRecording : handleStartRecording}
           disabled={isConnecting}
           aria-label={
-            isConnecting 
-              ? "Connecting..." 
-              : isRecording 
-                ? "Stop recording" 
-                : "Start recording"
+            isConnecting ? "Connecting..." : isRecording ? "Stop recording" : "Start recording"
           }
           aria-pressed={isRecording}
         >
@@ -198,7 +194,7 @@ export function AgentChat({ className }: AgentChatProps) {
       {/* Volume level display */}
       {isRecording && (
         <div className="w-64 bg-gray-200 rounded-full h-2 mb-6">
-          <div 
+          <div
             className="bg-violet-600 h-2 rounded-full transition-all duration-100"
             style={{ width: `${Math.min(100, volume)}%` }}
           />
@@ -208,14 +204,15 @@ export function AgentChat({ className }: AgentChatProps) {
       {/* Error display */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg max-w-md text-center">
-          <p className="text-sm">{error}</p>            <Button
-              variant="ghost"
-              size="sm"
-              className="mt-2 text-red-600 hover:text-red-700"
-              onClick={() => setError(null)}
-            >
-              Close
-            </Button>
+          <p className="text-sm">{error}</p>{" "}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mt-2 text-red-600 hover:text-red-700"
+            onClick={() => setError(null)}
+          >
+            Close
+          </Button>
         </div>
       )}
 

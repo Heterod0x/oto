@@ -1,4 +1,11 @@
-"use strict";(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[7689],{7689:(l,h,f)=>{f.r(h),f.d(h,{xSvg:()=>e});var a=f(2776);let e=(0,a.JW)`<svg fill="none" viewBox="0 0 41 40">
+"use strict";
+(self.webpackChunk_N_E = self.webpackChunk_N_E || []).push([
+  [7689],
+  {
+    7689: (l, h, f) => {
+      f.r(h), f.d(h, { xSvg: () => e });
+      var a = f(2776);
+      let e = (0, a.JW)`<svg fill="none" viewBox="0 0 41 40">
   <g clip-path="url(#a)">
     <path fill="#000" d="M.8 0h40v40H.8z" />
     <path
@@ -9,4 +16,7 @@
   <defs>
     <clipPath id="a"><path fill="#fff" d="M.8 20a20 20 0 1 1 40 0 20 20 0 0 1-40 0Z" /></clipPath>
   </defs>
-</svg>`}}]);
+</svg>`;
+    },
+  },
+]);

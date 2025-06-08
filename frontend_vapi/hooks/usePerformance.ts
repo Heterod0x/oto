@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Hook to measure performance metrics
@@ -13,7 +13,7 @@ export function usePerformanceMonitor(componentName: string) {
     setRenderTime(duration);
 
     // Log output only in development environment
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       console.log(`[Performance] ${componentName} mounted in ${duration}ms`);
     }
   }, [componentName]);
@@ -26,7 +26,7 @@ export function usePerformanceMonitor(componentName: string) {
  */
 export function useNetworkStatus() {
   const [isOnline, setIsOnline] = useState(true);
-  const [connectionType, setConnectionType] = useState<string>('unknown');
+  const [connectionType, setConnectionType] = useState<string>("unknown");
 
   useEffect(() => {
     const updateOnlineStatus = () => {
@@ -37,29 +37,29 @@ export function useNetworkStatus() {
       // @ts-ignore - experimental API
       if (navigator.connection) {
         // @ts-ignore
-        setConnectionType(navigator.connection.effectiveType || 'unknown');
+        setConnectionType(navigator.connection.effectiveType || "unknown");
       }
     };
 
     updateOnlineStatus();
     updateConnectionType();
 
-    window.addEventListener('online', updateOnlineStatus);
-    window.addEventListener('offline', updateOnlineStatus);
+    window.addEventListener("online", updateOnlineStatus);
+    window.addEventListener("offline", updateOnlineStatus);
 
     // @ts-ignore
     if (navigator.connection) {
       // @ts-ignore
-      navigator.connection.addEventListener('change', updateConnectionType);
+      navigator.connection.addEventListener("change", updateConnectionType);
     }
 
     return () => {
-      window.removeEventListener('online', updateOnlineStatus);
-      window.removeEventListener('offline', updateOnlineStatus);
+      window.removeEventListener("online", updateOnlineStatus);
+      window.removeEventListener("offline", updateOnlineStatus);
       // @ts-ignore
       if (navigator.connection) {
         // @ts-ignore
-        navigator.connection.removeEventListener('change', updateConnectionType);
+        navigator.connection.removeEventListener("change", updateConnectionType);
       }
     };
   }, []);
@@ -89,12 +89,12 @@ export function useBatteryStatus() {
         };
 
         updateBatteryInfo();
-        battery.addEventListener('levelchange', updateBatteryInfo);
-        battery.addEventListener('chargingchange', updateBatteryInfo);
+        battery.addEventListener("levelchange", updateBatteryInfo);
+        battery.addEventListener("chargingchange", updateBatteryInfo);
 
         return () => {
-          battery.removeEventListener('levelchange', updateBatteryInfo);
-          battery.removeEventListener('chargingchange', updateBatteryInfo);
+          battery.removeEventListener("levelchange", updateBatteryInfo);
+          battery.removeEventListener("chargingchange", updateBatteryInfo);
         };
       });
     }

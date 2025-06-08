@@ -9,8 +9,8 @@
   "orientation": "portrait",
   "scope": "/",
   "icons": [
-    {"src": "/favicons/android-chrome-192x192.png", "type": "image/png", "sizes": "192x192"},
-    {"src": "/favicons/android-chrome-512x512.png", "type": "image/png", "sizes": "512x512"}
+    { "src": "/favicons/android-chrome-192x192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "/favicons/android-chrome-512x512.png", "type": "image/png", "sizes": "512x512" }
   ],
   "categories": ["productivity", "business", "utilities"],
   "lang": "en-US",
@@ -20,14 +20,14 @@
       "short_name": "Chat",
       "description": "Start a new voice conversation with agent",
       "url": "/agent",
-      "icons": [{"src": "/favicons/android-chrome-192x192.png", "sizes": "192x192"}]
+      "icons": [{ "src": "/favicons/android-chrome-192x192.png", "sizes": "192x192" }]
     },
     {
       "name": "Task Management",
       "short_name": "Tasks",
       "description": "View and manage extracted tasks",
       "url": "/tasks",
-      "icons": [{"src": "/favicons/android-chrome-192x192.png", "sizes": "192x192"}]
+      "icons": [{ "src": "/favicons/android-chrome-192x192.png", "sizes": "192x192" }]
     }
   ],
   "share_target": {

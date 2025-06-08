@@ -11,12 +11,7 @@ type Props = {
   navbarItems: Array<NavbarItem>;
 };
 
-export default function Layout({
-  children,
-  accountId,
-  appName,
-  navbarItems,
-}: Props) {
+export default function Layout({ children, accountId, appName, navbarItems }: Props) {
   const { ready, authenticated } = usePrivy();
   const router = useRouter();
 

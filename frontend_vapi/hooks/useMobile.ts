@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 /**
  * Hook to detect mobile device
@@ -15,11 +15,11 @@ export function useIsMobile(breakpoint: number = 768) {
     checkIsMobile();
 
     // Resize event listener
-    window.addEventListener('resize', checkIsMobile);
+    window.addEventListener("resize", checkIsMobile);
 
     // Cleanup
     return () => {
-      window.removeEventListener('resize', checkIsMobile);
+      window.removeEventListener("resize", checkIsMobile);
     };
   }, [breakpoint]);
 
@@ -41,10 +41,10 @@ export function usePWAInstall() {
       setIsInstallable(true);
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     };
   }, []);
 
@@ -57,7 +57,7 @@ export function usePWAInstall() {
     // Wait for user's choice
     const { outcome } = await deferredPrompt.userChoice;
 
-    if (outcome === 'accepted') {
+    if (outcome === "accepted") {
       setDeferredPrompt(null);
       setIsInstallable(false);
       return true;
@@ -68,6 +68,6 @@ export function usePWAInstall() {
 
   return {
     isInstallable,
-    installPWA
+    installPWA,
   };
 }

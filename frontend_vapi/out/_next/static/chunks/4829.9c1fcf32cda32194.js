@@ -1,4 +1,11 @@
-"use strict";(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[4829],{44829:(a,t,e)=>{e.r(t),e.d(t,{chromeStoreSvg:()=>s});var l=e(2776);let s=(0,l.JW)`<svg width="36" height="36" fill="none">
+"use strict";
+(self.webpackChunk_N_E = self.webpackChunk_N_E || []).push([
+  [4829],
+  {
+    44829: (a, t, e) => {
+      e.r(t), e.d(t, { chromeStoreSvg: () => s });
+      var l = e(2776);
+      let s = (0, l.JW)`<svg width="36" height="36" fill="none">
   <path
     fill="#fff"
     fill-opacity=".05"
@@ -58,4 +65,7 @@
       <stop offset="1" stop-color="#34A853" />
     </linearGradient>
   </defs>
-</svg>`}}]);
+</svg>`;
+    },
+  },
+]);

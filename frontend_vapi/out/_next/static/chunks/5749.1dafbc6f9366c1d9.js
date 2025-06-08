@@ -1,4 +1,11 @@
-"use strict";(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[5749],{55749:(c,e,a)=>{a.r(e),a.d(e,{desktopSvg:()=>r});var l=a(2776);let r=(0,l.JW)`<svg fill="none" viewBox="0 0 20 20">
+"use strict";
+(self.webpackChunk_N_E = self.webpackChunk_N_E || []).push([
+  [5749],
+  {
+    55749: (c, e, a) => {
+      a.r(e), a.d(e, { desktopSvg: () => r });
+      var l = a(2776);
+      let r = (0, l.JW)`<svg fill="none" viewBox="0 0 20 20">
   <path
     fill="currentColor"
     fill-rule="evenodd"
@@ -6,4 +13,7 @@
     clip-rule="evenodd"
   />
   <path fill="currentColor" d="M6.14 17.57a1 1 0 1 0 0 2h7.72a1 1 0 1 0 0-2H6.14Z" />
-</svg>`}}]);
+</svg>`;
+    },
+  },
+]);

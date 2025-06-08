@@ -24,7 +24,10 @@ export default function TasksPage() {
       <Head>
         <title>Tasks · VAPI</title>
         <meta name="description" content="View and manage your extracted tasks" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+        />
       </Head>
 
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pb-20">

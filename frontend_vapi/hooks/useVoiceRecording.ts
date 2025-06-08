@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface UseVoiceRecordingOptions {
   onStreamData?: (data: Blob) => void;
@@ -53,11 +53,11 @@ export function useVoiceRecording({
       });
 
       // Stop temporarily acquired stream for testing
-      stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach((track) => track.stop());
       setHasPermission(true);
       return true;
     } catch (error) {
-      console.error('Failed to get microphone permission:', error);
+      console.error("Failed to get microphone permission:", error);
       setHasPermission(false);
       onError?.(error as Error);
       return false;
@@ -78,12 +78,12 @@ export function useVoiceRecording({
       if (!isRecording) return;
 
       analyzer.getByteFrequencyData(dataArray);
-      
+
       // Calculate average volume
       const sum = dataArray.reduce((a, b) => a + b, 0);
       const average = sum / bufferLength;
       const normalizedVolume = Math.min(100, (average / 255) * 100);
-      
+
       setVolume(normalizedVolume);
 
       animationFrameRef.current = requestAnimationFrame(updateVolume);
@@ -100,7 +100,7 @@ export function useVoiceRecording({
       if (!hasPermission) {
         const permitted = await requestPermission();
         if (!permitted) {
-          throw new Error('Microphone permission denied');
+          throw new Error("Microphone permission denied");
         }
       }
 
@@ -125,7 +125,7 @@ export function useVoiceRecording({
 
       // MediaRecorder for streaming
       const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus',
+        mimeType: "audio/webm;codecs=opus",
         audioBitsPerSecond: 128000,
       });
 
@@ -139,8 +139,8 @@ export function useVoiceRecording({
       };
 
       mediaRecorder.onerror = (event) => {
-        console.error('MediaRecorder error:', event);
-        onError?.(new Error('Recording failed'));
+        console.error("MediaRecorder error:", event);
+        onError?.(new Error("Recording failed"));
       };
 
       // Send data every 100ms (for streaming)
@@ -149,12 +149,20 @@ export function useVoiceRecording({
 
       // Start volume monitoring
       monitorVolume();
-
     } catch (error) {
-      console.error('Failed to start recording:', error);
+      console.error("Failed to start recording:", error);
       onError?.(error as Error);
     }
-  }, [hasPermission, requestPermission, sampleRate, echoCancellation, noiseSuppression, onStreamData, onError, monitorVolume]);
+  }, [
+    hasPermission,
+    requestPermission,
+    sampleRate,
+    echoCancellation,
+    noiseSuppression,
+    onStreamData,
+    onError,
+    monitorVolume,
+  ]);
 
   /**
    * Stop recording
@@ -167,7 +175,7 @@ export function useVoiceRecording({
 
     // Stop stream
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
 
@@ -195,11 +203,14 @@ export function useVoiceRecording({
 
   // Permission check on initialization
   useEffect(() => {
-    navigator.permissions.query({ name: 'microphone' as PermissionName }).then((result) => {
-      setHasPermission(result.state === 'granted');
-    }).catch(() => {
-      // Keep initial value if Permissions API is not available
-    });
+    navigator.permissions
+      .query({ name: "microphone" as PermissionName })
+      .then((result) => {
+        setHasPermission(result.state === "granted");
+      })
+      .catch(() => {
+        // Keep initial value if Permissions API is not available
+      });
   }, []);
 
   return {

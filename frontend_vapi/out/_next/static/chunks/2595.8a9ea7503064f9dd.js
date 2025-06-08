@@ -1,4 +1,11 @@
-"use strict";(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[2595],{52595:(C,e,l)=>{l.r(e),l.d(e,{swapHorizontalMediumSvg:()=>i});var L=l(2776);let i=(0,L.JW)`<svg
+"use strict";
+(self.webpackChunk_N_E = self.webpackChunk_N_E || []).push([
+  [2595],
+  {
+    52595: (C, e, l) => {
+      l.r(e), l.d(e, { swapHorizontalMediumSvg: () => i });
+      var L = l(2776);
+      let i = (0, L.JW)`<svg
   width="14"
   height="14"
   viewBox="0 0 14 14"
@@ -13,4 +20,7 @@
   />
 </svg>
 
-`}}]);
+`;
+    },
+  },
+]);

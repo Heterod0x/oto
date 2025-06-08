@@ -78,9 +78,7 @@ export default function Navbar({ items, accountId, appName }: NavbarProps) {
                               navigateTo(item);
                             }}
                             className={
-                              selected === item.id
-                                ? selectedItemClass
-                                : unselectedItemClass
+                              selected === item.id ? selectedItemClass : unselectedItemClass
                             }
                           >
                             {item.name}
@@ -99,10 +97,7 @@ export default function Navbar({ items, accountId, appName }: NavbarProps) {
                     type="button"
                     className="rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white"
                   >
-                    <InformationCircleIcon
-                      className="h-6 w-6"
-                      aria-hidden="true"
-                    />
+                    <InformationCircleIcon className="h-6 w-6" aria-hidden="true" />
                   </button>
                   <p className="text-white">{appName}</p>
 
@@ -121,10 +116,7 @@ export default function Navbar({ items, accountId, appName }: NavbarProps) {
                           />
                         </div>
                       </Menu.Button>
-                      <ChevronDownIcon
-                        className="ml-1 h-4 w-4 text-white"
-                        aria-hidden="true"
-                      />
+                      <ChevronDownIcon className="ml-1 h-4 w-4 text-white" aria-hidden="true" />
                     </div>
                     <Transition
                       as={Fragment}
@@ -142,7 +134,7 @@ export default function Navbar({ items, accountId, appName }: NavbarProps) {
                               href={`/accounts/${accountId}`}
                               className={classNames(
                                 active ? "bg-gray-100" : "",
-                                "block px-4 py-2 text-sm text-gray-700"
+                                "block px-4 py-2 text-sm text-gray-700",
                               )}
                             >
                               Your account
@@ -155,7 +147,7 @@ export default function Navbar({ items, accountId, appName }: NavbarProps) {
                               href="#"
                               className={classNames(
                                 active ? "bg-gray-100" : "",
-                                "block px-4 py-2 text-sm text-gray-700"
+                                "block px-4 py-2 text-sm text-gray-700",
                               )}
                             >
                               Settings
@@ -168,7 +160,7 @@ export default function Navbar({ items, accountId, appName }: NavbarProps) {
                               href="#"
                               className={classNames(
                                 active ? "bg-gray-100" : "",
-                                "block px-4 py-2 text-sm text-gray-700"
+                                "block px-4 py-2 text-sm text-gray-700",
                               )}
                             >
                               Sign out

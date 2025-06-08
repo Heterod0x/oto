@@ -12,30 +12,10 @@ function MyApp({ Component, pageProps }: AppProps) {
   return (
     <>
       <Head>
-        <link
-          rel="preload"
-          href="/fonts/AdelleSans-Regular.woff"
-          as="font"
-          crossOrigin=""
-        />
-        <link
-          rel="preload"
-          href="/fonts/AdelleSans-Regular.woff2"
-          as="font"
-          crossOrigin=""
-        />
-        <link
-          rel="preload"
-          href="/fonts/AdelleSans-Semibold.woff"
-          as="font"
-          crossOrigin=""
-        />
-        <link
-          rel="preload"
-          href="/fonts/AdelleSans-Semibold.woff2"
-          as="font"
-          crossOrigin=""
-        />
+        <link rel="preload" href="/fonts/AdelleSans-Regular.woff" as="font" crossOrigin="" />
+        <link rel="preload" href="/fonts/AdelleSans-Regular.woff2" as="font" crossOrigin="" />
+        <link rel="preload" href="/fonts/AdelleSans-Semibold.woff" as="font" crossOrigin="" />
+        <link rel="preload" href="/fonts/AdelleSans-Semibold.woff2" as="font" crossOrigin="" />
 
         <link rel="icon" href="/favicons/favicon.ico" sizes="any" />
         <link rel="icon" href="/favicons/icon.svg" type="image/svg+xml" />
@@ -43,8 +23,14 @@ function MyApp({ Component, pageProps }: AppProps) {
         <link rel="manifest" href="/favicons/manifest.json" />
 
         <title>VAPI Voice Agent</title>
-        <meta name="description" content="AI-powered voice conversations with task extraction and calendar integration" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+        <meta
+          name="description"
+          content="AI-powered voice conversations with task extraction and calendar integration"
+        />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+        />
         <meta name="theme-color" content="#3b82f6" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -60,9 +46,7 @@ function MyApp({ Component, pageProps }: AppProps) {
       >
         <ToastProvider>
           <Component {...pageProps} />
-          {showInstallPrompt && (
-            <PWAInstallPrompt onClose={() => setShowInstallPrompt(false)} />
-          )}
+          {showInstallPrompt && <PWAInstallPrompt onClose={() => setShowInstallPrompt(false)} />}
         </ToastProvider>
       </PrivyProvider>
     </>

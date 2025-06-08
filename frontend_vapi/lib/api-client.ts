@@ -5,11 +5,11 @@
 
 export interface Task {
   id: string;
-  type: 'TODO' | 'CAL' | 'TASK';
+  type: "TODO" | "CAL" | "TASK";
   title: string;
   description?: string;
   dueDate?: string;
-  priority?: 'low' | 'medium' | 'high';
+  priority?: "low" | "medium" | "high";
   completed?: boolean;
   createdAt: string;
 }
@@ -17,7 +17,7 @@ export interface Task {
 export interface ConversationSession {
   id: string;
   userId: string;
-  status: 'active' | 'ended';
+  status: "active" | "ended";
   startedAt: string;
   endedAt?: string;
   tasks: Task[];
@@ -30,7 +30,7 @@ export class VAPIClient {
   private baseURL: string;
   private accessToken: string | null = null;
 
-  constructor(baseURL: string = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001') {
+  constructor(baseURL: string = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001") {
     this.baseURL = baseURL;
   }
 
@@ -46,11 +46,11 @@ export class VAPIClient {
    */
   private getHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     };
 
     if (this.accessToken) {
-      headers['Authorization'] = `Bearer ${this.accessToken}`;
+      headers["Authorization"] = `Bearer ${this.accessToken}`;
     }
 
     return headers;
@@ -62,7 +62,7 @@ export class VAPIClient {
   async startVoiceSession(): Promise<{ sessionId: string; wsUrl: string }> {
     try {
       const response = await fetch(`${this.baseURL}/api/voice/session/start`, {
-        method: 'POST',
+        method: "POST",
         headers: this.getHeaders(),
       });
 
@@ -72,7 +72,7 @@ export class VAPIClient {
 
       return await response.json();
     } catch (error) {
-      console.error('Error starting voice session:', error);
+      console.error("Error starting voice session:", error);
       throw error;
     }
   }
@@ -83,7 +83,7 @@ export class VAPIClient {
   async endVoiceSession(sessionId: string): Promise<ConversationSession> {
     try {
       const response = await fetch(`${this.baseURL}/api/voice/session/${sessionId}/end`, {
-        method: 'POST',
+        method: "POST",
         headers: this.getHeaders(),
       });
 
@@ -93,7 +93,7 @@ export class VAPIClient {
 
       return await response.json();
     } catch (error) {
-      console.error('Error ending voice session:', error);
+      console.error("Error ending voice session:", error);
       throw error;
     }
   }
@@ -101,13 +101,17 @@ export class VAPIClient {
   /**
    * Get task list via streaming
    */
-  async streamTasks(sessionId: string, onTask: (task: Task) => void, onComplete: () => void): Promise<void> {
+  async streamTasks(
+    sessionId: string,
+    onTask: (task: Task) => void,
+    onComplete: () => void,
+  ): Promise<void> {
     try {
       const response = await fetch(`${this.baseURL}/api/tasks/stream/${sessionId}`, {
-        method: 'GET',
+        method: "GET",
         headers: {
           ...this.getHeaders(),
-          'Accept': 'text/event-stream',
+          Accept: "text/event-stream",
         },
       });
 
@@ -117,43 +121,43 @@ export class VAPIClient {
 
       const reader = response.body?.getReader();
       if (!reader) {
-        throw new Error('Failed to get response reader');
+        throw new Error("Failed to get response reader");
       }
 
       const decoder = new TextDecoder();
-      let buffer = '';
+      let buffer = "";
 
       while (true) {
         const { done, value } = await reader.read();
-        
+
         if (done) {
           onComplete();
           break;
         }
 
         buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
 
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
+          if (line.startsWith("data: ")) {
             try {
               const data = line.slice(6);
-              if (data === '[DONE]') {
+              if (data === "[DONE]") {
                 onComplete();
                 return;
               }
-              
+
               const task: Task = JSON.parse(data);
               onTask(task);
             } catch (error) {
-              console.error('Error parsing task data:', error);
+              console.error("Error parsing task data:", error);
             }
           }
         }
       }
     } catch (error) {
-      console.error('Error streaming tasks:', error);
+      console.error("Error streaming tasks:", error);
       throw error;
     }
   }
@@ -164,7 +168,7 @@ export class VAPIClient {
   async addToGoogleCalendar(task: Task): Promise<{ success: boolean; eventId?: string }> {
     try {
       const response = await fetch(`${this.baseURL}/api/calendar/google/add`, {
-        method: 'POST',
+        method: "POST",
         headers: this.getHeaders(),
         body: JSON.stringify({ task }),
       });
@@ -175,7 +179,7 @@ export class VAPIClient {
 
       return await response.json();
     } catch (error) {
-      console.error('Error adding to Google Calendar:', error);
+      console.error("Error adding to Google Calendar:", error);
       throw error;
     }
   }
@@ -186,7 +190,7 @@ export class VAPIClient {
   async addToIosCalendar(task: Task): Promise<{ success: boolean; eventId?: string }> {
     try {
       const response = await fetch(`${this.baseURL}/api/calendar/ios/add`, {
-        method: 'POST',
+        method: "POST",
         headers: this.getHeaders(),
         body: JSON.stringify({ task }),
       });
@@ -197,7 +201,7 @@ export class VAPIClient {
 
       return await response.json();
     } catch (error) {
-      console.error('Error adding to iOS Calendar:', error);
+      console.error("Error adding to iOS Calendar:", error);
       throw error;
     }
   }
@@ -207,17 +211,17 @@ export class VAPIClient {
    */
   createWebSocketConnection(wsUrl: string): WebSocket {
     const ws = new WebSocket(wsUrl);
-    
+
     ws.onopen = () => {
-      console.log('WebSocket connected for voice streaming');
+      console.log("WebSocket connected for voice streaming");
     };
 
     ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
+      console.error("WebSocket error:", error);
     };
 
     ws.onclose = () => {
-      console.log('WebSocket connection closed');
+      console.log("WebSocket connection closed");
     };
 
     return ws;
