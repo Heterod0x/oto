@@ -1,18 +1,27 @@
 import {
-  useCreateWallet,
-  useSolanaWallets,
-  WalletWithMetadata,
-  useUser,
+    useCreateWallet,
+    useSolanaWallets,
+    useUser,
+    WalletWithMetadata,
 } from "@privy-io/react-auth";
 import { useCallback, useMemo, useState } from "react";
 import WalletCard from "./WalletCard";
 
+/**
+ * WalletList component that manages and displays user's wallets
+ * Supports both Ethereum and Solana wallet creation and management
+ *
+ * @returns React component for wallet list management
+ */
 export default function WalletList() {
   const { user } = useUser();
   const { createWallet: createEthereumWallet } = useCreateWallet();
   const { createWallet: createSolanaWallet } = useSolanaWallets();
   const [isCreating, setIsCreating] = useState(false);
 
+  /**
+   * Filters and returns embedded Ethereum wallets from user's linked accounts
+   */
   const ethereumEmbeddedWallets = useMemo<WalletWithMetadata[]>(
     () =>
       (user?.linkedAccounts.filter(
@@ -24,6 +33,9 @@ export default function WalletList() {
     [user]
   );
 
+  /**
+   * Filters and returns embedded Solana wallets from user's linked accounts
+   */
   const solanaEmbeddedWallets = useMemo<WalletWithMetadata[]>(
     () =>
       (user?.linkedAccounts.filter(
@@ -35,6 +47,11 @@ export default function WalletList() {
     [user]
   );
 
+  /**
+   * Creates a new wallet of the specified type (Ethereum or Solana)
+   *
+   * @param type - The blockchain type for the new wallet
+   */
   const handleCreateWallet = useCallback(
     async (type: "ethereum" | "solana") => {
       setIsCreating(true);

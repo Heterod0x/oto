@@ -1,0 +1,42 @@
+{
+  "name": "VAPI Voice Agent",
+  "short_name": "VAPI Agent",
+  "description": "AI-powered voice conversations with task extraction and calendar integration",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#7c3aed",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    {"src": "/favicons/android-chrome-192x192.png", "type": "image/png", "sizes": "192x192"},
+    {"src": "/favicons/android-chrome-512x512.png", "type": "image/png", "sizes": "512x512"}
+  ],
+  "categories": ["productivity", "business", "utilities"],
+  "lang": "en-US",
+  "shortcuts": [
+    {
+      "name": "New Conversation",
+      "short_name": "Chat",
+      "description": "Start a new voice conversation with agent",
+      "url": "/agent",
+      "icons": [{"src": "/favicons/android-chrome-192x192.png", "sizes": "192x192"}]
+    },
+    {
+      "name": "Task Management",
+      "short_name": "Tasks",
+      "description": "View and manage extracted tasks",
+      "url": "/tasks",
+      "icons": [{"src": "/favicons/android-chrome-192x192.png", "sizes": "192x192"}]
+    }
+  ],
+  "share_target": {
+    "action": "/tasks",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
+}

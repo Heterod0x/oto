@@ -2,11 +2,26 @@ import { Battery, BatteryLow, Signal, Wifi, WifiOff } from 'lucide-react';
 import { useBatteryStatus, useNetworkStatus } from '../hooks/usePerformance';
 import { cn } from '../lib/utils';
 
+/**
+ * Props for SystemStatus component
+ */
 interface SystemStatusProps {
+  /** Additional CSS class names */
   className?: string;
+  /** Whether to show the component in development mode */
   showInDevelopment?: boolean;
 }
 
+/**
+ * SystemStatus component that displays system information including
+ * network connectivity and battery status (when available)
+ * 
+ * This component is primarily useful for development and debugging,
+ * but can be displayed in production if needed.
+ * 
+ * @param props - Component props
+ * @returns React component showing system status or null if hidden
+ */
 export function SystemStatus({ className, showInDevelopment = true }: SystemStatusProps) {
   const { isOnline, connectionType } = useNetworkStatus();
   const batteryInfo = useBatteryStatus();

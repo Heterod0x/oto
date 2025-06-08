@@ -1,8 +1,19 @@
-type Props = {
+/**
+ * Props for FormattedDate component
+ */
+interface FormattedDateProps {
+  /** Seconds since Unix epoch */
   secsSinceEpoch: number;
-};
+}
 
-export default function FormattedDate({ secsSinceEpoch }: Props) {
+/**
+ * FormattedDate component that displays a formatted date string
+ * Converts Unix timestamp to a human-readable date format
+ *
+ * @param props - Component props containing the timestamp
+ * @returns React component displaying formatted date
+ */
+export default function FormattedDate({ secsSinceEpoch }: FormattedDateProps) {
   const formattedDate = new Date(secsSinceEpoch * 1000).toLocaleDateString(
     "en-us",
     {

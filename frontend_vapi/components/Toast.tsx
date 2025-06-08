@@ -3,16 +3,38 @@ import React from 'react';
 import { cn } from '../lib/utils';
 import { Button } from './ui/button';
 
+/**
+ * Toast type variants
+ */
+type ToastType = 'success' | 'error' | 'warning' | 'info';
+
+/**
+ * Props for Toast component
+ */
 interface ToastProps {
-  type: 'success' | 'error' | 'warning' | 'info';
+  /** Type of toast message affecting styling and icon */
+  type: ToastType;
+  /** Main title of the toast */
   title: string;
+  /** Optional additional message content */
   message?: string;
+  /** Whether the toast is currently visible */
   isVisible: boolean;
+  /** Callback function when toast is closed */
   onClose: () => void;
+  /** Whether to automatically close the toast */
   autoClose?: boolean;
+  /** Duration in milliseconds before auto-close */
   duration?: number;
 }
 
+/**
+ * Toast component for displaying temporary notifications
+ * Supports different types (success, error, warning, info) with appropriate styling
+ * 
+ * @param props - Component props
+ * @returns React component for toast notification
+ */
 export function Toast({ 
   type, 
   title, 
@@ -31,6 +53,9 @@ export function Toast({
 
   if (!isVisible) return null;
 
+  /**
+   * Configuration for different toast types including icons and colors
+   */
   const typeConfig = {
     success: {
       icon: CheckCircle,

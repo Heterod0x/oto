@@ -1,12 +1,26 @@
+import React from 'react';
 import { cn } from '../lib/utils';
 
+/**
+ * Props for LoadingSpinner component
+ */
 interface LoadingSpinnerProps {
+  /** Size variant of the spinner */
   size?: 'sm' | 'md' | 'lg';
+  /** Additional CSS class names */
   className?: string;
+  /** Color variant of the spinner */
   color?: 'primary' | 'white' | 'gray';
 }
 
-export function LoadingSpinner({ 
+/**
+ * LoadingSpinner component that displays an animated spinner
+ * Optimized with React.memo for performance
+ * 
+ * @param props - Component props
+ * @returns React component for loading spinner
+ */
+export const LoadingSpinner = React.memo(function LoadingSpinner({ 
   size = 'md', 
   className, 
   color = 'primary' 
@@ -35,7 +49,7 @@ export function LoadingSpinner({
       aria-label="Loading"
     />
   );
-}
+});
 
 interface LoadingOverlayProps {
   isVisible: boolean;

@@ -6,24 +6,42 @@ import { LoadingSpinner } from './LoadingSpinner';
 import { useToast } from './Toast';
 import { Button } from './ui/button';
 
+/**
+ * Task interface representing a task item
+ */
 export interface Task {
+  /** Unique identifier for the task */
   id: string;
+  /** Type of task (TODO, Calendar event, or general TASK) */
   type: 'TODO' | 'CAL' | 'TASK';
+  /** Task title */
   title: string;
+  /** Optional task description */
   description?: string;
+  /** Optional due date in ISO string format */
   dueDate?: string;
+  /** Task priority level */
   priority?: 'low' | 'medium' | 'high';
+  /** Whether the task is completed */
   completed?: boolean;
+  /** Creation timestamp in ISO string format */
   createdAt: string;
 }
 
+/**
+ * Props for TaskList component
+ */
 export interface TaskListProps {
+  /** Additional CSS class names */
   className?: string;
 }
 
 /**
- * Task list component
- * Display and manage tasks extracted from AI
+ * TaskList component that displays and manages tasks extracted from AI conversations
+ * Provides functionality to view, complete, and navigate to task details
+ * 
+ * @param props - Component props
+ * @returns React component for task list management
  */
 export function TaskList({ className }: TaskListProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -38,6 +56,10 @@ export function TaskList({ className }: TaskListProps) {
     loadTasks();
   }, []);
 
+  /**
+   * Loads tasks from the API
+   * Currently uses mock data but can be extended to use real API endpoints
+   */
   const loadTasks = async () => {
     try {
       setLoading(true);

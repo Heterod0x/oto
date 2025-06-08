@@ -1,10 +1,23 @@
-interface LogoPropsType {
+/**
+ * Props for Logo component
+ */
+interface LogoProps {
+  /** Font color for the logo text (default: "white") */
   fontColor?: string;
+  /** Width of the logo SVG (default: "151") */
   width?: string;
+  /** Height of the logo SVG (default: "44") */
   height?: string;
 }
 
-export function Logo(props: LogoPropsType) {
+/**
+ * Logo component that displays the company logo as an SVG
+ * Customizable font color and dimensions
+ *
+ * @param props - Component props for logo customization
+ * @returns React component displaying the logo SVG
+ */
+export function Logo(props: LogoProps) {
   const fontColor = props.fontColor || "white";
   const width = props.width || "151";
   const height = props.height || "44";

@@ -1,4 +1,3 @@
-import { useCallback, useState } from "react";
 import {
   getAccessToken,
   useSessionSigners,
@@ -7,13 +6,25 @@ import {
   WalletWithMetadata,
 } from "@privy-io/react-auth";
 import axios from "axios";
+import { useCallback, useState } from "react";
 
 const SESSION_SIGNER_ID = process.env.NEXT_PUBLIC_SESSION_SIGNER_ID;
 
+/**
+ * Props for WalletCard component
+ */
 interface WalletCardProps {
+  /** Wallet metadata from Privy */
   wallet: WalletWithMetadata;
 }
 
+/**
+ * WalletCard component that displays wallet information and provides
+ * signing capabilities for both Ethereum and Solana wallets
+ *
+ * @param props - Component props containing wallet metadata
+ * @returns React component for wallet card display
+ */
 export default function WalletCard({ wallet }: WalletCardProps) {
   const { addSessionSigners, removeSessionSigners } = useSessionSigners();
   const { signMessage: signMessageEthereum } = useSignMessage();
@@ -25,6 +36,11 @@ export default function WalletCard({ wallet }: WalletCardProps) {
   // Check if this specific wallet has session signers
   const hasSessionSigners = wallet.delegated === true;
 
+  /**
+   * Adds a session signer to the wallet for delegated transactions
+   *
+   * @param walletAddress - The wallet address to add session signer for
+   */
   const addSessionSigner = useCallback(
     async (walletAddress: string) => {
       if (!SESSION_SIGNER_ID) {
@@ -53,6 +69,11 @@ export default function WalletCard({ wallet }: WalletCardProps) {
     [addSessionSigners]
   );
 
+  /**
+   * Removes session signer from the wallet
+   *
+   * @param walletAddress - The wallet address to remove session signer from
+   */
   const removeSessionSigner = useCallback(
     async (walletAddress: string) => {
       setIsLoading(true);
@@ -67,6 +88,9 @@ export default function WalletCard({ wallet }: WalletCardProps) {
     [removeSessionSigners]
   );
 
+  /**
+   * Handles client-side message signing for wallet verification
+   */
   const handleClientSign = useCallback(async () => {
     setIsClientSigning(true);
     try {
@@ -87,8 +111,11 @@ export default function WalletCard({ wallet }: WalletCardProps) {
     } finally {
       setIsClientSigning(false);
     }
-  }, [wallet]);
+  }, [wallet.address, wallet.chainType, signMessageEthereum, signMessageSolana]);
 
+  /**
+   * Handles remote message signing through the server
+   */
   const handleRemoteSign = useCallback(async () => {
     setIsRemoteSigning(true);
     try {
