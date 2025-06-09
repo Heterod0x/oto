@@ -6,6 +6,23 @@ import { ListActionsQuery, UpdateActionRequest } from '../types';
 
 const router = Router();
 
+const setInner = (action: any): any => {
+  action.inner = {};
+  action.relate = {};
+  action.inner.title = action.title.trim();
+  if (action.type === 'todo') {
+    action.inner.body = action.body.trim();
+  } else if (action.type === 'calendar') {
+    action.inner.datetime = new Date(action.datetime).toISOString();
+  } else if (action.type === 'research') {
+    action.inner.query = action.query.trim();
+  }
+  action.relate.transcript = action.transcript_excerpt.trim();
+  action.relate.start = action.transcript_start;
+  action.relate.end = action.transcript_end;
+  return action;
+}
+
 // GET /actions - List actions
 router.get(
   '/',
@@ -21,7 +38,7 @@ router.get(
         type: query.type,
       });
 
-      res.json({ actions });
+      res.json({ actions: actions.map(setInner) });
     } catch (error) {
       console.error('Failed to list actions:', error);
       res.status(500).json({
@@ -59,20 +76,9 @@ router.get(
         status: action.status,
         id: action.id,
         conversation_id: action.conversation_id,
-        inner: {
-          title: action.title,
-          ...(action.body && { body: action.body }),
-          ...(action.query && { query: action.query }),
-          ...(action.datetime && { datetime: action.datetime }),
-        },
-        relate: {
-          start: action.transcript_start || 0,
-          end: action.transcript_end || 0,
-          transcript: action.transcript_excerpt || '',
-        },
       };
 
-      res.json(response);
+      res.json(setInner(response));
     } catch (error) {
       console.error('Failed to get action:', error);
       res.status(500).json({

@@ -4,12 +4,14 @@ import { Action, DetectedAction } from '../types';
 import { ApiService } from '../services/api';
 
 interface ActionsListProps {
+  conversationId: string;
   apiService: ApiService;
   detectedActions: DetectedAction[];
   onError: (error: string) => void;
 }
 
 export const ActionsList: React.FC<ActionsListProps> = ({
+  conversationId,
   apiService,
   detectedActions,
   onError
@@ -25,7 +27,10 @@ export const ActionsList: React.FC<ActionsListProps> = ({
   const loadActions = async () => {
     setLoading(true);
     try {
-      const actionsList = await apiService.listActions(filter);
+      const actionsList = await apiService.listActions({
+        ...filter,
+        conversation_id: conversationId,
+      });
       setActions(actionsList);
     } catch (error) {
       onError(`Failed to load actions: ${error}`);

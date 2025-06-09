@@ -2,17 +2,17 @@ import WebSocket from 'ws';
 import { IncomingMessage } from 'http';
 import { wsAuthMiddleware } from '../middleware/auth';
 import { databaseService } from '../services/database';
-import { transcriptionService } from '../services/transcription';
+import { TranscriptionService, transcriptionService } from '../services/transcription';
 import { actionDetectionService } from '../services/actionDetection';
 import { WebSocketMessage, DetectedAction } from '../types';
+import { AudioDecoder } from '../services/audioDecoder';
 
 interface ConversationSession {
   conversationId: string;
   userId: string;
   ws: WebSocket;
-  transcriptionService: any;
+  transcriptionService?: TranscriptionService;
   fullTranscript: string;
-  audioBuffer: Buffer[];
   isCompleted: boolean;
   authenticated: boolean;
 }
@@ -24,6 +24,7 @@ interface AuthMessage {
 
 export class AudioStreamHandler {
   private sessions: Map<string, ConversationSession> = new Map();
+  private decoders: Map<string, AudioDecoder> = new Map();
 
   async handleConnection(ws: WebSocket, req: IncomingMessage): Promise<void> {
     try {
@@ -59,14 +60,21 @@ export class AudioStreamHandler {
         conversationId,
         userId: "",
         ws,
-        transcriptionService: null,
         fullTranscript: '',
-        audioBuffer: [],
         isCompleted: false,
         authenticated: false,
       };
+      const decoder = new AudioDecoder(false);
 
       this.sessions.set(sessionId, session);
+      this.decoders.set(sessionId, decoder);
+
+      decoder.on("pcm", (pcm: Buffer) => {
+        // Send audio to transcription service
+        if (session.transcriptionService) {
+          session.transcriptionService.sendAudioData(pcm);
+        }
+      });
 
       // Set up WebSocket event handlers
       ws.on('message', (data: Buffer) => {
@@ -166,11 +174,9 @@ export class AudioStreamHandler {
     try {
       // Decode base64 audio data
       const audioBuffer = Buffer.from(encodedAudio, 'base64');
-      session.audioBuffer.push(audioBuffer);
-
-      // Send audio to transcription service
-      if (session.transcriptionService) {
-        session.transcriptionService.sendAudioData(audioBuffer);
+      const decoder = this.decoders.get(sessionId);
+      if (decoder) {
+        decoder.write(audioBuffer);
       }
     } catch (error) {
       console.error('Failed to handle audio data:', error);
@@ -191,6 +197,7 @@ export class AudioStreamHandler {
       const finalTranscript = await session.transcriptionService?.stopRealtimeTranscription() || session.fullTranscript;
 
       // Update conversation with final transcript
+      await databaseService.createConversation(session.userId, session.conversationId, "Test Conversation");
       await databaseService.updateConversation(session.userId, session.conversationId, {
         transcript: finalTranscript,
         last_transcript_preview: this.generatePreview(finalTranscript),
@@ -240,15 +247,16 @@ export class AudioStreamHandler {
 
       transcriptionInstance.on('final-transcript', async (data: any) => {
         console.log('final-transcript', data);
-        session.fullTranscript += ' ' + data.text;
         this.sendTranscribeResponse(session.ws, data.text, true);
 
         // Detect actions in the transcript segment
         const actions = await actionDetectionService.detectActions(
           data.text,
           data.audioStart,
-          data.audioEnd
+          data.audioEnd,
         );
+
+        session.fullTranscript += ' ' + data.text;
 
         // Save detected actions and send to client
         for (const action of actions) {

@@ -11,7 +11,7 @@ export class ActionDetectionService {
     this.openai = new OpenAI({
       apiKey: config.openai.apiKey,
     });
-    this.model = "o4-mini";
+    this.model = "gpt-4o-mini";
   }
 
   async detectActions(transcript: string, audioStart: number = 0, audioEnd: number = 0): Promise<DetectedAction[]> {

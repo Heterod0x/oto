@@ -96,8 +96,6 @@ export class TranscriptionService extends EventEmitter {
       }
 
       // Send current audio data
-      console.log('Sending current audio data');
-      console.log(audioData.subarray(0, 10));
       this.realtimeTranscriber.sendAudio(audioData);
     } catch (error) {
       console.error('Failed to send audio data:', error);

@@ -28,12 +28,13 @@ export class DatabaseService {
   }
 
   // Conversations
-  async createConversation(userId: string, title?: string): Promise<Conversation> {
+  async createConversation(userId: string, conversationId: string, title?: string): Promise<Conversation> {
     await this.setUserContext(userId);
     
     const { data, error } = await this.supabase
       .from('conversations')
       .insert({
+        id: conversationId,
         user_id: userId,
         title,
         status: 'active',

@@ -73,7 +73,7 @@ function App() {
         <div className="header-content">
           <h1>
             <Activity size={32} />
-            Oto Voice API Client
+            Oto Voice API Client Demo
           </h1>
           <div className="header-controls">
             <ConfigPanel config={config} onConfigChange={handleConfigChange} />
@@ -143,9 +143,14 @@ function App() {
               </div>
             </div>
 
-            {detectedActions.length > 0 && (
+            {/*detectedActions.length > 0*/ true && (
               <div className="live-actions">
                 <h3>Recently Detected Actions</h3>
+                {detectedActions.length == 0 && (
+                  <div className="actions-preview">
+                    <span className="action-preview">No actions detected yet...</span>
+                  </div>
+                )}
                 <div className="actions-preview">
                   {detectedActions.slice(0, 3).map((action, index) => (
                     <div key={index} className="action-preview">
@@ -161,6 +166,7 @@ function App() {
 
         {activeTab === 'actions' && (
           <ActionsList
+            conversationId={selectedConversationId}
             apiService={apiService}
             detectedActions={detectedActions}
             onError={handleError}

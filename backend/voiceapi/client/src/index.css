@@ -507,14 +507,18 @@ body {
 .actions-preview {
   display: flex;
   gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .action-preview {
+  display: flex;
+  gap: 8px;
   background: #f3f4f6;
   border: 1px solid #d1d5db;
   border-radius: 6px;
   padding: 0.75rem;
   flex: 1;
+  min-width: calc(50% - 32px);
 }
 
 .action-type {
