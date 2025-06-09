@@ -136,8 +136,10 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
               </button>
             ) : (
               <div className="stopping-indicator">
-                <Loader2 size={16} className="spin left" />
-                Stopping recording... (& saving transcript...)
+                <div className="animate-spin" style={{ width: '16px', height: '16px', display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Loader2 size={16} />
+                </div>
+                Stopping... (& Saving...)
               </div>
             )}
           </div>

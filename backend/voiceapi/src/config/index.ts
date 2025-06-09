@@ -12,8 +12,15 @@ export const config = {
     serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
   },
   
-  assemblyai: {
-    apiKey: process.env.ASSEMBLYAI_API_KEY || '',
+  stt: {
+    provider: process.env.STT_PROVIDER || 'assemblyai', // 'assemblyai' or 'google-cloud'
+    assemblyai: {
+      apiKey: process.env.ASSEMBLYAI_API_KEY || '',
+    },
+    googleCloud: {
+      projectId: process.env.GOOGLE_CLOUD_PROJECT_ID || '',
+      keyFilename: process.env.GOOGLE_CLOUD_KEY_FILENAME || '',
+    },
   },
   
   openai: {

@@ -23,6 +23,7 @@
   "license": "MIT",
   "dependencies": {
     "@discordjs/opus": "^0.10.0",
+    "@google-cloud/speech": "^7.1.0",
     "@supabase/supabase-js": "^2.38.4",
     "@types/wav": "^1.0.4",
     "assemblyai": "^4.0.0",
