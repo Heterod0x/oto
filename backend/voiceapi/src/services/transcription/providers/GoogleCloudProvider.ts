@@ -4,7 +4,7 @@ import { BaseSTTProvider } from '../BaseSTTProvider';
 import { TranscriptionResult, STTProviderConfig } from '../types';
 
 export class GoogleCloudProvider extends BaseSTTProvider {
-  private client: any;
+  private client: SpeechClient;
   private recognizeStream: any = null;
   private restartCounter: number = 0;
   private resultEndTime: number = 0;
@@ -60,21 +60,23 @@ export class GoogleCloudProvider extends BaseSTTProvider {
     // Clear current audioInput
     this.clearAudioBuffer();
 
-    const request = {
-      config: {
-        encoding: this.config.encoding || 'LINEAR16',
-        sampleRateHertz: this.config.sampleRate || 16000,
-        languageCode: this.config.languageCode || 'en-US',
-      },
-      interimResults: true,
-    };
-
     // Initiate (Reinitiate) a recognize stream
     this.recognizeStream = this.client
-      .streamingRecognize(request)
+      .streamingRecognize({
+        config: {
+          encoding: 'LINEAR16',
+          sampleRateHertz: 16000,
+          languageCode: 'en-US',
+          enableWordTimeOffsets: true,
+          enableWordConfidence: true,
+          alternativeLanguageCodes: ['ja-JP', 'en-US'],
+        },
+        interimResults: true,
+      })
       .on('error', (err: any) => {
         if (err.code === 11) {
           // Handle exceeded maximum allowed stream duration
+          console.log('Google Cloud: exceeded maximum allowed stream duration');
           this.restartStream();
         } else {
           console.error('Google Cloud API request error:', err);
@@ -82,11 +84,6 @@ export class GoogleCloudProvider extends BaseSTTProvider {
         }
       })
       .on('data', this.speechCallback.bind(this));
-
-    // Restart stream when streamingLimit expires
-    this.restartTimeout = setTimeout(() => {
-      this.restartStream();
-    }, this.streamingLimit);
   }
 
   private speechCallback(stream: any): void {
@@ -247,7 +244,7 @@ export class GoogleCloudProvider extends BaseSTTProvider {
         },
       };
 
-      const [response] = await this.client.recognize(request);
+      const [response] = await this.client.recognize(request as any);
       
       if (!response.results || response.results.length === 0) {
         return {
