@@ -218,14 +218,14 @@ export class AudioStreamHandler {
       }
 
       // Close WebSocket connection
-      session.ws.close(1000, 'Conversation completed');
-      this.sessions.delete(sessionId);
-
       console.log(`Audio stream session completed: ${sessionId}`);
     } catch (error) {
       console.error('Failed to complete conversation:', error);
       this.sendError(session.ws, 'Failed to complete conversation');
     }
+
+    session.ws.close(1000, 'Conversation completed');
+    this.sessions.delete(sessionId);
   }
 
   private async startTranscription(sessionId: string): Promise<void> {
@@ -241,12 +241,10 @@ export class AudioStreamHandler {
 
       // Set up transcription event handlers
       transcriptionInstance.on('partial-transcript', (data: any) => {
-        console.log('partial-transcript', data);
         this.sendTranscribeResponse(session.ws, data.text, false);
       });
 
       transcriptionInstance.on('final-transcript', async (data: any) => {
-        console.log('final-transcript', data);
         this.sendTranscribeResponse(session.ws, data.text, true);
 
         // Detect actions in the transcript segment

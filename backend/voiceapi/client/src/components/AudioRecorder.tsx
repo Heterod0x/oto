@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Mic, MicOff, Square } from 'lucide-react';
+import { Mic, MicOff, Square, Loader2 } from 'lucide-react';
 import { WebSocketService } from '../services/websocket';
 import { WebSocketMessage, DetectedAction } from '../types';
 
@@ -20,6 +20,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
 }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [isStoppingRecording, setIsStoppingRecording] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<string>('Disconnected');
 
   const handleConnect = async () => {
@@ -45,6 +46,14 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
         }
       });
 
+      // Set up WebSocket close event listener
+      wsService.onClose(() => {
+        setIsStoppingRecording(false);
+        setIsConnected(false);
+        setIsRecording(false);
+        setConnectionStatus('Disconnected');
+      });
+
       setIsConnected(true);
       setConnectionStatus('Connected');
     } catch (error) {
@@ -57,6 +66,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
     wsService.disconnect();
     setIsConnected(false);
     setIsRecording(false);
+    setIsStoppingRecording(false);
     setConnectionStatus('Disconnected');
   };
 
@@ -75,6 +85,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   };
 
   const handleStopRecording = () => {
+    setIsStoppingRecording(true);
     wsService.stopRecording();
     setIsRecording(false);
   };
@@ -91,17 +102,21 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
       <div className="recorder-controls">
         {!isConnected ? (
           <button onClick={handleConnect} className="btn-primary">
-            Connect to WebSocket
+            Connect
           </button>
         ) : (
-          <button onClick={handleDisconnect} className="btn-secondary">
+          <button 
+            onClick={handleDisconnect} 
+            className="btn-secondary"
+            hidden={isRecording || isStoppingRecording}
+          >
             Disconnect
           </button>
         )}
 
         {isConnected && (
           <div className="recording-controls">
-            {!isRecording ? (
+            {!isRecording && !isStoppingRecording ? (
               <button 
                 onClick={handleStartRecording} 
                 className="btn-record"
@@ -110,7 +125,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
                 <Mic size={24} />
                 Start Recording
               </button>
-            ) : (
+            ) : !isStoppingRecording ? (
               <button 
                 onClick={handleStopRecording} 
                 className="btn-stop"
@@ -119,6 +134,11 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
                 <Square size={24} />
                 Stop Recording
               </button>
+            ) : (
+              <div className="stopping-indicator">
+                <Loader2 size={16} className="spin left" />
+                Stopping recording... (& saving transcript...)
+              </div>
             )}
           </div>
         )}

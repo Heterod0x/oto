@@ -63,6 +63,15 @@ export class WebSocketService {
     }
   }
 
+  onClose(callback: () => void): void {
+    if (this.ws) {
+      this.ws.onclose = (event) => {
+        console.log('WebSocket closed:', event.code, event.reason);
+        callback();
+      };
+    }
+  }
+
   async startRecording(): Promise<void> {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 

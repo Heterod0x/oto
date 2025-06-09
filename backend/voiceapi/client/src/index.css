@@ -1043,3 +1043,12 @@ body {
     max-width: 90vw;
   }
 }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;  /* 回転速度を変えたいときは 1s を調整 */
+}
