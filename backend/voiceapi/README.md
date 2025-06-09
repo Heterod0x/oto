@@ -333,33 +333,5 @@ CMD ["npm", "start"]
 
 ## Monitoring
 
-The API includes several monitoring endpoints:
-
 - `GET /health` - Health check with active WebSocket sessions count
 - `GET /` - API documentation and available endpoints
-
-## Troubleshooting
-
-### Common Issues
-
-1. **WebSocket connection fails**: Check authentication headers and conversation ID format
-2. **Transcription not working**: Verify AssemblyAI API key and audio format
-3. **Actions not detected**: Check OpenAI API key and ensure transcript has actionable content
-4. **Database errors**: Verify Supabase configuration and RLS policies
-
-### Logs
-
-The server logs important events:
-- WebSocket connections and disconnections
-- Transcription events
-- Action detection results
-- Database operations
-- Errors and warnings
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
