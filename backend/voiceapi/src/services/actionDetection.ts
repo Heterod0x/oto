@@ -11,7 +11,7 @@ export class ActionDetectionService {
     this.openai = new OpenAI({
       apiKey: config.openai.apiKey,
     });
-    this.model = "gpt-4o-mini";
+    this.model = "gpt-4o";
   }
 
   async detectActions(transcript: string, audioStart: number = 0, audioEnd: number = 0, detectedActionsPrevious: DetectedAction[] = []): Promise<DetectedAction[]> {
@@ -47,42 +47,43 @@ export class ActionDetectionService {
   }
 
   private buildActionDetectionPrompt(transcript: string): string {
-    return `You are an AI assistant that analyzes conversation transcripts to detect actionable items. Your task is to identify three types of actions:
+    return `You are an AI assistant that scans ordinary conversation transcripts—dialogue between other people or even someone’s inner monologue—to capture **every** actionable item, no matter how small.  
+Classify each item as one of three types:
 
-1. **TODO**: Tasks, assignments, or things that need to be done
-2. **CALENDAR**: Meetings, appointments, events, or time-based commitments
-3. **RESEARCH**: Questions, topics to investigate, or information to look up
+1. **TODO** – Any task, chore, reminder, or thing to be done  
+2. **CALENDAR** – Any appointment, deadline, event, promise, or plan tied to a date or time  
+3. **RESEARCH** – Any request to investigate, check, look up, or gather information  
 
-For each detected action, respond with a JSON array containing objects with this structure:
+Return the findings as a JSON array of objects with this structure:
+
 {
-  "type": "todo|calendar|research",
+  "type": "todo | calendar | research",
   "title": "Brief descriptive title",
-  "body": "Detailed description (for todo items)",
-  "query": "Search query or question (for research items)",
-  "datetime": "ISO 8601 datetime string (for calendar items, if specific time mentioned)"
+  "body": "Detailed description (for TODO items; optional but recommended)",
+  "query": "Search query or question (for RESEARCH items)",
+  "datetime": "ISO 8601 datetime string (for CALENDAR items when a specific date/time is mentioned)"
 }
 
-Guidelines:
-- Only detect clear, actionable items mentioned in the conversation
-- For TODO items: Include tasks, assignments, reminders, or things to complete
-- For CALENDAR items: Include meetings, appointments, deadlines, or scheduled events
-- For RESEARCH items: Include questions to answer, topics to investigate, or information to find
-- Extract specific datetime information when mentioned (e.g., "meeting at 3pm tomorrow")
-- If no specific time is mentioned for calendar items, omit the datetime field
-- Be conservative - only extract items that are clearly actionable
-- Return an empty array if no actions are detected
-- If the detected action is already in the previous detected actions, skip it. But don't miss new actions.
+### Extraction Rules
+- **Catch everything**: If an utterance explicitly or implicitly points to an action—even a casual “I should … someday”—include it.  
+- **CALENDAR**: If a plan or commitment is stated but no exact date/time is given, still extract it and omit "datetime".  
+- **TODO**: Speaker or assignee doesn’t matter. Self-talk counts. Conditional or tentative phrasing counts.  
+  - Example: “I guess I ought to clean the garage” → TODO  
+- **RESEARCH**: Anything that clearly asks for information or clarification.  
+  - Example: “What’s the new AWS pricing?” → RESEARCH  
+- **De-duplicate**: Skip actions that were already listed in the previous output unless new details have been added.  
+- **Updates override**: If an action is modified later in the conversation, keep only the latest version.  
+- **Err on the side of inclusion** when the statement strongly suggests action.
 
-Examples:
-- "I need to buy groceries" → TODO
-- "Let's schedule a meeting for tomorrow at 2pm" → CALENDAR
-- "Can you look up the weather forecast?" → RESEARCH
-- "Remind me to call John" → TODO
-- "What's the capital of France?" → RESEARCH
+### Examples
+- “Set up a meeting tomorrow at 3 PM.” → CALENDAR (with "datetime")
+- “I’ll look over the slides later.” → TODO
+- “Can you find out the exchange rate?” → RESEARCH
+- “I promise to send the report by Friday.” → TODO
+- “Let’s grab lunch sometime next month.” → CALENDAR (no "datetime")
 
-*but not limited to these examples.
-
-Respond only with valid JSON array, no additional text.`;
+Respond **only** with the resulting JSON array. If no actions are found, return [].
+`;
   }
 
   private parseActionResponse(
@@ -200,6 +201,33 @@ Respond only with valid JSON array, no additional text.`;
     } catch (error) {
       console.error('Failed to generate conversation summary:', error);
       return 'Summary generation failed';
+    }
+  }
+
+  async generateConversationTitle(transcript: string): Promise<string> {
+    try {
+      const response = await this.openai.chat.completions.create({
+        model: this.model,
+        messages: [
+          {
+            role: 'system',
+            content: `You are an AI assistant that creates a concise title for a conversation transcript.
+            Create a brief, informative title that captures the main topics discussed and key points mentioned.
+            Keep the title under 200 words and focus on the most important information.`,
+          },
+          {
+            role: 'user',
+            content: `Please generate a title for this conversation transcript:\n\n${transcript}`,
+          },
+        ],
+        temperature: 0.3,
+        max_tokens: 300,
+      });
+
+      return response.choices[0]?.message?.content?.trim() || 'No title available';
+    } catch (error) {
+      console.error('Failed to generate conversation title:', error);
+      return 'Title generation failed';
     }
   }
 

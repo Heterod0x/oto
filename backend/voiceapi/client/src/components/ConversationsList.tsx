@@ -65,6 +65,18 @@ export const ConversationsList: React.FC<ConversationsListProps> = ({
     }
   };
 
+  const msToTime = (ms: number) => {
+    const hours   = Math.floor(ms / 3_600_000);          // 1000*60*60
+    const minutes = Math.floor(ms / 60_000) % 60;        // 残り分
+    const seconds = Math.floor(ms / 1000) % 60;          // 残り秒
+
+    return [
+      hours.toString().padStart(2, '0'),
+      minutes.toString().padStart(2, '0'),
+      seconds.toString().padStart(2, '0')
+    ].join(':');
+  };
+
   useEffect(() => {
     loadConversations();
   }, []);
@@ -181,7 +193,7 @@ export const ConversationsList: React.FC<ConversationsListProps> = ({
                         <div className="log-header">
                           <span className={`speaker ${log.speaker}`}>{log.speaker}</span>
                           <span className="time-range">
-                            {log.start}s - {log.end}s
+                            {msToTime(log.start)} - {msToTime(log.end)}
                           </span>
                         </div>
                         <div className="log-content">

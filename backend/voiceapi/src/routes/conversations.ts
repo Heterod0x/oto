@@ -4,6 +4,7 @@ import { validateRequest, schemas } from '../middleware/validation';
 import { databaseService } from '../services/database';
 import { transcriptionService } from '../services/transcription';
 import { ListConversationsQuery, TranscriptFormat, ConversationLogsQuery } from '../types';
+import { BeautifiedSegment } from '@/services/transcriptionBeautifier';
 
 const router = Router();
 
@@ -106,13 +107,21 @@ router.get(
         return;
       }
 
-      let formattedTranscript = conversation.transcript;
+      const msToTime = (ms: number) => {
+        const seconds = Math.floor(ms / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      };
+
+      let transcriptObject = JSON.parse(conversation.transcript) as BeautifiedSegment[];
+      let formattedTranscript = transcriptObject.map(segment => `[${msToTime(segment.audioStart)} - ${msToTime(segment.audioEnd)}] ${segment.beautifiedText}`).join('\n');
 
       // Convert transcript to requested format
       if (format === 'srt') {
-        formattedTranscript = transcriptionService.convertToSRT(conversation.transcript);
+        formattedTranscript = transcriptionService.convertToSRT(transcriptObject);
       } else if (format === 'vtt') {
-        formattedTranscript = transcriptionService.convertToVTT(conversation.transcript);
+        formattedTranscript = transcriptionService.convertToVTT(transcriptObject);
       }
 
       res.json({

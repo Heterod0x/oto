@@ -6,6 +6,7 @@ import {
   ConnectionEvent,
   DisconnectionEvent
 } from './types';
+import { BeautifiedSegment } from '../transcriptionBeautifier';
 
 export abstract class BaseSTTProvider extends EventEmitter {
   protected config: STTProviderConfig;
@@ -83,24 +84,23 @@ export abstract class BaseSTTProvider extends EventEmitter {
   }
 
   // Utility methods for subtitle conversion
-  convertToSRT(transcript: string, words?: Array<{ text: string; start: number; end: number }>): string {
-    if (!words || words.length === 0) {
-      return `1\n00:00:00,000 --> 00:00:10,000\n${transcript}\n\n`;
+  convertToSRT(transcript: BeautifiedSegment[]): string {
+    if (transcript.length === 0) {
+      return '';
     }
 
     let srt = '';
     let index = 1;
     let currentText = '';
-    let startTime = words[0].start;
-    let endTime = words[0].end;
+    let startTime = transcript[0].audioStart;
+    let endTime = transcript[0].audioEnd;
 
-    for (let i = 0; i < words.length; i++) {
-      const word = words[i];
-      currentText += word.text + ' ';
+    for (let i = 0; i < transcript.length; i++) {
+      const word = transcript[i];
+      currentText += word.beautifiedText + ' ';
 
-      // Create subtitle every 10 words or at the end
-      if ((i + 1) % 10 === 0 || i === words.length - 1) {
-        endTime = word.end;
+      if (true) {
+        endTime = word.audioEnd;
         
         const startSRT = this.millisecondsToSRTTime(startTime);
         const endSRT = this.millisecondsToSRTTime(endTime);
@@ -109,8 +109,8 @@ export abstract class BaseSTTProvider extends EventEmitter {
         
         index++;
         currentText = '';
-        if (i < words.length - 1) {
-          startTime = words[i + 1].start;
+        if (i < transcript.length - 1) {
+          startTime = transcript[i + 1].audioStart;
         }
       }
     }
@@ -118,8 +118,8 @@ export abstract class BaseSTTProvider extends EventEmitter {
     return srt;
   }
 
-  convertToVTT(transcript: string, words?: Array<{ text: string; start: number; end: number }>): string {
-    const srt = this.convertToSRT(transcript, words);
+  convertToVTT(transcript: BeautifiedSegment[]): string {
+    const srt = this.convertToSRT(transcript);
     let vtt = 'WEBVTT\n\n';
     
     // Convert SRT timestamps to VTT format (replace comma with dot)

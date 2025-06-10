@@ -3,6 +3,7 @@ import { config } from '../../config';
 import { BaseSTTProvider } from './BaseSTTProvider';
 import { ProviderFactory } from './ProviderFactory';
 import { STTProvider, STTProviderConfig, TranscriptionResult } from './types';
+import { BeautifiedSegment } from '../transcriptionBeautifier';
 
 export class TranscriptionService extends EventEmitter {
   private provider: BaseSTTProvider;
@@ -115,12 +116,12 @@ export class TranscriptionService extends EventEmitter {
   }
 
   // Utility methods for subtitle conversion
-  convertToSRT(transcript: string, words?: Array<{ text: string; start: number; end: number }>): string {
-    return this.provider.convertToSRT(transcript, words);
+  convertToSRT(transcript: BeautifiedSegment[]): string {
+    return this.provider.convertToSRT(transcript);
   }
 
-  convertToVTT(transcript: string, words?: Array<{ text: string; start: number; end: number }>): string {
-    return this.provider.convertToVTT(transcript, words);
+  convertToVTT(transcript: BeautifiedSegment[]): string {
+    return this.provider.convertToVTT(transcript);
   }
 
   // Provider management methods

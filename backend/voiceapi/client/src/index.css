@@ -484,11 +484,14 @@ body {
   border-radius: 4px;
   padding: 1rem;
   min-height: 200px;
+  max-height: 400px;
+  overflow-y: auto;
   font-family: 'Courier New', monospace;
   font-size: 0.9rem;
   line-height: 1.5;
   white-space: pre-wrap;
   color: #374151;
+  scroll-behavior: smooth;
 }
 
 .live-actions {

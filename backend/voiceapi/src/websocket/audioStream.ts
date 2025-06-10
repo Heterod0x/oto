@@ -207,6 +207,7 @@ export class AudioStreamHandler {
         session.actionDetector.stop();
         
         // Perform final action detection on any remaining transcript
+        await session.actionDetector.beautifyNow();
         const finalActions = await session.actionDetector.detectActionsNow();
         for (const action of finalActions) {
           await this.saveAndSendAction(session, action);
@@ -219,17 +220,19 @@ export class AudioStreamHandler {
       // Get the full transcript with timestamps from ActionDetector if available
       const timestampedTranscript = session.actionDetector?.getFullTranscript() || finalTranscript;
       const plainTranscript = session.actionDetector?.getPlainTranscript() || finalTranscript;
+      const audioTimestampedTranscript = session.actionDetector?.getFullBeautifiedTranscriptWithSeconds() || finalTranscript;
 
       // Update conversation with final transcript
-      await databaseService.createConversation(session.userId, session.conversationId, "Test Conversation");
+      await databaseService.createConversation(session.userId, session.conversationId, await actionDetectionService.generateConversationTitle(audioTimestampedTranscript));
       await databaseService.updateConversation(session.userId, session.conversationId, {
-        transcript: timestampedTranscript, // Use timestamped version for storage
-        last_transcript_preview: this.generatePreview(plainTranscript),
+        transcript: session.actionDetector?.getFullJsonTranscript(), // Use timestamped version for storage
+        last_transcript_preview: await actionDetectionService.generateConversationSummary(audioTimestampedTranscript),
         status: 'archived',
       });
 
       // Generate conversation logs using the plain transcript
-      const logs = await actionDetectionService.generateConversationLogs(plainTranscript);
+      const logs = await actionDetectionService.generateConversationLogs(audioTimestampedTranscript);
+      console.log("logs", logs);
       for (const log of logs) {
         await databaseService.createConversationLog(session.userId, {
           conversation_id: session.conversationId,

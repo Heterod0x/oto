@@ -16,6 +16,8 @@ interface BeautifiedTranscriptSegment {
   beautifiedText: string;
   startTimestamp: string;
   endTimestamp: string;
+  audioStart: number;
+  audioEnd: number;
   speaker: string;
 }
 
@@ -138,6 +140,10 @@ export class ActionDetector extends EventEmitter {
       .join('\n');
   }
 
+  getFullJsonTranscript(): string {
+    return JSON.stringify(this.beautifiedSegments);
+  }
+
   /**
    * Get the full beautified transcript with timestamps
    */
@@ -155,6 +161,12 @@ export class ActionDetector extends EventEmitter {
       .slice(-maxSegments)
       .map(segment => segment.text)
       .join(' ');
+  }
+
+  getFullBeautifiedTranscriptWithSeconds(): string {
+    return this.beautifiedSegments
+      .map(segment => `[${segment.audioStart} - ${segment.audioEnd}] ${segment.beautifiedText}`)
+      .join('\n');
   }
 
   /**
@@ -270,7 +282,7 @@ export class ActionDetector extends EventEmitter {
       }
 
       try {
-        await this.beautifyPendingSegments();
+        await this.beautifyPendingSegments(false);
         await this.detectActionsNow();
       } catch (error) {
         this.emit('detection-error', error);
@@ -296,7 +308,7 @@ export class ActionDetector extends EventEmitter {
   /**
    * Beautify pending finalized segments
    */
-  private async beautifyPendingSegments(): Promise<void> {
+  private async beautifyPendingSegments(full: boolean): Promise<void> {
     try {
       const finalizedSegments = this.originalSegments.filter(segment => segment.finalized);
       const segmentsToBeautify = finalizedSegments.slice(this.lastBeautifiedIndex);
@@ -306,7 +318,7 @@ export class ActionDetector extends EventEmitter {
         return;
       }
 
-      if (segmentsToBeautify.length < this.options.minSegmentsForBeautification) {
+      if (!full && segmentsToBeautify.length < this.options.minSegmentsForBeautification) {
         console.log("Not enough segments to beautify", segmentsToBeautify.length);
         return;
       }
@@ -330,6 +342,8 @@ export class ActionDetector extends EventEmitter {
           beautifiedText: beautifiedSegment.beautifiedText,
           startTimestamp: beautifiedSegment.startTimestamp,
           endTimestamp: beautifiedSegment.endTimestamp,
+          audioStart: beautifiedSegment.audioStart,
+          audioEnd: beautifiedSegment.audioEnd,
           speaker: beautifiedSegment.speaker,
         };
 
@@ -365,7 +379,7 @@ export class ActionDetector extends EventEmitter {
       clearTimeout(this.beautificationTimer);
       this.beautificationTimer = null;
     }
-    await this.beautifyPendingSegments();
+    await this.beautifyPendingSegments(true);
   }
 
   /**

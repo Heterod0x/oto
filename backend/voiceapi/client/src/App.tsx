@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Activity, Mic, MessageSquare, Settings } from 'lucide-react';
 import { ConfigPanel } from './components/ConfigPanel';
 import { AudioRecorder } from './components/AudioRecorder';
@@ -27,6 +27,7 @@ function App() {
   const [transcriptSegments, setTranscriptSegments] = useState<TranscriptSegment[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [healthStatus, setHealthStatus] = useState<any>(null);
+  const transcriptContentRef = useRef<HTMLDivElement>(null);
 
   const handleConfigChange = (newConfig: ApiConfig) => {
     setConfig(newConfig);
@@ -125,6 +126,13 @@ function App() {
     checkHealth();
   }, [apiService]);
 
+  // Auto-scroll to bottom when transcript is updated
+  useEffect(() => {
+    if (transcriptContentRef.current && transcriptSegments.length > 0) {
+      transcriptContentRef.current.scrollTop = transcriptContentRef.current.scrollHeight;
+    }
+  }, [transcriptSegments]);
+
   return (
     <div className="app">
       <header className="app-header">
@@ -204,7 +212,7 @@ function App() {
                   </button>
                 )}
               </div>
-              <div className="transcript-content">
+              <div className="transcript-content" ref={transcriptContentRef}>
                 <pre>{formattedTranscript || 'No transcript yet...'}</pre>
               </div>
             </div>
