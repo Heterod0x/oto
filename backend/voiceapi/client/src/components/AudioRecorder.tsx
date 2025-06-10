@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import { Mic, Square, Loader2, Upload, Play, RotateCcw } from 'lucide-react';
 import { WebSocketService } from '../services/websocket';
 import { WebSocketMessage, DetectedAction, TranscriptSegment, TranscriptBeautifyData } from '../types';
