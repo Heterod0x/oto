@@ -1052,3 +1052,185 @@ body {
 .animate-spin {
   animation: spin 1s linear infinite;  /* 回転速度を変えたいときは 1s を調整 */
 }
+
+/* Input Mode Selection */
+.input-mode-selection {
+  margin-bottom: 1.5rem;
+}
+
+.mode-tabs {
+  display: flex;
+  background: #f3f4f6;
+  border-radius: 6px;
+  padding: 0.25rem;
+  gap: 0.25rem;
+}
+
+.mode-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+  font-weight: 500;
+  justify-content: center;
+}
+
+.mode-tab:hover:not(:disabled) {
+  color: #374151;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.mode-tab.active {
+  background: white;
+  color: #667eea;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.mode-tab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* File Selection */
+.file-selection {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.file-input-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.file-name {
+  font-weight: 500;
+  color: #374151;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-duration {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.btn-clear-file {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-clear-file:hover:not(:disabled) {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.btn-clear-file:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* File Progress */
+.file-progress {
+  margin-top: 1rem;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+  position: relative;
+}
+
+.progress-bar.clickable {
+  cursor: pointer;
+  height: 8px;
+  transition: height 0.2s ease;
+}
+
+.progress-bar.clickable:hover {
+  height: 12px;
+  background: #d1d5db;
+}
+
+.progress-bar.clickable:hover .progress-fill {
+  background: #5a67d8;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #667eea;
+  border-radius: 3px;
+  transition: width 0.1s ease;
+}
+
+.time-display {
+  display: flex;
+  justify-content: center;
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-family: 'Courier New', monospace;
+}
+
+/* Recording controls adjustments for file mode */
+.btn-record:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-record:disabled:hover {
+  background: #9ca3af;
+}
+
+/* Responsive adjustments for new elements */
+@media (max-width: 768px) {
+  .file-input-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .file-info {
+    justify-content: space-between;
+  }
+  
+  .mode-tabs {
+    flex-direction: column;
+  }
+  
+  .mode-tab {
+    justify-content: flex-start;
+  }
+}

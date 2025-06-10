@@ -1,4 +1,5 @@
 import { WebSocketMessage, DetectedAction } from '../types';
+import { AudioFileService } from './audioFile';
 
 export class WebSocketService {
   private ws: WebSocket | null = null;
@@ -8,6 +9,9 @@ export class WebSocketService {
   private userId: string;
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
+  private audioFileService: AudioFileService | null = null;
+  private isUsingFileMode: boolean = false;
+  private fileStreamInterval: number | null = null;
 
   constructor(baseUrl: string, authToken: string, userId: string) {
     this.baseUrl = baseUrl.replace('http', 'ws');
@@ -156,5 +160,73 @@ export class WebSocketService {
 
   isRecording(): boolean {
     return this.mediaRecorder !== null && this.mediaRecorder.state === 'recording';
+  }
+
+  // File-based audio methods
+  async loadAudioFile(file: File): Promise<void> {
+    this.audioFileService = new AudioFileService();
+    await this.audioFileService.loadAudioFile(file);
+    this.isUsingFileMode = true;
+    console.log('Audio file loaded for streaming');
+  }
+
+  async startFilePlayback(): Promise<void> {
+    if (!this.audioFileService) {
+      throw new Error('No audio file loaded');
+    }
+
+    try {
+      await this.audioFileService.startPlayback((audioBlob: Blob) => {
+        // Send the Opus-encoded blob directly - same format as microphone
+        this.sendAudioChunk(audioBlob);
+      });
+      console.log('File playback started');
+    } catch (error) {
+      console.error('Failed to start file playback:', error);
+      throw error;
+    }
+  }
+
+  stopFilePlayback(): void {
+    if (this.audioFileService) {
+      this.audioFileService.stopPlayback();
+      console.log('File playback stopped');
+      
+      // Send completion message
+      this.sendMessage({
+        type: 'complete'
+      });
+    }
+  }
+
+
+  isUsingFile(): boolean {
+    return this.isUsingFileMode;
+  }
+
+  isFilePlaybackActive(): boolean {
+    return this.audioFileService ? this.audioFileService.isPlaybackActive() : false;
+  }
+
+  getFileDuration(): number {
+    return this.audioFileService ? this.audioFileService.getDuration() : 0;
+  }
+
+  getCurrentFileTime(): number {
+    return this.audioFileService ? this.audioFileService.getCurrentTime() : 0;
+  }
+
+  clearAudioFile(): void {
+    if (this.audioFileService) {
+      this.audioFileService.stopPlayback();
+      this.audioFileService = null;
+    }
+    this.isUsingFileMode = false;
+  }
+
+  seekFilePlayback(time: number): void {
+    if (this.audioFileService) {
+      this.audioFileService.seekTo(time);
+    }
   }
 }

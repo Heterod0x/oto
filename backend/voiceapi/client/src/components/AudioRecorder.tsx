@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Mic, MicOff, Square, Loader2 } from 'lucide-react';
+import { Mic, MicOff, Square, Loader2, Upload, Play, Pause, RotateCcw } from 'lucide-react';
 import { WebSocketService } from '../services/websocket';
 import { WebSocketMessage, DetectedAction } from '../types';
 
@@ -22,6 +22,13 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   const [isRecording, setIsRecording] = useState(false);
   const [isStoppingRecording, setIsStoppingRecording] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<string>('Disconnected');
+  const [inputMode, setInputMode] = useState<'microphone' | 'file'>('microphone');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isFileLoaded, setIsFileLoaded] = useState(false);
+  const [isFilePlaybackActive, setIsFilePlaybackActive] = useState(false);
+  const [fileDuration, setFileDuration] = useState(0);
+  const [currentFileTime, setCurrentFileTime] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleConnect = async () => {
     try {
@@ -90,6 +97,100 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
     setIsRecording(false);
   };
 
+  // File mode handlers
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setSelectedFile(file);
+      await wsService.loadAudioFile(file);
+      setIsFileLoaded(true);
+      setFileDuration(wsService.getFileDuration());
+      setCurrentFileTime(0);
+      console.log(`Audio file loaded: ${file.name}`);
+    } catch (error) {
+      onError(`Failed to load audio file: ${error}`);
+      setSelectedFile(null);
+      setIsFileLoaded(false);
+    }
+  };
+
+  const handleStartFilePlayback = async () => {
+    if (!isConnected) {
+      onError('Please connect first');
+      return;
+    }
+
+    if (!isFileLoaded) {
+      onError('Please select an audio file first');
+      return;
+    }
+
+    try {
+      await wsService.startFilePlayback();
+      setIsFilePlaybackActive(true);
+      setIsRecording(true); // Use same state for UI consistency
+      
+      // Update progress periodically
+      const progressInterval = setInterval(() => {
+        if (wsService.isFilePlaybackActive()) {
+          setCurrentFileTime(wsService.getCurrentFileTime());
+        } else {
+          clearInterval(progressInterval);
+          setIsFilePlaybackActive(false);
+          setIsRecording(false);
+          setCurrentFileTime(0);
+        }
+      }, 100);
+    } catch (error) {
+      onError(`Failed to start file playback: ${error}`);
+    }
+  };
+
+  const handleStopFilePlayback = () => {
+    setIsStoppingRecording(true);
+    wsService.stopFilePlayback();
+    setIsFilePlaybackActive(false);
+    setIsRecording(false);
+    setCurrentFileTime(0);
+  };
+
+  const handleClearFile = () => {
+    wsService.clearAudioFile();
+    setSelectedFile(null);
+    setIsFileLoaded(false);
+    setFileDuration(0);
+    setCurrentFileTime(0);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleProgressBarClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!isFileLoaded || fileDuration === 0) return;
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const progressBarWidth = rect.width;
+    const clickRatio = clickX / progressBarWidth;
+    const seekTime = clickRatio * fileDuration;
+
+    // Clamp to valid range
+    const clampedSeekTime = Math.max(0, Math.min(seekTime, fileDuration));
+    
+    wsService.seekFilePlayback(clampedSeekTime);
+    setCurrentFileTime(clampedSeekTime);
+    
+    console.log(`Seeking to ${clampedSeekTime.toFixed(2)}s`);
+  };
+
   return (
     <div className="audio-recorder">
       <div className="recorder-header">
@@ -98,6 +199,85 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
           {connectionStatus}
         </div>
       </div>
+
+      {/* Input Mode Selection */}
+      <div className="input-mode-selection">
+        <div className="mode-tabs">
+          <button
+            className={`mode-tab ${inputMode === 'microphone' ? 'active' : ''}`}
+            onClick={() => setInputMode('microphone')}
+            disabled={isRecording || isStoppingRecording}
+          >
+            <Mic size={16} />
+            Microphone
+          </button>
+          <button
+            className={`mode-tab ${inputMode === 'file' ? 'active' : ''}`}
+            onClick={() => setInputMode('file')}
+            disabled={isRecording || isStoppingRecording}
+          >
+            <Upload size={16} />
+            Audio File
+          </button>
+        </div>
+      </div>
+
+      {/* File Selection (only shown in file mode) */}
+      {inputMode === 'file' && (
+        <div className="file-selection">
+          <div className="file-input-section">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="audio/*"
+              onChange={handleFileSelect}
+              style={{ display: 'none' }}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="btn-secondary"
+              disabled={isRecording || isStoppingRecording}
+            >
+              <Upload size={16} />
+              Select Audio File
+            </button>
+            {selectedFile && (
+              <div className="file-info">
+                <span className="file-name">{selectedFile.name}</span>
+                {isFileLoaded && (
+                  <span className="file-duration">({formatTime(fileDuration)})</span>
+                )}
+                <button
+                  onClick={handleClearFile}
+                  className="btn-clear-file"
+                  disabled={isRecording || isStoppingRecording}
+                  title="Clear file"
+                >
+                  <RotateCcw size={14} />
+                </button>
+              </div>
+            )}
+          </div>
+          
+          {isFileLoaded && (
+            <div className="file-progress">
+              <div 
+                className="progress-bar clickable"
+                onClick={handleProgressBarClick}
+                title="Click to seek"
+              >
+                <div 
+                  className="progress-fill"
+                  style={{ width: `${(currentFileTime / fileDuration) * 100}%` }}
+                />
+              </div>
+              <div className="time-display">
+                {formatTime(currentFileTime)} / {formatTime(fileDuration)}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="recorder-controls">
         {!isConnected ? (
@@ -117,22 +297,34 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
         {isConnected && (
           <div className="recording-controls">
             {!isRecording && !isStoppingRecording ? (
-              <button 
-                onClick={handleStartRecording} 
-                className="btn-record"
-                title="Start Recording"
-              >
-                <Mic size={24} />
-                Start Recording
-              </button>
+              inputMode === 'microphone' ? (
+                <button 
+                  onClick={handleStartRecording} 
+                  className="btn-record"
+                  title="Start Recording"
+                >
+                  <Mic size={24} />
+                  Start Recording
+                </button>
+              ) : (
+                <button 
+                  onClick={handleStartFilePlayback} 
+                  className="btn-record"
+                  title="Start File Playback"
+                  disabled={!isFileLoaded}
+                >
+                  <Play size={24} />
+                  Start Playback
+                </button>
+              )
             ) : !isStoppingRecording ? (
               <button 
-                onClick={handleStopRecording} 
+                onClick={inputMode === 'microphone' ? handleStopRecording : handleStopFilePlayback} 
                 className="btn-stop"
-                title="Stop Recording"
+                title={inputMode === 'microphone' ? "Stop Recording" : "Stop Playback"}
               >
                 <Square size={24} />
-                Stop Recording
+                {inputMode === 'microphone' ? 'Stop Recording' : 'Stop Playback'}
               </button>
             ) : (
               <div className="stopping-indicator">
@@ -148,10 +340,11 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
 
       <div className="recorder-info">
         <p><strong>Conversation ID:</strong> {conversationId}</p>
+        <p><strong>Input Mode:</strong> {inputMode === 'microphone' ? 'Microphone' : 'Audio File'}</p>
         {isRecording && (
           <div className="recording-indicator">
             <div className="pulse"></div>
-            Recording...
+            {inputMode === 'microphone' ? 'Recording...' : 'Playing back file...'}
           </div>
         )}
       </div>
