@@ -1,9 +1,8 @@
-import { WebSocketMessage, DetectedAction } from '../types';
+import { WebSocketMessage } from '../types';
 import { AudioFileService } from './audioFile';
 
 export class WebSocketService {
   private ws: WebSocket | null = null;
-  private conversationId: string | null = null;
   private baseUrl: string;
   private authToken: string;
   private userId: string;
@@ -11,10 +10,13 @@ export class WebSocketService {
   private audioChunks: Blob[] = [];
   private audioFileService: AudioFileService | null = null;
   private isUsingFileMode: boolean = false;
-  private fileStreamInterval: number | null = null;
 
   constructor(baseUrl: string, authToken: string, userId: string) {
-    this.baseUrl = baseUrl.replace('http', 'ws');
+    if (baseUrl.includes("https")) {
+      this.baseUrl = baseUrl.replace('https', 'wss');
+    } else {
+      this.baseUrl = baseUrl.replace('http', 'ws');
+    }
     this.authToken = authToken;
     this.userId = userId;
   }
@@ -25,7 +27,6 @@ export class WebSocketService {
         const wsUrl = `${this.baseUrl}/conversation/${conversationId}/stream`;
         this.ws = new WebSocket(wsUrl);
 
-        this.conversationId = conversationId;
 
         this.ws.onopen = () => {
           console.log('WebSocket connected');
@@ -150,8 +151,6 @@ export class WebSocketService {
       this.ws.close();
       this.ws = null;
     }
-    
-    this.conversationId = null;
   }
 
   isConnected(): boolean {

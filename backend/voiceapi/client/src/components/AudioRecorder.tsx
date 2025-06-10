@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Mic, MicOff, Square, Loader2, Upload, Play, Pause, RotateCcw } from 'lucide-react';
+import { Mic, Square, Loader2, Upload, Play, RotateCcw } from 'lucide-react';
 import { WebSocketService } from '../services/websocket';
 import { WebSocketMessage, DetectedAction, TranscriptSegment, TranscriptBeautifyData } from '../types';
 
@@ -27,7 +27,6 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   const [inputMode, setInputMode] = useState<'microphone' | 'file'>('microphone');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isFileLoaded, setIsFileLoaded] = useState(false);
-  const [isFilePlaybackActive, setIsFilePlaybackActive] = useState(false);
   const [fileDuration, setFileDuration] = useState(0);
   const [currentFileTime, setCurrentFileTime] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -154,7 +153,6 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
 
     try {
       await wsService.startFilePlayback();
-      setIsFilePlaybackActive(true);
       setIsRecording(true); // Use same state for UI consistency
       
       // Update progress periodically
@@ -163,7 +161,6 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
           setCurrentFileTime(wsService.getCurrentFileTime());
         } else {
           clearInterval(progressInterval);
-          setIsFilePlaybackActive(false);
           setIsRecording(false);
           setCurrentFileTime(0);
         }
@@ -176,7 +173,6 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   const handleStopFilePlayback = () => {
     setIsStoppingRecording(true);
     wsService.stopFilePlayback();
-    setIsFilePlaybackActive(false);
     setIsRecording(false);
     setCurrentFileTime(0);
   };

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Activity, Mic, MessageSquare, Settings } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Activity, Mic, MessageSquare } from 'lucide-react';
 import { ConfigPanel } from './components/ConfigPanel';
 import { AudioRecorder } from './components/AudioRecorder';
 import { ActionsList } from './components/ActionsList';
@@ -7,14 +7,11 @@ import { ConversationsList } from './components/ConversationsList';
 import { ApiService } from './services/api';
 import { WebSocketService } from './services/websocket';
 import { ApiConfig, DetectedAction, TranscriptSegment, TranscriptBeautifyData } from './types';
+import { getApiConfig } from './config/env';
 import { v4 as uuidv4 } from 'uuid';
 
 function App() {
-  const [config, setConfig] = useState<ApiConfig>({
-    baseUrl: 'http://localhost:3000',
-    userId: 'test-user-123',
-    authToken: 'Bearer cHLnhvOEr8l6RkvEwjAk4sjN5XgES'
-  });
+  const [config, setConfig] = useState<ApiConfig>(getApiConfig());
 
   const [apiService, setApiService] = useState<ApiService>(new ApiService(config));
   const [wsService, setWsService] = useState<WebSocketService>(

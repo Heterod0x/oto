@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, Clock, Trash2, Calendar, Search, FileText } from 'lucide-react';
+import { CheckCircle, Trash2, Calendar, Search, FileText } from 'lucide-react';
 import { Action, DetectedAction } from '../types';
 import { ApiService } from '../services/api';
 
