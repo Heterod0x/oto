@@ -281,6 +281,7 @@ export class AudioStreamHandler {
 
       // Set up ActionDetector event handlers
       session.actionDetector.on('actions-detected', async (actions: DetectedAction[]) => {
+        if (session.isCompleted) return;
         // Save detected actions and send to client
         for (const action of actions) {
           await this.saveAndSendAction(session, action);
@@ -296,6 +297,7 @@ export class AudioStreamHandler {
       });
 
       session.actionDetector.on('segments-beautified', (data: any) => {
+        if (session.isCompleted) return;
         const segments: BeautifiedSegment[] = data.beautifiedSegments;
         this.sendBeautifyResponse(session.ws, data.transcript, data.audioStart, data.audioEnd, segments.map(segment => ({
           audioStart: segment.audioStart,
@@ -306,11 +308,13 @@ export class AudioStreamHandler {
 
       // Set up transcription event handlers
       transcriptionInstance.on('partial-transcript', (data: any) => {
+        if (session.isCompleted) return;
         this.sendTranscribeResponse(session.ws, data.text, false, data.audioStart, data.audioEnd);
       });
 
       transcriptionInstance.on('final-transcript', async (data: any) => {
         if (!data.text) return;
+        if (session.isCompleted) return;
 
         console.log("final-transcript", data);
         this.sendTranscribeResponse(session.ws, data.text, true, data.audioStart, data.audioEnd);

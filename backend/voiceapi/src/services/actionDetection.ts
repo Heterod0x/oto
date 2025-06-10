@@ -11,7 +11,7 @@ export class ActionDetectionService {
     this.openai = new OpenAI({
       apiKey: config.openai.apiKey,
     });
-    this.model = "gpt-4o";
+    this.model = "gpt-4o-mini";
   }
 
   async detectActions(transcript: string, audioStart: number = 0, audioEnd: number = 0, detectedActionsPrevious: DetectedAction[] = []): Promise<DetectedAction[]> {
@@ -27,7 +27,7 @@ export class ActionDetectionService {
           },
           {
             role: 'user',
-            content: `Previous detected actions: ${JSON.stringify(detectedActionsPrevious)}\n\nTranscript: ${transcript}`,
+            content: `Already detected actions (don't detect same actions again): ${JSON.stringify(detectedActionsPrevious)}\n\nTranscript: ${transcript}`,
           },
         ],
         temperature: 0.1,
@@ -39,7 +39,7 @@ export class ActionDetectionService {
         return [];
       }
 
-      return this.parseActionResponse(content, transcript, audioStart, audioEnd);
+      return this.parseActionResponse(content, audioStart, audioEnd);
     } catch (error) {
       console.error('Failed to detect actions:', error);
       return [];
@@ -61,7 +61,8 @@ Return the findings as a JSON array of objects with this structure:
   "title": "Brief descriptive title",
   "body": "Detailed description (for TODO items; optional but recommended)",
   "query": "Search query or question (for RESEARCH items)",
-  "datetime": "ISO 8601 datetime string (for CALENDAR items when a specific date/time is mentioned)"
+  "datetime": "ISO 8601 datetime string (for CALENDAR items when a specific date/time is mentioned)",
+  "related_transcript": "The transcript of the action"
 }
 
 ### Extraction Rules
@@ -88,7 +89,6 @@ Respond **only** with the resulting JSON array. If no actions are found, return 
 
   private parseActionResponse(
     response: string,
-    transcript: string,
     audioStart: number,
     audioEnd: number
   ): DetectedAction[] {
@@ -106,7 +106,7 @@ Respond **only** with the resulting JSON array. If no actions are found, return 
 
       return actions
         .filter(this.validateAction)
-        .map((action: any) => this.formatDetectedAction(action, transcript, audioStart, audioEnd));
+        .map((action: any) => this.formatDetectedAction(action, audioStart, audioEnd));
     } catch (error) {
       console.error('Failed to parse action response:', error);
       return [];
@@ -125,7 +125,6 @@ Respond **only** with the resulting JSON array. If no actions are found, return 
 
   private formatDetectedAction(
     action: any,
-    transcript: string,
     audioStart: number,
     audioEnd: number
   ): DetectedAction {
@@ -138,7 +137,7 @@ Respond **only** with the resulting JSON array. If no actions are found, return 
       relate: {
         start: audioStart,
         end: audioEnd,
-        transcript: transcript,
+        transcript: action.related_transcript,
       },
     };
 

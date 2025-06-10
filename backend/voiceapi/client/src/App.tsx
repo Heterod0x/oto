@@ -226,7 +226,7 @@ function App() {
                   </div>
                 )}
                 <div className="actions-preview">
-                  {detectedActions.slice(0, 3).map((action, index) => (
+                  {detectedActions.slice(0, 99).map((action, index) => (
                     <div key={index} className="action-preview">
                       <span className="action-type">{action.type}</span>
                       <span className="action-title">{action.inner.title}</span>
