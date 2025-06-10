@@ -1,5 +1,5 @@
 import { usePrivy } from "@privy-io/react-auth";
-import { FileText, LogOut, Mic } from "lucide-react";
+import { FileText, History, LogOut, Mic, Radio } from "lucide-react";
 import { useRouter } from "next/router";
 import { cn } from "../lib/utils";
 
@@ -24,6 +24,20 @@ export function FooterNavigation({ className }: FooterNavigationProps) {
       icon: Mic,
       path: "/agent",
       isActive: currentPath === "/agent",
+    },
+    {
+      id: "record",
+      label: "Record",
+      icon: Radio,
+      path: "/record",
+      isActive: currentPath === "/record",
+    },
+    {
+      id: "history",
+      label: "History",
+      icon: History,
+      path: "/history",
+      isActive: currentPath === "/history",
     },
     {
       id: "tasks",
@@ -57,7 +71,7 @@ export function FooterNavigation({ className }: FooterNavigationProps) {
         className,
       )}
     >
-      <nav className="flex items-center justify-around px-4 py-2 max-w-md mx-auto">
+      <nav className="flex items-center justify-around px-2 py-2 max-w-lg mx-auto">
         {navigationItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -65,7 +79,7 @@ export function FooterNavigation({ className }: FooterNavigationProps) {
               key={item.id}
               onClick={() => handleNavigation(item.path, item.id)}
               className={cn(
-                "flex flex-col items-center gap-1 p-3 rounded-xl transition-all duration-200",
+                "flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200",
                 "hover:bg-gray-100 active:scale-95",
                 item.isActive
                   ? "bg-violet-100 text-violet-600"
@@ -73,7 +87,7 @@ export function FooterNavigation({ className }: FooterNavigationProps) {
               )}
             >
               <Icon
-                size={20}
+                size={18}
                 className={cn("transition-transform duration-200", item.isActive && "scale-110")}
               />
               <span className="text-xs font-medium">{item.label}</span>
