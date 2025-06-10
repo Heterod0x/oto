@@ -285,23 +285,29 @@ export class AudioStreamHandler {
         console.log(`Action detector started for session: ${sessionId}`);
       });
 
+      session.actionDetector.on('segments-beautified', (data: any) => {
+        this.sendBeautifyResponse(session.ws, data.transcript, data.audioStart, data.audioEnd);
+      });
+
       // Set up transcription event handlers
       transcriptionInstance.on('partial-transcript', (data: any) => {
-        this.sendTranscribeResponse(session.ws, data.text, false);
+        this.sendTranscribeResponse(session.ws, data.text, false, data.audioStart, data.audioEnd);
       });
 
       transcriptionInstance.on('final-transcript', async (data: any) => {
         if (!data.text) return;
 
         console.log("final-transcript", data);
-        this.sendTranscribeResponse(session.ws, data.text, true);
+        this.sendTranscribeResponse(session.ws, data.text, true, data.audioStart, data.audioEnd);
 
         // Add transcript to action detector instead of immediate detection
         if (session.actionDetector) {
           session.actionDetector.addTranscript(
             data.text,
-            data.audioStart || 0,
-            data.audioEnd || 0
+            data.audioStart,
+            data.audioEnd,
+            undefined, // customTimestamp
+            true // finalized
           );
         }
 
@@ -348,13 +354,28 @@ export class AudioStreamHandler {
     }
   }
 
-  private sendTranscribeResponse(ws: WebSocket, transcript: string, finalized: boolean): void {
+  private sendTranscribeResponse(ws: WebSocket, transcript: string, finalized: boolean, audioStart: number, audioEnd: number): void {
     if (ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({
         type: 'transcribe',
         data: {
           finalized,
           transcript,
+          audioStart,
+          audioEnd,
+        },
+      }));
+    }
+  }
+
+  private sendBeautifyResponse(ws: WebSocket, transcript: string, audioStart: number, audioEnd: number): void {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'transcript-beautify',
+        data: {
+          transcript,
+          audioStart,
+          audioEnd,
         },
       }));
     }

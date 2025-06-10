@@ -14,7 +14,7 @@ export class ActionDetectionService {
     this.model = "gpt-4o-mini";
   }
 
-  async detectActions(transcript: string, audioStart: number = 0, audioEnd: number = 0): Promise<DetectedAction[]> {
+  async detectActions(transcript: string, audioStart: number = 0, audioEnd: number = 0, detectedActionsPrevious: DetectedAction[] = []): Promise<DetectedAction[]> {
     try {
       const prompt = this.buildActionDetectionPrompt(transcript);
       
@@ -27,7 +27,7 @@ export class ActionDetectionService {
           },
           {
             role: 'user',
-            content: transcript,
+            content: `Previous detected actions: ${JSON.stringify(detectedActionsPrevious)}\n\nTranscript: ${transcript}`,
           },
         ],
         temperature: 0.1,
@@ -71,6 +71,7 @@ Guidelines:
 - If no specific time is mentioned for calendar items, omit the datetime field
 - Be conservative - only extract items that are clearly actionable
 - Return an empty array if no actions are detected
+- If the detected action is already in the previous detected actions, skip it. But don't miss new actions.
 
 Examples:
 - "I need to buy groceries" → TODO
