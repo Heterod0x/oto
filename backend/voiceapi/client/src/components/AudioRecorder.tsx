@@ -1,12 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { Mic, MicOff, Square, Loader2, Upload, Play, Pause, RotateCcw } from 'lucide-react';
 import { WebSocketService } from '../services/websocket';
-import { WebSocketMessage, DetectedAction } from '../types';
+import { WebSocketMessage, DetectedAction, TranscriptSegment, TranscriptBeautifyData } from '../types';
 
 interface AudioRecorderProps {
   wsService: WebSocketService;
   conversationId: string;
-  onTranscript: (transcript: string, finalized: boolean) => void;
+  onTranscriptSegment: (segment: TranscriptSegment) => void;
+  onTranscriptBeautify: (beautifyData: TranscriptBeautifyData) => void;
   onActionDetected: (action: DetectedAction) => void;
   onError: (error: string) => void;
 }
@@ -14,7 +15,8 @@ interface AudioRecorderProps {
 export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   wsService,
   conversationId,
-  onTranscript,
+  onTranscriptSegment,
+  onTranscriptBeautify,
   onActionDetected,
   onError
 }) => {
@@ -39,7 +41,28 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
         switch (message.type) {
           case 'transcribe':
             if (message.data) {
-              onTranscript(message.data.transcript, message.data.finalized);
+              // Handle new transcribe message format with audioStart/audioEnd
+              const segment: TranscriptSegment = {
+                audioStart: message.data.audioStart || 0,
+                audioEnd: message.data.audioEnd || 0,
+                transcript: message.data.transcript,
+                finalized: message.data.finalized
+              };
+              
+              // Only call onTranscriptSegment if the transcript is finalized and has timing info
+              if (segment.finalized && (message.data.audioStart !== undefined && message.data.audioEnd !== undefined)) {
+                onTranscriptSegment(segment);
+              }
+            }
+            break;
+          case 'transcript-beautify':
+            if (message.data) {
+              const beautifyData: TranscriptBeautifyData = {
+                audioStart: message.data.audioStart,
+                audioEnd: message.data.audioEnd,
+                transcript: message.data.transcript
+              };
+              onTranscriptBeautify(beautifyData);
             }
             break;
           case 'detect-action':

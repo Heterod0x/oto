@@ -6,7 +6,7 @@ import { ActionsList } from './components/ActionsList';
 import { ConversationsList } from './components/ConversationsList';
 import { ApiService } from './services/api';
 import { WebSocketService } from './services/websocket';
-import { ApiConfig, DetectedAction } from './types';
+import { ApiConfig, DetectedAction, TranscriptSegment, TranscriptBeautifyData } from './types';
 import { v4 as uuidv4 } from 'uuid';
 
 function App() {
@@ -24,7 +24,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<'recorder' | 'actions' | 'conversations'>('recorder');
   const [selectedConversationId, setSelectedConversationId] = useState<string>(uuidv4());
   const [detectedActions, setDetectedActions] = useState<DetectedAction[]>([]);
-  const [transcript, setTranscript] = useState<string>('');
+  const [transcriptSegments, setTranscriptSegments] = useState<TranscriptSegment[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [healthStatus, setHealthStatus] = useState<any>(null);
 
@@ -40,11 +40,38 @@ function App() {
     setErrors(prev => [...prev, `${new Date().toLocaleTimeString()}: ${error}`]);
   };
 
-  const handleTranscript = (newTranscript: string, finalized: boolean) => {
-    if (finalized) {
-      setTranscript(prev => prev + ' ' + newTranscript);
+  const handleTranscriptSegment = (segment: TranscriptSegment) => {
+    if (segment.finalized) {
+      setTranscriptSegments(prev => [...prev, segment]);
     }
   };
+
+  const handleTranscriptBeautify = (beautifyData: TranscriptBeautifyData) => {
+    setTranscriptSegments(prev => {
+      // Filter out segments that fall within the beautified range
+      const filteredSegments = prev.filter(segment => 
+        segment.audioEnd <= beautifyData.audioStart || segment.audioStart >= beautifyData.audioEnd
+      );
+      
+      // Add the beautified segment
+      const beautifiedSegment: TranscriptSegment = {
+        audioStart: beautifyData.audioStart,
+        audioEnd: beautifyData.audioEnd,
+        transcript: beautifyData.transcript,
+        finalized: true
+      };
+      
+      // Insert in chronological order
+      const newSegments = [...filteredSegments, beautifiedSegment];
+      return newSegments.sort((a, b) => a.audioStart - b.audioStart);
+    });
+  };
+
+  // Generate display transcript from segments
+  const displayTranscript = transcriptSegments
+    .sort((a, b) => a.audioStart - b.audioStart)
+    .map(segment => segment.transcript)
+    .join(' ');
 
   const handleActionDetected = (action: DetectedAction) => {
     setDetectedActions(prev => [action, ...prev.slice(0, 9)]); // Keep last 10 actions
@@ -61,6 +88,10 @@ function App() {
 
   const clearErrors = () => {
     setErrors([]);
+  };
+
+  const clearTranscriptSegments = () => {
+    setTranscriptSegments([]);
   };
 
   useEffect(() => {
@@ -119,7 +150,8 @@ function App() {
               <AudioRecorder
                 wsService={wsService}
                 conversationId={selectedConversationId}
-                onTranscript={handleTranscript}
+                onTranscriptSegment={handleTranscriptSegment}
+                onTranscriptBeautify={handleTranscriptBeautify}
                 onActionDetected={handleActionDetected}
                 onError={handleError}
               />
@@ -137,9 +169,16 @@ function App() {
             </div>
 
             <div className="transcript-section">
-              <h3>Live Transcript</h3>
+              <div className="transcript-header">
+                <h3>Live Transcript</h3>
+                {transcriptSegments.length > 0 && (
+                  <button onClick={clearTranscriptSegments} className="btn-clear">
+                    Clear Transcript
+                  </button>
+                )}
+              </div>
               <div className="transcript-content">
-                {transcript || 'No transcript yet...'}
+                {displayTranscript || 'No transcript yet...'}
               </div>
             </div>
 

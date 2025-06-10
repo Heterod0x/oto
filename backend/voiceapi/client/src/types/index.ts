@@ -52,8 +52,21 @@ export interface DetectedAction {
   };
 }
 
+export interface TranscriptSegment {
+  audioStart: number;
+  audioEnd: number;
+  transcript: string;
+  finalized: boolean;
+}
+
+export interface TranscriptBeautifyData {
+  audioStart: number;
+  audioEnd: number;
+  transcript: string;
+}
+
 export interface WebSocketMessage {
-  type: 'transcribe' | 'detect-action' | 'error';
+  type: 'transcribe' | 'transcript-beautify' | 'detect-action' | 'error';
   data?: any;
   message?: string;
 }
