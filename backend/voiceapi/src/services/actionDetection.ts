@@ -62,12 +62,12 @@ Return the findings as a JSON array of objects with this structure:
   "body": "Detailed description (for TODO items; optional but recommended)",
   "query": "Search query or question (for RESEARCH items)",
   "datetime": "ISO 8601 datetime string (for CALENDAR items when a specific date/time is mentioned)",
-  "related_transcript": "The transcript of the action"
+  "related_transcript": "The related transcript of the action" // capture as much as possible of the related transcript
 }
 
 ### Extraction Rules
 - **Catch everything**: If an utterance explicitly or implicitly points to an action—even a casual “I should … someday”—include it.  
-- **CALENDAR**: If a plan or commitment is stated but no exact date/time is given, still extract it and omit "datetime".  
+- **CALENDAR**: You need to have the date at least to classify it as a CALENDAR item.
 - **TODO**: Speaker or assignee doesn’t matter. Self-talk counts. Conditional or tentative phrasing counts.  
   - Example: “I guess I ought to clean the garage” → TODO  
 - **RESEARCH**: Anything that clearly asks for information or clarification.  
