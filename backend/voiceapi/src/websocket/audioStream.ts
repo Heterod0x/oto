@@ -4,6 +4,7 @@ import { wsAuthMiddleware } from '../middleware/auth';
 import { databaseService } from '../services/database';
 import { TranscriptionService, transcriptionService } from '../services/transcription';
 import { actionDetectionService } from '../services/actionDetection';
+import { ActionDetector } from '../services/actionDetector';
 import { WebSocketMessage, DetectedAction } from '../types';
 import { AudioDecoder } from '../services/audioDecoder';
 
@@ -12,6 +13,7 @@ interface ConversationSession {
   userId: string;
   ws: WebSocket;
   transcriptionService?: TranscriptionService;
+  actionDetector?: ActionDetector;
   fullTranscript: string;
   isCompleted: boolean;
   authenticated: boolean;
@@ -193,19 +195,34 @@ export class AudioStreamHandler {
     try {
       session.isCompleted = true;
 
+      // Stop action detector and perform final detection
+      if (session.actionDetector) {
+        session.actionDetector.stop();
+        
+        // Perform final action detection on any remaining transcript
+        const finalActions = await session.actionDetector.detectActionsNow();
+        for (const action of finalActions) {
+          await this.saveAndSendAction(session, action);
+        }
+      }
+
       // Stop transcription and get final transcript
       const finalTranscript = await session.transcriptionService?.stopRealtimeTranscription() || session.fullTranscript;
+      
+      // Get the full transcript with timestamps from ActionDetector if available
+      const timestampedTranscript = session.actionDetector?.getFullTranscript() || finalTranscript;
+      const plainTranscript = session.actionDetector?.getPlainTranscript() || finalTranscript;
 
       // Update conversation with final transcript
       await databaseService.createConversation(session.userId, session.conversationId, "Test Conversation");
       await databaseService.updateConversation(session.userId, session.conversationId, {
-        transcript: finalTranscript,
-        last_transcript_preview: this.generatePreview(finalTranscript),
+        transcript: timestampedTranscript, // Use timestamped version for storage
+        last_transcript_preview: this.generatePreview(plainTranscript),
         status: 'archived',
       });
 
-      // Generate conversation logs
-      const logs = await actionDetectionService.generateConversationLogs(finalTranscript);
+      // Generate conversation logs using the plain transcript
+      const logs = await actionDetectionService.generateConversationLogs(plainTranscript);
       for (const log of logs) {
         await databaseService.createConversationLog(session.userId, {
           conversation_id: session.conversationId,
@@ -215,6 +232,12 @@ export class AudioStreamHandler {
           summary: log.summary,
           transcript_excerpt: log.transcript_excerpt,
         });
+      }
+
+      // Log session statistics
+      if (session.actionDetector) {
+        const stats = session.actionDetector.getStats();
+        console.log(`Session ${sessionId} completed with stats:`, stats);
       }
 
       // Close WebSocket connection
@@ -239,33 +262,59 @@ export class AudioStreamHandler {
       const transcriptionInstance = Object.create(transcriptionService);
       session.transcriptionService = transcriptionInstance;
 
-      // Set up transcription event handlers
-      transcriptionInstance.on('partial-transcript', (data: any) => {
-        this.sendTranscribeResponse(session.ws, data.text, false);
+      // Create and configure ActionDetector for this session
+      session.actionDetector = new ActionDetector(actionDetectionService, {
+        detectionInterval: 10000, // 10 seconds
+        maxSegments: 50,
+        minTextLength: 30,
       });
 
-      transcriptionInstance.on('final-transcript', async (data: any) => {
-        this.sendTranscribeResponse(session.ws, data.text, true);
-
-        // Detect actions in the transcript segment
-        const actions = await actionDetectionService.detectActions(
-          data.text,
-          data.audioStart,
-          data.audioEnd,
-        );
-
-        session.fullTranscript += ' ' + data.text;
-
+      // Set up ActionDetector event handlers
+      session.actionDetector.on('actions-detected', async (actions: DetectedAction[]) => {
         // Save detected actions and send to client
         for (const action of actions) {
           await this.saveAndSendAction(session, action);
         }
       });
 
+      session.actionDetector.on('detection-error', (error: Error) => {
+        console.error('Action detection error:', error);
+      });
+
+      session.actionDetector.on('started', () => {
+        console.log(`Action detector started for session: ${sessionId}`);
+      });
+
+      // Set up transcription event handlers
+      transcriptionInstance.on('partial-transcript', (data: any) => {
+        this.sendTranscribeResponse(session.ws, data.text, false);
+      });
+
+      transcriptionInstance.on('final-transcript', async (data: any) => {
+        if (!data.text) return;
+
+        console.log("final-transcript", data);
+        this.sendTranscribeResponse(session.ws, data.text, true);
+
+        // Add transcript to action detector instead of immediate detection
+        if (session.actionDetector) {
+          session.actionDetector.addTranscript(
+            data.text,
+            data.audioStart || 0,
+            data.audioEnd || 0
+          );
+        }
+
+        session.fullTranscript += ' ' + data.text;
+      });
+
       transcriptionInstance.on('error', (error: Error) => {
         console.error('Transcription error:', error);
         this.sendError(session.ws, 'Transcription failed');
       });
+
+      // Start action detector
+      session.actionDetector.start();
 
       // Start real-time transcription
       await transcriptionInstance.startRealtimeTranscription();
@@ -346,6 +395,12 @@ export class AudioStreamHandler {
         session.transcriptionService.stopRealtimeTranscription().catch((error: Error) => {
           console.error('Error stopping transcription:', error);
         });
+      }
+
+      // Clean up action detector
+      if (session.actionDetector) {
+        session.actionDetector.stop();
+        session.actionDetector.removeAllListeners();
       }
 
       this.sessions.delete(sessionId);
