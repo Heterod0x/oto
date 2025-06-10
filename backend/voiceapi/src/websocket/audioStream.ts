@@ -7,6 +7,7 @@ import { actionDetectionService } from '../services/actionDetection';
 import { ActionDetector } from '../services/actionDetector';
 import { WebSocketMessage, DetectedAction } from '../types';
 import { AudioDecoder } from '../services/audioDecoder';
+import { BeautifiedSegment } from '@/services/transcriptionBeautifier';
 
 interface ConversationSession {
   conversationId: string;
@@ -22,6 +23,12 @@ interface ConversationSession {
 interface AuthMessage {
   userId: string;
   apiKey: string;
+}
+
+interface BeautifiedSegmentResponse {
+  audioStart: number;
+  audioEnd: number;
+  transcript: string;
 }
 
 export class AudioStreamHandler {
@@ -286,7 +293,12 @@ export class AudioStreamHandler {
       });
 
       session.actionDetector.on('segments-beautified', (data: any) => {
-        this.sendBeautifyResponse(session.ws, data.transcript, data.audioStart, data.audioEnd);
+        const segments: BeautifiedSegment[] = data.beautifiedSegments;
+        this.sendBeautifyResponse(session.ws, data.transcript, data.audioStart, data.audioEnd, segments.map(segment => ({
+          audioStart: segment.audioStart,
+          audioEnd: segment.audioEnd,
+          transcript: segment.beautifiedText,
+        })));
       });
 
       // Set up transcription event handlers
@@ -368,7 +380,7 @@ export class AudioStreamHandler {
     }
   }
 
-  private sendBeautifyResponse(ws: WebSocket, transcript: string, audioStart: number, audioEnd: number): void {
+  private sendBeautifyResponse(ws: WebSocket, transcript: string, audioStart: number, audioEnd: number, segments: BeautifiedSegmentResponse[]): void {
     if (ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({
         type: 'transcript-beautify',
@@ -376,6 +388,7 @@ export class AudioStreamHandler {
           transcript,
           audioStart,
           audioEnd,
+          segments,
         },
       }));
     }

@@ -57,7 +57,7 @@ export class ActionDetector extends EventEmitter {
       beautificationInterval: options.beautificationInterval || 15000, // 15 seconds
       maxSegments: options.maxSegments || 50, // keep last 50 segments
       minTextLength: options.minTextLength || 20, // minimum 20 characters
-      minSegmentsForBeautification: options.minSegmentsForBeautification || 5, // minimum 5 segments
+      minSegmentsForBeautification: options.minSegmentsForBeautification || 3, // minimum 5 segments
     };
   }
 
@@ -281,11 +281,16 @@ export class ActionDetector extends EventEmitter {
     }, this.options.detectionInterval);
   }
 
-  private millisecondsToTimestampFormat(milliseconds: number): string {
-    const seconds = Math.floor(milliseconds / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  private millisecondsToTimestampFormat(ms: number): string {
+    const hours   = Math.floor(ms / 3_600_000);          // 1000*60*60
+    const minutes = Math.floor(ms / 60_000) % 60;        // 残り分
+    const seconds = Math.floor(ms / 1000) % 60;          // 残り秒
+
+    return [
+      hours.toString().padStart(2, '0'),
+      minutes.toString().padStart(2, '0'),
+      seconds.toString().padStart(2, '0')
+    ].join(':');
   }
 
   /**

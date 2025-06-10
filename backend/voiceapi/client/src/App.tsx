@@ -54,24 +54,51 @@ function App() {
       );
       
       // Add the beautified segment
+      /*
       const beautifiedSegment: TranscriptSegment = {
         audioStart: beautifyData.audioStart,
         audioEnd: beautifyData.audioEnd,
         transcript: beautifyData.transcript,
         finalized: true
-      };
+      };*/
+      const beautifiedSegments = beautifyData.segments.map(segment => ({
+        audioStart: segment.audioStart,
+        audioEnd: segment.audioEnd,
+        transcript: segment.transcript,
+        finalized: true,
+        beautified: true,
+      }));
       
       // Insert in chronological order
-      const newSegments = [...filteredSegments, beautifiedSegment];
+      const newSegments = [...filteredSegments, ...beautifiedSegments];
       return newSegments.sort((a, b) => a.audioStart - b.audioStart);
     });
   };
 
-  // Generate display transcript from segments
-  const displayTranscript = transcriptSegments
+  // Helper function to format milliseconds to HH:MM:SS
+  const formatTimestamp = (milliseconds: number): string => {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  // Generate formatted transcript from segments
+  const formattedTranscript = transcriptSegments
     .sort((a, b) => a.audioStart - b.audioStart)
-    .map(segment => segment.transcript)
-    .join(' ');
+    .map(segment => {
+      const startTime = formatTimestamp(segment.audioStart);
+      const endTime = formatTimestamp(segment.audioEnd);
+
+      let ret = `[${startTime}-${endTime}]`;
+      ret += segment.beautified ? '' : '*';
+      ret += `\n${segment.transcript}`;
+
+      return ret;
+    })
+    .join('\n\n');
 
   const handleActionDetected = (action: DetectedAction) => {
     setDetectedActions(prev => [action, ...prev.slice(0, 9)]); // Keep last 10 actions
@@ -178,7 +205,7 @@ function App() {
                 )}
               </div>
               <div className="transcript-content">
-                {displayTranscript || 'No transcript yet...'}
+                <pre>{formattedTranscript || 'No transcript yet...'}</pre>
               </div>
             </div>
 

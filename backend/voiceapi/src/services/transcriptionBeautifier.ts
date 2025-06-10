@@ -5,6 +5,8 @@ export interface BeautifiedSegment {
   beautifiedText: string;
   startTimestamp: string;
   endTimestamp: string;
+  audioStart: number;
+  audioEnd: number;
   speaker: string;
 }
 
@@ -98,6 +100,11 @@ body
 `;
   }
 
+  private timestampToMs(timestamp: string): number {
+    const [hours, minutes, seconds] = timestamp.split(':').map(Number);
+    return hours * 3600 * 1000 + minutes * 60 * 1000 + seconds * 1000;
+  }
+
 
   private parseBeautificationBatchResponse(
     response: string,
@@ -120,6 +127,8 @@ body
                     beautifiedText: text.trim(),
                     startTimestamp: timestamp.split(' - ')[0].trim(),
                     endTimestamp: timestamp.split(' - ')[1].trim(),
+                    audioStart: this.timestampToMs(timestamp.split(' - ')[0].trim()),
+                    audioEnd: this.timestampToMs(timestamp.split(' - ')[1].trim()),
                     //speaker: speaker.trim(),
                     speaker: 'Unknown',
                 });
@@ -159,6 +168,8 @@ body
           beautifiedText: originalText,
           startTimestamp,
           endTimestamp,
+          audioStart: this.timestampToMs(startTimestamp),
+          audioEnd: this.timestampToMs(endTimestamp),
           speaker: "Unknown",
         },
       ],
@@ -178,6 +189,8 @@ body
       beautifiedText: segment.text,
       startTimestamp: segment.startTimestamp,
       endTimestamp: segment.endTimestamp,
+      audioStart: this.timestampToMs(segment.startTimestamp),
+      audioEnd: this.timestampToMs(segment.endTimestamp),
       speaker: "Unknown",
     }));
 

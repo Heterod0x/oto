@@ -46,7 +46,8 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
                 audioStart: message.data.audioStart || 0,
                 audioEnd: message.data.audioEnd || 0,
                 transcript: message.data.transcript,
-                finalized: message.data.finalized
+                finalized: message.data.finalized,
+                beautified: false,
               };
               
               // Only call onTranscriptSegment if the transcript is finalized and has timing info
@@ -60,7 +61,8 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
               const beautifyData: TranscriptBeautifyData = {
                 audioStart: message.data.audioStart,
                 audioEnd: message.data.audioEnd,
-                transcript: message.data.transcript
+                transcript: message.data.transcript,
+                segments: message.data.segments,
               };
               onTranscriptBeautify(beautifyData);
             }

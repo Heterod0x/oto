@@ -57,12 +57,14 @@ export interface TranscriptSegment {
   audioEnd: number;
   transcript: string;
   finalized: boolean;
+  beautified: boolean;
 }
 
 export interface TranscriptBeautifyData {
   audioStart: number;
   audioEnd: number;
   transcript: string;
+  segments: TranscriptSegment[];
 }
 
 export interface WebSocketMessage {
