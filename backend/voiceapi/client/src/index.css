@@ -114,6 +114,70 @@ body {
   background: #f8faff;
 }
 
+.nav-tab.recording {
+  position: relative;
+}
+
+.recording-indicator-dot {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  animation: pulse 1s infinite;
+}
+
+.nav-tab.recording .recording-indicator-dot {
+  animation: pulse 1s infinite;
+}
+
+/* Recording Status Banner */
+.recording-status-banner {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  padding: 0.75rem 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.recording-status-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  gap: 1rem;
+}
+
+.recording-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.recording-status-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.recording-status-banner .btn-secondary {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  font-size: 0.85rem;
+  padding: 0.4rem 0.8rem;
+}
+
+.recording-status-banner .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
 /* Main content */
 .app-main {
   flex: 1;
@@ -1238,5 +1302,21 @@ body {
   
   .mode-tab {
     justify-content: flex-start;
+  }
+  
+  .recording-status-banner {
+    padding: 0.5rem 1rem;
+  }
+  
+  .recording-status-content {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  
+  .recording-status-info {
+    flex-direction: column;
+    gap: 0.25rem;
+    align-items: flex-start;
   }
 }

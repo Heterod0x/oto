@@ -26,6 +26,17 @@ function App() {
   const [healthStatus, setHealthStatus] = useState<any>(null);
   const transcriptContentRef = useRef<HTMLDivElement>(null);
 
+  // Recording state lifted to App level to persist across tab switches
+  const [isConnected, setIsConnected] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isStoppingRecording, setIsStoppingRecording] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<string>('Disconnected');
+  const [inputMode, setInputMode] = useState<'microphone' | 'file'>('microphone');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isFileLoaded, setIsFileLoaded] = useState(false);
+  const [fileDuration, setFileDuration] = useState(0);
+  const [currentFileTime, setCurrentFileTime] = useState(0);
+
   const handleConfigChange = (newConfig: ApiConfig) => {
     setConfig(newConfig);
     const newApiService = new ApiService(newConfig);
@@ -176,11 +187,12 @@ function App() {
 
       <nav className="app-nav">
         <button
-          className={`nav-tab ${activeTab === 'recorder' ? 'active' : ''}`}
+          className={`nav-tab ${activeTab === 'recorder' ? 'active' : ''} ${isRecording ? 'recording' : ''}`}
           onClick={() => setActiveTab('recorder')}
         >
           <Mic size={20} />
           Audio Recorder
+          {isRecording && <span className="recording-indicator-dot"></span>}
         </button>
         <button
           className={`nav-tab ${activeTab === 'actions' ? 'active' : ''}`}
@@ -198,6 +210,30 @@ function App() {
         </button>
       </nav>
 
+      {/* Recording status banner when not on recorder tab */}
+      {isRecording && activeTab !== 'recorder' && (
+        <div className="recording-status-banner">
+          <div className="recording-status-content">
+            <div className="recording-status-indicator">
+              <div className="pulse"></div>
+              <span>Recording in progress...</span>
+            </div>
+            <div className="recording-status-info">
+              <span>Mode: {inputMode === 'microphone' ? 'Microphone' : 'Audio File'}</span>
+              {inputMode === 'file' && selectedFile && (
+                <span>File: {selectedFile.name}</span>
+              )}
+            </div>
+            <button 
+              className="btn-secondary"
+              onClick={() => setActiveTab('recorder')}
+            >
+              Go to Recorder
+            </button>
+          </div>
+        </div>
+      )}
+
       <main className="app-main">
         {activeTab === 'recorder' && (
           <div className="recorder-tab">
@@ -209,6 +245,24 @@ function App() {
                 onTranscriptBeautify={handleTranscriptBeautify}
                 onActionDetected={handleActionDetected}
                 onError={handleError}
+                isConnected={isConnected}
+                setIsConnected={setIsConnected}
+                isRecording={isRecording}
+                setIsRecording={setIsRecording}
+                isStoppingRecording={isStoppingRecording}
+                setIsStoppingRecording={setIsStoppingRecording}
+                connectionStatus={connectionStatus}
+                setConnectionStatus={setConnectionStatus}
+                inputMode={inputMode}
+                setInputMode={setInputMode}
+                selectedFile={selectedFile}
+                setSelectedFile={setSelectedFile}
+                isFileLoaded={isFileLoaded}
+                setIsFileLoaded={setIsFileLoaded}
+                fileDuration={fileDuration}
+                setFileDuration={setFileDuration}
+                currentFileTime={currentFileTime}
+                setCurrentFileTime={setCurrentFileTime}
               />
               
               <div className="conversation-input">

@@ -10,6 +10,25 @@ interface AudioRecorderProps {
   onTranscriptBeautify: (beautifyData: TranscriptBeautifyData) => void;
   onActionDetected: (action: DetectedAction) => void;
   onError: (error: string) => void;
+  // Recording state props
+  isConnected: boolean;
+  setIsConnected: (connected: boolean) => void;
+  isRecording: boolean;
+  setIsRecording: (recording: boolean) => void;
+  isStoppingRecording: boolean;
+  setIsStoppingRecording: (stopping: boolean) => void;
+  connectionStatus: string;
+  setConnectionStatus: (status: string) => void;
+  inputMode: 'microphone' | 'file';
+  setInputMode: (mode: 'microphone' | 'file') => void;
+  selectedFile: File | null;
+  setSelectedFile: (file: File | null) => void;
+  isFileLoaded: boolean;
+  setIsFileLoaded: (loaded: boolean) => void;
+  fileDuration: number;
+  setFileDuration: (duration: number) => void;
+  currentFileTime: number;
+  setCurrentFileTime: (time: number) => void;
 }
 
 export const AudioRecorder: React.FC<AudioRecorderProps> = ({
@@ -18,17 +37,26 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   onTranscriptSegment,
   onTranscriptBeautify,
   onActionDetected,
-  onError
+  onError,
+  isConnected,
+  setIsConnected,
+  isRecording,
+  setIsRecording,
+  isStoppingRecording,
+  setIsStoppingRecording,
+  connectionStatus,
+  setConnectionStatus,
+  inputMode,
+  setInputMode,
+  selectedFile,
+  setSelectedFile,
+  isFileLoaded,
+  setIsFileLoaded,
+  fileDuration,
+  setFileDuration,
+  currentFileTime,
+  setCurrentFileTime
 }) => {
-  const [isConnected, setIsConnected] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const [isStoppingRecording, setIsStoppingRecording] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<string>('Disconnected');
-  const [inputMode, setInputMode] = useState<'microphone' | 'file'>('microphone');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isFileLoaded, setIsFileLoaded] = useState(false);
-  const [fileDuration, setFileDuration] = useState(0);
-  const [currentFileTime, setCurrentFileTime] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleConnect = async () => {
