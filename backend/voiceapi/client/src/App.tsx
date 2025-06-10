@@ -139,7 +139,7 @@ function App() {
         <div className="header-content">
           <h1>
             <Activity size={32} />
-            Oto Voice API Client Playground
+            Oto Voice API Playground
           </h1>
           <div className="header-controls">
             <ConfigPanel config={config} onConfigChange={handleConfigChange} />
