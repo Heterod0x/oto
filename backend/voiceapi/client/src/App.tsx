@@ -39,9 +39,17 @@ function App() {
   };
 
   const handleTranscriptSegment = (segment: TranscriptSegment) => {
-    if (segment.finalized) {
-      setTranscriptSegments(prev => [...prev, segment]);
-    }
+    setTranscriptSegments(prev => {
+      if (segment.finalized) {
+        // For finalized segments, remove any existing partial transcript and add the finalized one
+        const filteredSegments = prev.filter(s => s.finalized); // Remove partial transcripts
+        return [...filteredSegments, { ...segment, id: `${segment.audioStart}-${segment.audioEnd}` }];
+      } else {
+        // For partial segments, replace any existing partial transcript
+        const finalizedSegments = prev.filter(s => s.finalized); // Keep only finalized segments
+        return [...finalizedSegments, { ...segment, id: 'partial-current', audioStart: 999999999, audioEnd: 999999999 }]; // Add current partial
+      }
+    });
   };
 
   const handleTranscriptBeautify = (beautifyData: TranscriptBeautifyData) => {
@@ -87,11 +95,26 @@ function App() {
   const formattedTranscript = transcriptSegments
     .sort((a, b) => a.audioStart - b.audioStart)
     .map(segment => {
-      const startTime = formatTimestamp(segment.audioStart);
-      const endTime = formatTimestamp(segment.audioEnd);
-
-      let ret = `[${startTime}-${endTime}]`;
-      ret += segment.beautified ? '' : '*';
+      let ret = '';
+      
+      // For partial transcripts, don't show timing (might not be meaningful)
+      if (segment.finalized) {
+        const startTime = formatTimestamp(segment.audioStart);
+        const endTime = formatTimestamp(segment.audioEnd);
+        ret = `[${startTime}-${endTime}]`;
+      } else {
+        ret = '[Live]'; // Show "Live" for partial transcripts
+      }
+      
+      // Add status indicators
+      if (segment.beautified) {
+        ret += ' ✓'; // Beautified
+      } else if (segment.finalized) {
+        ret += ' *'; // Finalized but not beautified
+      } else {
+        ret += ' ~'; // Partial/interim transcript
+      }
+      
       ret += `\n${segment.transcript}`;
 
       return ret;
@@ -203,6 +226,11 @@ function App() {
             <div className="transcript-section">
               <div className="transcript-header">
                 <h3>Live Transcript</h3>
+                <div className="transcript-legend">
+                  <small>
+                    <span>~ Partial</span> | <span>* Finalized</span> | <span>✓ Beautified</span>
+                  </small>
+                </div>
                 {transcriptSegments.length > 0 && (
                   <button onClick={clearTranscriptSegments} className="btn-clear">
                     Clear Transcript

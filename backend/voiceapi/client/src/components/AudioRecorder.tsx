@@ -47,10 +47,14 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
                 transcript: message.data.transcript,
                 finalized: message.data.finalized,
                 beautified: false,
+                id: message.data.finalized 
+                  ? `${message.data.audioStart || 0}-${message.data.audioEnd || 0}` 
+                  : 'partial-current', // Use simple ID for partial transcripts
               };
               
-              // Only call onTranscriptSegment if the transcript is finalized and has timing info
-              if (segment.finalized && (message.data.audioStart !== undefined && message.data.audioEnd !== undefined)) {
+              // Call onTranscriptSegment for both partial and final transcripts
+              // This allows users to see transcription progress in real-time
+              if (message.data.transcript && message.data.transcript.trim()) {
                 onTranscriptSegment(segment);
               }
             }

@@ -58,6 +58,7 @@ export interface TranscriptSegment {
   transcript: string;
   finalized: boolean;
   beautified: boolean;
+  id?: string; // Add unique identifier for tracking partial updates
 }
 
 export interface TranscriptBeautifyData {
