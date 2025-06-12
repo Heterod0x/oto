@@ -8,6 +8,7 @@ import { ActionDetector } from '../services/actionDetector';
 import { WebSocketMessage, DetectedAction } from '../types';
 import { AudioDecoder } from '../services/audioDecoder';
 import { BeautifiedSegment } from '@/services/transcriptionBeautifier';
+import { audioUploadService, UploadResult } from '../services/audioUpload';
 
 interface ConversationSession {
   conversationId: string;
@@ -15,6 +16,7 @@ interface ConversationSession {
   ws: WebSocket;
   transcriptionService?: TranscriptionService;
   actionDetector?: ActionDetector;
+  audioUploadSessionId: string;
   fullTranscript: string;
   isCompleted: boolean;
   authenticated: boolean;
@@ -72,6 +74,7 @@ export class AudioStreamHandler {
         fullTranscript: '',
         isCompleted: false,
         authenticated: false,
+        audioUploadSessionId: '',
       };
       const decoder = new AudioDecoder(false);
 
@@ -171,6 +174,7 @@ export class AudioStreamHandler {
 
     // Start transcription service
     await this.startTranscription(sessionId);
+    await this.startAudioUpload(sessionId);
     console.log(`Audio stream session started: ${sessionId}`);
   }
 
@@ -183,6 +187,9 @@ export class AudioStreamHandler {
     try {
       // Decode base64 audio data
       const audioBuffer = Buffer.from(encodedAudio, 'base64');
+      // put audio data to the audio upload service
+      await this.addAudioData(sessionId, audioBuffer);
+
       const decoder = this.decoders.get(sessionId);
       if (decoder) {
         decoder.write(audioBuffer);
@@ -224,10 +231,15 @@ export class AudioStreamHandler {
 
       // Update conversation with final transcript
       await databaseService.createConversation(session.userId, session.conversationId, await actionDetectionService.generateConversationTitle(audioTimestampedTranscript));
+
+      // Stop audio upload
+      const audioUploadResult = await this.stopAudioUpload(sessionId);
+
       await databaseService.updateConversation(session.userId, session.conversationId, {
         transcript: session.actionDetector?.getFullJsonTranscript(), // Use timestamped version for storage
         last_transcript_preview: await actionDetectionService.generateConversationSummary(audioTimestampedTranscript),
         status: 'archived',
+        audio_url: audioUploadResult.audioUrl || '',
       });
 
       // Generate conversation logs using the plain transcript
@@ -259,6 +271,43 @@ export class AudioStreamHandler {
 
     session.ws.close(1000, 'Conversation completed');
     this.sessions.delete(sessionId);
+  }
+
+  private async startAudioUpload(sessionId: string): Promise<void> {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      return;
+    }
+
+    const audioUploadSessionId = await audioUploadService.startUpload({
+      conversationId: session.conversationId,
+      userId: session.userId,
+    });
+
+    session.audioUploadSessionId = audioUploadSessionId;
+  }
+
+  private async stopAudioUpload(sessionId: string): Promise<UploadResult> {
+    const session = this.sessions.get(sessionId);
+    return await audioUploadService.completeUpload(session!.audioUploadSessionId);
+  }
+
+  private async cancelAudioUpload(sessionId: string): Promise<void> {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      return;
+    }
+
+    await audioUploadService.cancelUpload(session.audioUploadSessionId);
+  }
+
+  private async addAudioData(sessionId: string, audioData: Buffer): Promise<void> {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      return;
+    }
+
+    await audioUploadService.addAudioData(session.audioUploadSessionId, audioData);
   }
 
   private async startTranscription(sessionId: string): Promise<void> {
