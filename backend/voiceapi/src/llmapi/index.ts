@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { ConversationAgentService } from './services/ConversationAgentService';
 import dotenv from 'dotenv';
@@ -17,8 +17,7 @@ app.use(express.json());
 // Initialize the conversation agent service
 const conversationAgentService = new ConversationAgentService();
 
-// Basic chat completions endpoint (non-streaming)
-app.post('/chat/completions', async (req, res) => {
+const completionNoStream = async (req: Request, res: Response) => {
   try {
     const response = await conversationAgentService.handleChatCompletion(req.body);
     res.json(response);
@@ -31,12 +30,10 @@ app.post('/chat/completions', async (req, res) => {
       },
     });
   }
-});
+};
 
-// Streaming chat completions endpoint
-app.post('/chat/completions/stream', async (req, res) => {
+const completionStream = async (req: Request, res: Response) => {
   try {
-    // Set headers for Server-Sent Events
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
@@ -54,6 +51,20 @@ app.post('/chat/completions/stream', async (req, res) => {
     })}\n\n`);
     res.end();
   }
+};
+
+// Basic chat completions endpoint (non-streaming)
+app.post('/chat/completions', async (req, res) => {
+  if (req.body.stream) {
+    await completionStream(req, res);
+  } else {
+    await completionNoStream(req, res);
+  }
+});
+
+// Streaming chat completions endpoint
+app.post('/chat/completions/stream', async (req, res) => {
+  await completionStream(req, res);
 });
 
 // Health check endpoint

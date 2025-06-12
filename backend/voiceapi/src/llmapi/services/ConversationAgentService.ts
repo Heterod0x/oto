@@ -1,6 +1,23 @@
+import { BeautifiedSegment } from '@/services/transcriptionBeautifier';
 import { Agent, run, MCPServerStdio } from '@openai/agents';
 import { Response } from 'express';
 import path from 'path';
+
+import { tool } from '@openai/agents';
+import { z } from 'zod';
+
+// key: call-id, value: conversation_id
+const conversationCache = new Map<string, string>();
+
+export const getTodayTool = tool({
+  name: 'get_now',
+  description: "Returns current date and time in ISO 8601 format",
+  parameters: z.object({}),  // no inputs required
+  async execute() {
+    const today = new Date().toISOString();
+    return today;  // e.g. "2025-06-12T12:00:00.000Z"
+  },
+});
 
 interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -30,10 +47,12 @@ export class ConversationAgentService {
       this.mcpServer = new MCPServerStdio({
         name: 'Conversation Context Server',
         fullCommand: `node ${path.join(process.cwd(), 'dist/mcp/index.js')}`,
+        cacheToolsList: true,
       });
 
       // Connect to the MCP server
       await this.mcpServer.connect();
+      console.log('Conversation Agent initialized successfully');
 
       // Create the agent with MCP server
       this.agent = new Agent({
@@ -42,17 +61,34 @@ export class ConversationAgentService {
 
 When a user asks about their past conversations, meetings, todos, or any historical context:
 1. Use the available MCP tools to search for relevant conversations
-2. Get detailed context from the most relevant conversations
+2. Get detailed context from the most relevant conversations. 
 3. Provide specific, accurate answers based on the conversation data
 4. Reference which conversations or time periods you're drawing from
 5. If no relevant conversations are found, let the user know
 
-Always be helpful and provide context-aware responses when conversation data is available.
+When you do the search, search a little bit wider range of dates than the user's query to collect properly.
 
-Start the conversation with "Hello, how can I help you today?"
+Always be helpful and provide context-aware responses when conversation data is available. 
+You are the conversational agent on a phone call, so you must be concise and to the point when you are talking to the user. We will use text-to-speech to convert your responses to speech, so your text must be in that manner. (Except final systematic conversation id reference)
+
+If you decided to use the conversation, you MUST return the conversation_id at the end of your response in this format always as a systematic reference to the conversation.
+"""
+<<conversation_id: x>>
+"""
+
+Also as a user input, we may provide a [Current Reference Conversation Transcript: ...] and [Current Reference Conversation ID: ...] in order to provide context to the user's query.
+Don't talk about the reference conversation in your response, its systematic, just use it as a reference to provide context to the user's query.
+You DON'T have to use MCP tools if user provide the reference and user didn't change the target conversation to reference. Just use the reference in that case.
+
+When you respond to the user, you should use the same language as the user's query.
 `,
         mcpServers: [this.mcpServer],
-        model: 'gpt-4o-mini',
+        tools: [getTodayTool],
+        model: 'gpt-4o',
+      });
+
+      this.agent.on("agent_tool_end", (c, t) => {
+        console.log("Agent tool end", c);
       });
 
       console.log('Conversation Agent initialized successfully');
@@ -68,11 +104,17 @@ Start the conversation with "Hello, how can I help you today?"
   }
 
   async handleChatCompletion(request: ChatCompletionRequest) {
+    console.log('handleChatCompletion');
+    console.log(request);
+
     if (!this.agent) {
       throw new Error('Agent not initialized');
     }
 
-    const { messages, model = 'gpt-4o-mini', temperature = 0.7, max_tokens = 1000, user_id } = request;
+    let { messages, model = 'gpt-4o', temperature = 0.7, max_tokens = 1000, user_id } = request;
+
+    // remove system messages from the messages array
+    messages = messages.filter(message => message.role !== 'system');
     
     // Get the user's query (last message)
     const userQuery = messages[messages.length - 1]?.content || '';
@@ -117,21 +159,53 @@ Start the conversation with "Hello, how can I help you today?"
   }
 
   async handleStreamingChatCompletion(request: ChatCompletionRequest, res: Response) {
+    console.log('handleStreamingChatCompletion');
+    console.log(request);
+
     if (!this.agent) {
       throw new Error('Agent not initialized');
     }
 
-    const { messages, model = 'gpt-4o-mini', user_id } = request;
+    let { messages, model = 'gpt-4o', user_id } = request;
+    
+    // remove system messages from the messages array
+    messages = messages.filter(message => message.role !== 'system');
     
     // Get the user's query (last message)
-    const userQuery = messages[messages.length - 1]?.content || '';
+    let userQuery = messages[messages.length - 1]?.content || '';
+
+    let plainTranscript = "";
+    let conversationId = "";
+
+    if (messages.length >= 3) {
+        if (messages[messages.length - 2]?.content.includes("<<conversation_id: ")) {
+            conversationId = messages[messages.length - 2]?.content.split("<<conversation_id: ")[1].split(">>")[0];
+            const conversationContext = await this.mcpServer!.callTool("get_conversation_context", {
+                user_id,
+                conversation_ids: [conversationId],
+            });
+            const parsed = JSON.parse(conversationContext[0]["text"]);
+            const date = parsed.contexts[0].conversation.created_at;
+            const transcript = JSON.parse(parsed.contexts[0].conversation.transcript) as BeautifiedSegment[];
+            plainTranscript = "Date: " + date + "\n\n" + "Summary: " + parsed.contexts[0].conversation.last_transcript_preview + "\n\n" + "Transcript: " + transcript.map(t => t.beautifiedText).join("\n");
+            plainTranscript = plainTranscript.replace(/<<|>>/g, " ");
+        }
+    }
     
     // Build the input for the agent
-    let agentInput = userQuery;
+    let agentInput = "";
     
+    if (plainTranscript) {
+        agentInput += `\n\n[Current Reference Conversation Transcript: """${plainTranscript}"""]`;
+        agentInput += `\n\n[Current Reference Conversation ID: "${conversationId}"]`;
+        agentInput += "\n\n";
+    }
+
+    agentInput += userQuery;
+
     // If user_id is provided, add it as context for the MCP tools
     if (user_id) {
-      agentInput = `[User ID: ${user_id}] ${userQuery}`;
+      agentInput += `\n\n[User ID: ${user_id}]`;
     }
 
     try {

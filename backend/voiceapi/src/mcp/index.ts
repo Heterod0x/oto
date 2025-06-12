@@ -5,6 +5,10 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { ConversationMCPService } from './services/ConversationMCPService';
+import dotenv from 'dotenv';
+
+// load from .env
+dotenv.config();
 
 class ConversationMCPServer {
   private server: Server;
@@ -19,6 +23,7 @@ class ConversationMCPServer {
       {
         capabilities: {
           tools: {},
+          logging: {},
         },
       }
     );
@@ -89,6 +94,11 @@ class ConversationMCPServer {
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
 
+    this.server.sendLoggingMessage({
+      level: "error",
+      data: '[[[[]]]]] Conversation Context MCP Server running on stdio',
+    });
+
       try {
         if (!args) {
           throw new Error('Missing arguments');
@@ -120,7 +130,6 @@ class ConversationMCPServer {
   async run() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.error('Conversation Context MCP Server running on stdio');
   }
 }
 

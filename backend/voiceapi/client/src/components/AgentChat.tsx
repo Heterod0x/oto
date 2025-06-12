@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader2 } from 'lucide-react';
+import { Send, Bot, User, Loader2, RefreshCcw } from 'lucide-react';
 import { ChatService } from '../services/chat';
 import { ChatMessage, ApiConfig } from '../types';
 import { v4 as uuidv4 } from 'uuid';
@@ -128,6 +128,14 @@ export function AgentChat({ config, onError }: AgentChatProps) {
     return new Date(timestamp).toLocaleTimeString();
   };
 
+  const handleRetryMessage = () => {
+    const latestMessage = messages[messages.length - 2];
+    setMessages(messages.slice(0, -2));
+    setInputMessage(latestMessage.content);
+    setIsStreaming(false);
+    setStreamingContent('');
+  };
+
   return (
     <div className="agent-chat">
       <div className="chat-header">
@@ -225,6 +233,13 @@ export function AgentChat({ config, onError }: AgentChatProps) {
             disabled={isLoading || isStreaming}
             rows={1}
           />
+          <button
+            onClick={handleRetryMessage}
+            disabled={isLoading || isStreaming}
+            className="send-button"
+          >
+            <RefreshCcw size={20} />
+          </button>
           <button
             onClick={handleSendMessage}
             disabled={!inputMessage.trim() || isLoading || isStreaming}
