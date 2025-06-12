@@ -8,10 +8,7 @@ export class ChatService {
 
   constructor(config: ApiConfig) {
     this.config = config;
-    // LLM API typically runs on port 3002, derive from main API URL
-    const baseUrl = new URL(config.baseUrl);
-    baseUrl.port = '3002';
-    this.llmApiBaseUrl = baseUrl.toString().replace(/\/$/, '');
+    this.llmApiBaseUrl = config.llmApiBaseUrl;
     
     this.api = axios.create({
       baseURL: this.llmApiBaseUrl,
@@ -111,9 +108,7 @@ export class ChatService {
 
   updateConfig(config: Partial<ApiConfig>) {
     this.config = { ...this.config, ...config };
-    const baseUrl = new URL(this.config.baseUrl);
-    baseUrl.port = '3002';
-    this.llmApiBaseUrl = baseUrl.toString().replace(/\/$/, '');
+    this.llmApiBaseUrl = this.config.llmApiBaseUrl;
     this.api.defaults.baseURL = this.llmApiBaseUrl;
   }
 }

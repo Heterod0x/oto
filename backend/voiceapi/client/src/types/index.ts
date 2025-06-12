@@ -78,6 +78,7 @@ export interface ApiConfig {
   baseUrl: string;
   userId: string;
   authToken: string;
+  llmApiBaseUrl: string;
 }
 
 export interface ChatMessage {
