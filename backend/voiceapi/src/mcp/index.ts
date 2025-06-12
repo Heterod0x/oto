@@ -6,9 +6,14 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { ConversationMCPService } from './services/ConversationMCPService';
 import dotenv from 'dotenv';
+import fs from 'fs';
 
-// load from .env
-dotenv.config();
+// load from /etc/secrets/.env if exists
+if (fs.existsSync('/etc/secrets/.env')) {
+  dotenv.config({ path: '/etc/secrets/.env' });
+} else {
+  dotenv.config();
+}
 
 class ConversationMCPServer {
   private server: Server;
@@ -42,6 +47,7 @@ class ConversationMCPServer {
             inputSchema: {
               type: 'object',
               properties: {
+                /*
                 user_id: {
                   type: 'string',
                   description: 'User ID to search conversations for',
@@ -61,9 +67,9 @@ class ConversationMCPServer {
                 limit: {
                   type: 'number',
                   description: 'Maximum number of conversations to return (default: 10)',
-                },
+                },*/
               },
-              required: ['user_id', 'query'],
+              //required: ['user_id', 'query'],
             },
           },
           {

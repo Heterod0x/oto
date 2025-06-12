@@ -2,11 +2,16 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { ConversationAgentService } from './services/ConversationAgentService';
 import dotenv from 'dotenv';
+import fs from 'fs';
 
 const app = express();
 
 // load from .env
-dotenv.config();
+if (fs.existsSync('/etc/secrets/.env')) {
+  dotenv.config({ path: '/etc/secrets/.env' });
+} else {
+  dotenv.config();
+}
 
 const port = process.env.LLM_API_PORT || 3002;
 
@@ -52,6 +57,10 @@ const completionStream = async (req: Request, res: Response) => {
     res.end();
   }
 };
+
+app.get("/health", (req, res) => {
+  res.json({ status: 'ok', service: 'conversation-llm-api' });
+});
 
 // Basic chat completions endpoint (non-streaming)
 app.post('/chat/completions', async (req, res) => {

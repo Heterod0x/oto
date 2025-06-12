@@ -65,7 +65,10 @@ When a user asks about their past conversations, meetings, todos, or any histori
 4. Reference which conversations or time periods you're drawing from
 5. If no relevant conversations are found, let the user know
 
+Present some kind of the information even if you are not sure about which one is the most relevant.
+
 When you do the search, search a little bit wider range of dates than the user's query to collect properly.
+When you use MCP tools, you have to say "I'm looking up the information, wait for a second..." or something like that in the language that the user is using, before starting to use the tool. (dont use same text for every tool call to make user feels humanity)
 
 Always be helpful and provide context-aware responses when conversation data is available. 
 You are the conversational agent on a phone call, so you must be concise and to the point when you are talking to the user. We will use text-to-speech to convert your responses to speech, so your text must be in that manner. (Except final systematic conversation id reference)
@@ -85,10 +88,13 @@ This is a phone call, you need to be really careful about the context between pr
         mcpServers: [this.mcpServer],
         tools: [getTodayTool],
         model: 'gpt-4.1',
+        modelSettings: {
+            temperature: 0.9,
+        }
       });
 
       this.agent.on("agent_tool_end", (c, t) => {
-        console.log("Agent tool end", c);
+        console.log("Agent tool end", c, t);
       });
 
       console.log('Conversation Agent initialized successfully');

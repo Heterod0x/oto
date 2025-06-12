@@ -33,7 +33,10 @@ export class ConversationMCPService {
   }
 
   async searchConversations(args: SearchConversationsArgs) {
-    let { user_id, query, date_from, date_to, limit = 10 } = args;
+    //let { user_id, query, date_from, date_to, limit = 10 } = args;
+    let user_id = "123";
+    let limit = 10;
+    let query = "test";
 
 
     try {
@@ -45,15 +48,15 @@ export class ConversationMCPService {
 
       // Filter conversations based on date range if provided
       let filteredConversations = conversations;
-      if (date_from || date_to) {
         /*
+      if (date_from || date_to) {
         filteredConversations = conversations.filter(conv => {
           const convDate = new Date(conv.created_at);
           if (date_from && convDate <= new Date(date_from)) return false;
           if (date_to && convDate >= new Date(date_to)) return false;
           return true;
-        });*/
-      }
+        });
+      }*/
 
       // Search and rank conversations based on query
       const searchResults: ConversationSearchResult[] = [];
