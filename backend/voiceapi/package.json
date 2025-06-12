@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
+    "start:llm": "node dist/llmapi/index.js",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "dev:llm": "ts-node-dev --respawn --transpile-only src/llmapi/index.ts",
     "dev:mcp": "ts-node-dev --respawn --transpile-only src/mcp/index.ts",
