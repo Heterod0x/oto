@@ -52,7 +52,6 @@ export class ConversationAgentService {
 
       // Connect to the MCP server
       await this.mcpServer.connect();
-      console.log('Conversation Agent initialized successfully');
 
       // Create the agent with MCP server
       this.agent = new Agent({
@@ -81,10 +80,11 @@ Don't talk about the reference conversation in your response, its systematic, ju
 You DON'T have to use MCP tools if user provide the reference and user didn't change the target conversation to reference. Just use the reference in that case.
 
 When you respond to the user, you should use the same language as the user's query.
+This is a phone call, you need to be really careful about the context between previous user input and the latest one. Talk to the user like you are talking on the phone.
 `,
         mcpServers: [this.mcpServer],
         tools: [getTodayTool],
-        model: 'gpt-4o',
+        model: 'gpt-4.1',
       });
 
       this.agent.on("agent_tool_end", (c, t) => {

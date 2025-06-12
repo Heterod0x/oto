@@ -94,11 +94,6 @@ class ConversationMCPServer {
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
 
-    this.server.sendLoggingMessage({
-      level: "error",
-      data: '[[[[]]]]] Conversation Context MCP Server running on stdio',
-    });
-
       try {
         if (!args) {
           throw new Error('Missing arguments');

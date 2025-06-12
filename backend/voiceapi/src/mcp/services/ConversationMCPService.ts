@@ -25,7 +25,6 @@ interface ConversationSearchResult {
 
 interface ConversationContext {
   conversation: Conversation;
-  logs: ConversationLog[];
   full_transcript: string;
 }
 
@@ -104,23 +103,11 @@ export class ConversationMCPService {
           continue; // Skip if conversation not found
         }
 
-        const logs = await databaseService.getConversationLogs(user_id, conversationId);
-        
         // Build full transcript from logs and main transcript
-        let fullTranscript = '';
-        if (conversation.transcript) {
-          fullTranscript = conversation.transcript;
-        } else {
-          // Build from logs if main transcript is not available
-          fullTranscript = logs
-            .sort((a, b) => a.start_time - b.start_time)
-            .map(log => `[${log.speaker}]: ${log.transcript_excerpt || log.summary}`)
-            .join('\n');
-        }
+        const fullTranscript = conversation.transcript || "";
 
         contexts.push({
           conversation,
-          logs,
           full_transcript: fullTranscript,
         });
       }
