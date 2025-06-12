@@ -1320,3 +1320,383 @@ body {
     align-items: flex-start;
   }
 }
+
+/* Agent Chat Styles */
+.agent-chat {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 200px);
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.chat-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.chat-title h2 {
+  color: #374151;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.chat-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.chat-welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #6b7280;
+}
+
+.chat-welcome h3 {
+  margin: 1rem 0 0.5rem 0;
+  color: #374151;
+  font-size: 1.5rem;
+}
+
+.chat-welcome p {
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+  max-width: 500px;
+}
+
+.chat-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 600px;
+}
+
+.suggestion-chip {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  font-size: 0.95rem;
+  color: #374151;
+}
+
+.suggestion-chip:hover {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.message {
+  display: flex;
+  gap: 0.75rem;
+  max-width: 80%;
+  animation: fadeIn 0.3s ease-in;
+}
+
+.message.user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.message.assistant {
+  align-self: flex-start;
+}
+
+.message-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.message.user .message-avatar {
+  background: #667eea;
+  color: white;
+}
+
+.message.assistant .message-avatar {
+  background: #10b981;
+  color: white;
+}
+
+.message-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.message.user .message-content {
+  text-align: right;
+}
+
+.message-text {
+  background: #f3f4f6;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  margin-bottom: 0.25rem;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.message.user .message-text {
+  background: #667eea;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.message.assistant .message-text {
+  background: #f3f4f6;
+  color: #374151;
+  border-bottom-left-radius: 4px;
+}
+
+.message.streaming .message-text {
+  position: relative;
+}
+
+.cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.2em;
+  background: #374151;
+  margin-left: 2px;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.message-timestamp {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.message.user .message-timestamp {
+  justify-content: flex-end;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+.chat-input {
+  border-top: 1px solid #e5e7eb;
+  padding: 1rem;
+  background: #f9fafb;
+}
+
+.input-container {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+  max-width: 100%;
+}
+
+.input-container textarea {
+  flex: 1;
+  min-height: 44px;
+  max-height: 120px;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  resize: none;
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  background: white;
+  transition: border-color 0.2s;
+}
+
+.input-container textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.input-container textarea:disabled {
+  background: #f9fafb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.send-button {
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: #667eea;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.send-button:hover:not(:disabled) {
+  background: #5a67d8;
+  transform: translateY(-1px);
+}
+
+.send-button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.send-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Responsive chat styles */
+@media (max-width: 768px) {
+  .agent-chat {
+    height: calc(100vh - 150px);
+  }
+  
+  .chat-header {
+    padding: 1rem;
+  }
+  
+  .chat-title h2 {
+    font-size: 1.25rem;
+  }
+  
+  .chat-messages {
+    padding: 0.75rem;
+  }
+  
+  .chat-welcome {
+    padding: 2rem 1rem;
+  }
+  
+  .chat-welcome h3 {
+    font-size: 1.25rem;
+  }
+  
+  .chat-welcome p {
+    font-size: 1rem;
+  }
+  
+  .message {
+    max-width: 90%;
+  }
+  
+  .message-avatar {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .message-text {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+  }
+  
+  .chat-input {
+    padding: 0.75rem;
+  }
+  
+  .input-container textarea {
+    font-size: 0.9rem;
+  }
+  
+  .send-button {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .suggestion-chip {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* Dark mode support for chat (if needed in future) */
+@media (prefers-color-scheme: dark) {
+  .agent-chat {
+    background: #1f2937;
+    color: #f9fafb;
+  }
+  
+  .chat-header {
+    background: #111827;
+    border-bottom-color: #374151;
+  }
+  
+  .chat-title h2 {
+    color: #f9fafb;
+  }
+  
+  .message.assistant .message-text {
+    background: #374151;
+    color: #f9fafb;
+  }
+  
+  .chat-input {
+    background: #111827;
+    border-top-color: #374151;
+  }
+  
+  .input-container textarea {
+    background: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+  }
+  
+  .suggestion-chip {
+    background: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+  }
+  
+  .suggestion-chip:hover {
+    background: #4b5563;
+    border-color: #6b7280;
+  }
+}

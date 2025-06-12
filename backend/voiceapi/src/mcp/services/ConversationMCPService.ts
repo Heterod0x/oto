@@ -30,6 +30,10 @@ interface ConversationContext {
 }
 
 export class ConversationMCPService {
+  constructor() {
+    console.log('ConversationMCPService constructor');
+  }
+
   async searchConversations(args: SearchConversationsArgs) {
     let { user_id, query, date_from, date_to, limit = 10 } = args;
     
@@ -43,6 +47,7 @@ export class ConversationMCPService {
     }
     
     if (!user_id) {
+      console.error('No user_id provided');
       return {
         content: [
           {
@@ -60,10 +65,12 @@ export class ConversationMCPService {
 
     try {
       // Get conversations with optional date filtering
+      console.log('Getting conversations for user_id:', user_id);
       const conversations = await databaseService.listConversations(user_id, {
         status: 'active',
         limit: limit * 2, // Get more to filter and rank
       });
+      console.log('Conversations:', conversations);
 
       // Filter conversations based on date range if provided
       let filteredConversations = conversations;

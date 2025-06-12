@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { Activity, Mic, MessageSquare } from 'lucide-react';
+import { Activity, Mic, MessageSquare, Bot } from 'lucide-react';
 import { ConfigPanel } from './components/ConfigPanel';
 import { AudioRecorder } from './components/AudioRecorder';
 import { ActionsList } from './components/ActionsList';
 import { ConversationsList } from './components/ConversationsList';
+import { AgentChat } from './components/AgentChat';
 import { ApiService } from './services/api';
 import { WebSocketService } from './services/websocket';
 import { ApiConfig, DetectedAction, TranscriptSegment, TranscriptBeautifyData } from './types';
@@ -18,7 +19,7 @@ function App() {
     new WebSocketService(config.baseUrl, config.authToken, config.userId)
   );
 
-  const [activeTab, setActiveTab] = useState<'recorder' | 'actions' | 'conversations'>('recorder');
+  const [activeTab, setActiveTab] = useState<'recorder' | 'actions' | 'conversations' | 'agent'>('recorder');
   const [selectedConversationId, setSelectedConversationId] = useState<string>(uuidv4());
   const [detectedActions, setDetectedActions] = useState<DetectedAction[]>([]);
   const [transcriptSegments, setTranscriptSegments] = useState<TranscriptSegment[]>([]);
@@ -208,6 +209,13 @@ function App() {
           <MessageSquare size={20} />
           Conversations
         </button>
+        <button
+          className={`nav-tab ${activeTab === 'agent' ? 'active' : ''}`}
+          onClick={() => setActiveTab('agent')}
+        >
+          <Bot size={20} />
+          Talk with Agent
+        </button>
       </nav>
 
       {/* Recording status banner when not on recorder tab */}
@@ -331,6 +339,13 @@ function App() {
             apiService={apiService}
             onConversationSelect={setSelectedConversationId}
             selectedConversationId={selectedConversationId}
+            onError={handleError}
+          />
+        )}
+
+        {activeTab === 'agent' && (
+          <AgentChat
+            config={config}
             onError={handleError}
           />
         )}
