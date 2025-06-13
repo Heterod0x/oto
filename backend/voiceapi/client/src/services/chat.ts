@@ -1,14 +1,19 @@
 import axios, { AxiosInstance } from 'axios';
 import { ChatMessage, ChatCompletionRequest, ChatCompletionResponse, ApiConfig } from '../types';
+import { v4 as uuidv4 } from 'uuid';
 
 export class ChatService {
   private api: AxiosInstance;
   private config: ApiConfig;
   private llmApiBaseUrl: string;
+  private callId: string;
+  private userId: string;
 
   constructor(config: ApiConfig) {
     this.config = config;
     this.llmApiBaseUrl = config.llmApiBaseUrl;
+    this.callId = uuidv4();
+    this.userId = "test-user-123";
     
     this.api = axios.create({
       baseURL: this.llmApiBaseUrl,
@@ -25,6 +30,12 @@ export class ChatService {
       temperature: 0.7,
       max_tokens: 1000,
       user_id: this.config.userId,
+      metadata: {
+        OTO_USER_ID: this.userId,
+      },
+      call: {
+        id: this.callId,
+      },
     };
 
     const response = await this.api.post('/chat/completions', request);
@@ -44,6 +55,12 @@ export class ChatService {
       max_tokens: 1000,
       user_id: this.config.userId,
       stream: true,
+      metadata: {
+        OTO_USER_ID: this.userId,
+      },
+      call: {
+        id: this.callId,
+      },
     };
 
     try {

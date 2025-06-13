@@ -1,5 +1,5 @@
 import { BeautifiedSegment } from '@/services/transcriptionBeautifier';
-import { Agent, run, MCPServerStdio } from '@openai/agents';
+import { Agent, run, MCPServerStdio, AgentInputItem, user, assistant, system } from '@openai/agents';
 import { Response } from 'express';
 import path from 'path';
 
@@ -7,6 +7,7 @@ import { tool } from '@openai/agents';
 import { z } from 'zod';
 
 // key: call-id, value: conversation_id
+// TODO: this is not scalable, we need to use a database to store the conversation ids
 const conversationCache = new Map<string, string>();
 
 export const getTodayTool = tool({
@@ -31,6 +32,8 @@ interface ChatCompletionRequest {
   temperature?: number;
   max_tokens?: number;
   user_id?: string; // Custom field for user identification
+  metadata?: {OTO_USER_ID: string};
+  call?: {id: string};
 }
 
 export class ConversationAgentService {
@@ -111,58 +114,7 @@ This is a phone call, you need to be really careful about the context between pr
   }
 
   async handleChatCompletion(request: ChatCompletionRequest) {
-    console.log('handleChatCompletion');
-    console.log(request);
-
-    if (!this.agent) {
-      throw new Error('Agent not initialized');
-    }
-
-    let { messages, model = 'gpt-4o', temperature = 0.7, max_tokens = 1000, user_id } = request;
-
-    // remove system messages from the messages array
-    messages = messages.filter(message => message.role !== 'system');
-    
-    // Get the user's query (last message)
-    const userQuery = messages[messages.length - 1]?.content || '';
-    
-    // Build the input for the agent
-    let agentInput = userQuery;
-    
-    // If user_id is provided, add it as context for the MCP tools
-    if (user_id) {
-      agentInput = `[User ID: ${user_id}] ${userQuery}`;
-    }
-
-    try {
-      // Run the agent with the user's query
-      const result = await run(this.agent, agentInput);
-
-      return {
-        id: `chatcmpl-${Date.now()}`,
-        object: 'chat.completion',
-        created: Math.floor(Date.now() / 1000),
-        model,
-        choices: [
-          {
-            index: 0,
-            message: {
-              role: 'assistant',
-              content: result.finalOutput,
-            },
-            finish_reason: 'stop',
-          },
-        ],
-        usage: {
-          prompt_tokens: 0, // The Agents SDK doesn't expose token counts
-          completion_tokens: 0,
-          total_tokens: 0,
-        },
-      };
-    } catch (error) {
-      console.error('Error running agent:', error);
-      throw new Error(`Agent execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+    throw new Error('Not implemented');
   }
 
   async handleStreamingChatCompletion(request: ChatCompletionRequest, res: Response) {
@@ -173,62 +125,135 @@ This is a phone call, you need to be really careful about the context between pr
       throw new Error('Agent not initialized');
     }
 
-    let { messages, model = 'gpt-4o', user_id } = request;
+    let { messages, model = 'gpt-4o', user_id, metadata, call } = request;
     
     // remove system messages from the messages array
     messages = messages.filter(message => message.role !== 'system');
     
     // Get the user's query (last message)
-    let userQuery = messages[messages.length - 1]?.content || '';
+    const userQuery = messages[messages.length - 1]?.content || '';
+    messages = messages.slice(0, -1);
 
-    let plainTranscript = "";
-    let conversationId = "";
+    let conversations: {
+        plainTranscript: string;
+        conversationId: string;
+    }[] = [];
 
-    if (messages.length >= 3) {
-        if (messages[messages.length - 2]?.content.includes("<<conversation_id: ")) {
-            conversationId = messages[messages.length - 2]?.content.split("<<conversation_id: ")[1].split(">>")[0];
+    if (messages.length >= 2) {
+        let conversationIds: string[] = [];
+
+        let conversationIdsContext = "";
+
+        if (conversationCache.has(call?.id || "")) {
+            conversationIdsContext = conversationCache.get(call?.id || "") || "";
+        } else {
+            conversationIdsContext = messages[messages.length-1]?.content;
+        }
+
+        if (conversationIdsContext.includes("<<conversation_id: ") && conversationIdsContext.includes(">>")) {
+            conversationIds = conversationIdsContext.split("<<conversation_id: ")[1].split(">>")[0].split(",");
+            conversationIds = conversationIds.map(id => id.trim());
+            console.log("Conversation IDs: ", conversationIds);
+        }
+
+        if (conversationIds.length > 0) {
             const conversationContext = await this.mcpServer!.callTool("get_conversation_context", {
                 user_id,
-                conversation_ids: [conversationId],
+                conversation_ids: conversationIds,
             });
             const parsed = JSON.parse(conversationContext[0]["text"]);
-            const date = parsed.contexts[0].conversation.created_at;
-            const transcript = JSON.parse(parsed.contexts[0].conversation.transcript) as BeautifiedSegment[];
-            plainTranscript = "Date: " + date + "\n\n" + "Summary: " + parsed.contexts[0].conversation.last_transcript_preview + "\n\n" + "Transcript: " + transcript.map(t => t.beautifiedText).join("\n");
-            plainTranscript = plainTranscript.replace(/<<|>>/g, " ");
+
+            for (let i = 0; i < conversationIds.length; i++) {
+                const conversationId = conversationIds[i];
+                const conversation = parsed.contexts[i].conversation;
+                const date = conversation.created_at;
+                const transcript = JSON.parse(conversation.transcript) as BeautifiedSegment[];
+
+                conversations.push({
+                    plainTranscript: "Date: " + date + "\n\n" + "Summary: " + conversation.last_transcript_preview + "\n\n" + "Transcript: " + transcript.map(t => t.beautifiedText).join("\n"),
+                    conversationId: conversationId,
+                });
+            }
         }
     }
     
     // Build the input for the agent
     let agentInput = "";
     
-    if (plainTranscript) {
-        agentInput += `\n\n[Current Reference Conversation Transcript: """${plainTranscript}"""]`;
-        agentInput += `\n\n[Current Reference Conversation ID: "${conversationId}"]`;
+    if (conversations.length > 0) {
+        let idx = 1;
+        for (const conversation of conversations) {
+            agentInput += `\n\n[Current Reference Conversation Transcript ${idx}: """${conversation.plainTranscript}"""]`;
+            agentInput += `\n\n[Current Reference Conversation ID ${idx}: "${conversation.conversationId}"]`;
+            idx++;
+        }
         agentInput += "\n\n";
     }
 
-    agentInput += userQuery;
-
     // If user_id is provided, add it as context for the MCP tools
-    if (user_id) {
-      agentInput += `\n\n[User ID: ${user_id}]`;
+    if (metadata?.OTO_USER_ID) {
+      agentInput += `\n\n[User ID: "${metadata.OTO_USER_ID}"]`;
     }
 
     try {
       // Run the agent with streaming
-      const result = await run(this.agent, agentInput, { stream: true });
+      const agentInputItems: AgentInputItem[] = [];
+      for (const message of messages) {
+        if (message.role == "user") {
+            agentInputItems.push(user(message.content));
+        }else {
+            agentInputItems.push(assistant(message.content));
+        }
+      }
+
+      agentInputItems.push(user("[Systematic] Additional context: " + agentInput));
+      agentInputItems.push(user(userQuery));
+
+      console.log("Agent Input Items: ", agentInputItems);
+
+      const result = await run(this.agent, agentInputItems, { stream: true });
 
       let chunkIndex = 0;
+
+      const captureStart = "<<";
+      const captureEnd = ">>";
+      let capture = false;
+      let captureContent = "";
+
+      const handleCaptured = (content: string) => {
+        if (call?.id) {
+            conversationCache.set(call.id, content);
+        }
+      }
+
+      // reset conversation cache
+      if (call?.id) {
+        conversationCache.set(call.id, "");
+      }
       
       for await (const event of result) {
         // Handle different types of streaming events
         if (event.type === 'raw_model_stream_event' && 
             event.data.type === 'model' && 
             event.data.event.type === 'response.output_text.delta') {
-          
+        
           const deltaContent = event.data.event.delta;
-          
+
+          // capture
+          if (deltaContent && deltaContent.includes(captureStart)) {
+            capture = true;
+            captureContent += deltaContent;
+            continue;
+          }else if (deltaContent && capture && deltaContent.includes(captureEnd)) {
+            capture = false;
+            captureContent += deltaContent;
+            handleCaptured(captureContent);
+            continue;
+          } else if (deltaContent && capture) {
+            captureContent += deltaContent;
+            continue;
+          }
+
           if (deltaContent) {
             const chunk = {
               id: `chatcmpl-${Date.now()}`,

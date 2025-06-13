@@ -9,6 +9,10 @@ export const config = {
     defaultUserId: import.meta.env.VITE_DEFAULT_USER_ID || 'test-user-123',
     authToken: import.meta.env.VITE_AUTH_TOKEN || 'Bearer cHLnhvOEr8l6RkvEwjAk4sjN5XgES',
     llmApiBaseUrl: import.meta.env.VITE_LLM_API_BASE_URL || 'http://localhost:3002'
+  },
+  vapi: {
+    apiKey: import.meta.env.VITE_VAPI_API_KEY || '',
+    assistantId: import.meta.env.VITE_VAPI_ASSISTANT_ID || ''
   }
 } as const;
 
@@ -20,4 +24,12 @@ export const getApiConfig = () => ({
   userId: config.api.defaultUserId,
   authToken: config.api.authToken,
   llmApiBaseUrl: config.api.llmApiBaseUrl
+});
+
+/**
+ * Helper function to get VAPI configuration
+ */
+export const getVapiConfig = () => ({
+  apiKey: config.vapi.apiKey,
+  assistantId: config.vapi.assistantId
 });

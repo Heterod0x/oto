@@ -95,6 +95,8 @@ export interface ChatCompletionRequest {
   temperature?: number;
   max_tokens?: number;
   user_id?: string;
+  metadata?: {OTO_USER_ID: string};
+  call?: {id: string};
 }
 
 export interface ChatCompletionResponse {

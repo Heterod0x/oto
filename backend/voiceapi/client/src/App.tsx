@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { Activity, Mic, MessageSquare, Bot } from 'lucide-react';
+import { Activity, Mic, MessageSquare, Bot, Phone } from 'lucide-react';
 import { ConfigPanel } from './components/ConfigPanel';
 import { AudioRecorder } from './components/AudioRecorder';
 import { ActionsList } from './components/ActionsList';
 import { ConversationsList } from './components/ConversationsList';
 import { AgentChat } from './components/AgentChat';
+import VapiChat from './components/VapiChat';
 import { ApiService } from './services/api';
 import { WebSocketService } from './services/websocket';
 import { ApiConfig, DetectedAction, TranscriptSegment, TranscriptBeautifyData } from './types';
@@ -19,7 +20,7 @@ function App() {
     new WebSocketService(config.baseUrl, config.authToken, config.userId)
   );
 
-  const [activeTab, setActiveTab] = useState<'recorder' | 'actions' | 'conversations' | 'agent'>('recorder');
+  const [activeTab, setActiveTab] = useState<'recorder' | 'actions' | 'conversations' | 'agent' | 'vapi'>('recorder');
   const [selectedConversationId, setSelectedConversationId] = useState<string>(uuidv4());
   const [detectedActions, setDetectedActions] = useState<DetectedAction[]>([]);
   const [transcriptSegments, setTranscriptSegments] = useState<TranscriptSegment[]>([]);
@@ -216,6 +217,13 @@ function App() {
           <Bot size={20} />
           Talk with Agent
         </button>
+        <button
+          className={`nav-tab ${activeTab === 'vapi' ? 'active' : ''}`}
+          onClick={() => setActiveTab('vapi')}
+        >
+          <Phone size={20} />
+          Voice AI (VAPI)
+        </button>
       </nav>
 
       {/* Recording status banner when not on recorder tab */}
@@ -346,6 +354,12 @@ function App() {
         {activeTab === 'agent' && (
           <AgentChat
             config={config}
+            onError={handleError}
+          />
+        )}
+
+        {activeTab === 'vapi' && (
+          <VapiChat
             onError={handleError}
           />
         )}

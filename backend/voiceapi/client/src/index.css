@@ -1469,7 +1469,7 @@ body {
   border-radius: 12px;
   margin-bottom: 0.25rem;
   word-wrap: break-word;
-  white-space: pre-wrap;
+  white-space: normal;
   line-height: 1.5;
 }
 
