@@ -101,6 +101,7 @@ export class DatabaseService {
     let query = this.supabase
       .from('conversations')
       .select('*')
+      .eq('user_id', userId)
       .order('updated_at', { ascending: false });
 
     if (options.status) {
@@ -199,6 +200,7 @@ export class DatabaseService {
     let query = this.supabase
       .from('actions')
       .select('*')
+      .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
     if (options.conversationId) {

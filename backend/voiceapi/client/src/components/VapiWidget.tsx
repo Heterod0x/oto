@@ -67,9 +67,6 @@ const VapiWidget: React.FC<VapiWidgetProps> = ({
         metadata: {
             "OTO_USER_ID": "123",
         },
-        server: {
-            "url": "https://a302-121-87-40-167.ngrok-free.app",
-        }
       });
     }
   };

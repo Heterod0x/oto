@@ -153,6 +153,7 @@ This is a phone call, you need to be really careful about the context between pr
         if (conversationIdsContext.includes("<<conversation_id: ") && conversationIdsContext.includes(">>")) {
             conversationIds = conversationIdsContext.split("<<conversation_id: ")[1].split(">>")[0].split(",");
             conversationIds = conversationIds.map(id => id.trim());
+            conversationIds = conversationIds.filter(id => id.length >= 16);
             console.log("Conversation IDs: ", conversationIds);
         }
 

@@ -47,11 +47,11 @@ class ConversationMCPServer {
             inputSchema: {
               type: 'object',
               properties: {
-                /*
                 user_id: {
                   type: 'string',
                   description: 'User ID to search conversations for',
                 },
+                /*
                 query: {
                   type: 'string',
                   description: 'Search query to find relevant conversations',
@@ -69,7 +69,7 @@ class ConversationMCPServer {
                   description: 'Maximum number of conversations to return (default: 10)',
                 },*/
               },
-              //required: ['user_id', 'query'],
+              required: ['user_id'],
             },
           },
           {

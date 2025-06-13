@@ -34,7 +34,7 @@ export class ConversationMCPService {
 
   async searchConversations(args: SearchConversationsArgs) {
     //let { user_id, query, date_from, date_to, limit = 10 } = args;
-    let user_id = "123";
+    let user_id = args.user_id;
     let limit = 10;
     let query = "test";
 
