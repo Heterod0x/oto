@@ -68,11 +68,11 @@ export class WebSocketService {
     }
   }
 
-  onClose(callback: () => void): void {
+  onClose(callback: (msg: string) => void): void {
     if (this.ws) {
       this.ws.onclose = (event) => {
         console.log('WebSocket closed:', event.code, event.reason);
-        callback();
+        callback(event.reason);
       };
     }
   }

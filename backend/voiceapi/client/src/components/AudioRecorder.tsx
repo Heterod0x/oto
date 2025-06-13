@@ -110,11 +110,15 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
       });
 
       // Set up WebSocket close event listener
-      wsService.onClose(() => {
+      wsService.onClose((msg: string) => {
         setIsStoppingRecording(false);
         setIsConnected(false);
         setIsRecording(false);
         setConnectionStatus('Disconnected');
+
+        if (msg == 'No audio transcript found') {
+          alert('No audio transcript found');
+        }
       });
 
       setIsConnected(true);

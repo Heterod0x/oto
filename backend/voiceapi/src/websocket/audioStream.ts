@@ -168,7 +168,6 @@ export class AudioStreamHandler {
     }
 
     session.userId = data.userId;
-    session.authenticated = true;
 
     this.sendAuthResponse(session.ws, session.userId);
 
@@ -176,6 +175,8 @@ export class AudioStreamHandler {
     await this.startTranscription(sessionId);
     await this.startAudioUpload(sessionId);
     console.log(`Audio stream session started: ${sessionId}`);
+
+    session.authenticated = true;
   }
 
   private async handleAudioData(sessionId: string, encodedAudio?: string): Promise<void> {
@@ -229,6 +230,13 @@ export class AudioStreamHandler {
       const plainTranscript = session.actionDetector?.getPlainTranscript() || finalTranscript;
       const audioTimestampedTranscript = session.actionDetector?.getFullBeautifiedTranscriptWithSeconds() || finalTranscript;
 
+      if (audioTimestampedTranscript.length === 0) {
+        console.error("No audio transcript found");
+        session.ws.close(1000, 'No audio transcript found');
+        this.sessions.delete(sessionId);
+        return;
+      }
+
       // Update conversation with final transcript
       await databaseService.createConversation(session.userId, session.conversationId, await actionDetectionService.generateConversationTitle(audioTimestampedTranscript));
 
@@ -279,10 +287,12 @@ export class AudioStreamHandler {
       return;
     }
 
+    console.log("Starting audio upload for session:", sessionId);
     const audioUploadSessionId = await audioUploadService.startUpload({
       conversationId: session.conversationId,
       userId: session.userId,
     });
+    console.log("Audio upload session started:", audioUploadSessionId);
 
     session.audioUploadSessionId = audioUploadSessionId;
   }

@@ -97,6 +97,12 @@ export class OtoServer {
     // Clear timeout if graceful shutdown completes
     process.on('exit', () => {
       console.log('Exit event triggered');
+
+      // force exit after 10 seconds
+      setTimeout(() => {
+        console.log('Force exit after 10 seconds');
+        process.exit(0);
+      }, 10_000);
     });
   }
 
