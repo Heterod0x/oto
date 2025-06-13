@@ -29,6 +29,7 @@ interface AudioRecorderProps {
   setFileDuration: (duration: number) => void;
   currentFileTime: number;
   setCurrentFileTime: (time: number) => void;
+  onIssueNewConversationId: () => void;
 }
 
 export const AudioRecorder: React.FC<AudioRecorderProps> = ({
@@ -55,7 +56,8 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   fileDuration,
   setFileDuration,
   currentFileTime,
-  setCurrentFileTime
+  setCurrentFileTime,
+  onIssueNewConversationId
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -119,6 +121,8 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
         if (msg == 'No audio transcript found') {
           alert('No audio transcript found');
         }
+
+        onIssueNewConversationId();
       });
 
       setIsConnected(true);

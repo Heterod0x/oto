@@ -155,6 +155,11 @@ function App() {
   const clearTranscriptSegments = () => {
     setTranscriptSegments([]);
   };
+  
+  const handleIssueNewConversationId = () => {
+    setSelectedConversationId(uuidv4());
+    clearTranscriptSegments();
+  };
 
   useEffect(() => {
     checkHealth();
@@ -280,6 +285,7 @@ function App() {
                 setFileDuration={setFileDuration}
                 currentFileTime={currentFileTime}
                 setCurrentFileTime={setCurrentFileTime}
+                onIssueNewConversationId={handleIssueNewConversationId}
               />
               
               <div className="conversation-input">
@@ -346,8 +352,6 @@ function App() {
         {activeTab === 'conversations' && (
           <ConversationsList
             apiService={apiService}
-            onConversationSelect={setSelectedConversationId}
-            selectedConversationId={selectedConversationId}
             onError={handleError}
           />
         )}

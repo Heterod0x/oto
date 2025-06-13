@@ -5,15 +5,11 @@ import { ApiService } from '../services/api';
 
 interface ConversationsListProps {
   apiService: ApiService;
-  onConversationSelect: (conversationId: string) => void;
-  selectedConversationId?: string;
   onError: (error: string) => void;
 }
 
 export const ConversationsList: React.FC<ConversationsListProps> = ({
   apiService,
-  onConversationSelect,
-  selectedConversationId,
   onError
 }) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -21,6 +17,7 @@ export const ConversationsList: React.FC<ConversationsListProps> = ({
   const [loading, setLoading] = useState(false);
   const [selectedTranscript, setSelectedTranscript] = useState<string>('');
   const [transcriptFormat, setTranscriptFormat] = useState<'plain' | 'srt' | 'vtt'>('plain');
+  const [selectedConversationId, setSelectedConversationId] = useState<string>('');
 
   const loadConversations = async () => {
     setLoading(true);
@@ -39,7 +36,8 @@ export const ConversationsList: React.FC<ConversationsListProps> = ({
       const conversationLogs = await apiService.getConversationLogs(conversationId);
       setLogs(conversationLogs);
     } catch (error) {
-      onError(`Failed to load conversation logs: ${error}`);
+      //onError(`Failed to load conversation logs: ${error}`);
+      console.error(`Failed to load conversation logs: ${error}`);
     }
   };
 
@@ -48,7 +46,8 @@ export const ConversationsList: React.FC<ConversationsListProps> = ({
       const transcript = await apiService.getConversationTranscript(conversationId, transcriptFormat);
       setSelectedTranscript(transcript.transcript);
     } catch (error) {
-      onError(`Failed to load transcript: ${error}`);
+      //onError(`Failed to load transcript: ${error}`);
+      console.error(`Failed to load transcript: ${error}`);
     }
   };
 
@@ -108,7 +107,7 @@ export const ConversationsList: React.FC<ConversationsListProps> = ({
                 <div
                   key={conversation.id}
                   className={`conversation-item ${selectedConversationId === conversation.id ? 'selected' : ''}`}
-                  onClick={() => onConversationSelect(conversation.id)}
+                  onClick={() => setSelectedConversationId(conversation.id)}
                 >
                   <div className="conversation-header">
                     <MessageSquare size={16} />
