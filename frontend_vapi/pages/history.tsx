@@ -2,7 +2,7 @@ import { usePrivy } from "@privy-io/react-auth";
 import { Clock, Play, Trash2 } from "lucide-react";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { FooterNavigation } from "../components/FooterNavigation";
 import { Button } from "../components/ui/button";
 import {
@@ -16,6 +16,8 @@ interface Conversation {
   title: string;
   created_at: string;
   updated_at: string;
+  status: 'active' | 'archived';
+  last_transcript_preview?: string;
   transcript?: string;
   duration?: number;
 }
@@ -30,45 +32,83 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
 
+  // Get wallet address as user ID
+  const getUserId = () => {
+    const walletAddress = user?.wallet?.address;
+    const userId = user?.id;
+    console.log("User ID (wallet address):", walletAddress || userId);
+    return walletAddress || userId || "";
+    // return "test-user-123";
+  };
+
   useEffect(() => {
     if (!authenticated) {
       router.push("/");
     }
   }, [authenticated, router]);
 
-  // Fetch conversation history
-  const fetchConversations = useCallback(async () => {
+  // Fetch conversation history (without useCallback)
+  const fetchConversations = async () => {
     try {
       setLoading(true);
       const apiEndpoint = process.env.NEXT_PUBLIC_OTO_API_ENDPOINT || "";
       const apiKey = process.env.NEXT_PUBLIC_OTO_API_KEY || "";
+      const userId = getUserId();
       
-      const conversations = await getConversations(user?.id || "", apiKey, apiEndpoint);
+      if (!apiEndpoint) {
+        console.error("API endpoint not configured");
+        alert("API endpoint not configured. Please check environment variables.");
+        setLoading(false);
+        return;
+      }
+      
+      if (!apiKey) {
+        console.error("API key not configured");
+        alert("API key not configured. Please check environment variables.");
+        setLoading(false);
+        return;
+      }
+      
+      if (!userId) {
+        console.error("User wallet address not available");
+        alert("User wallet address not available. Please ensure you're logged in with Privy.");
+        setLoading(false);
+        return;
+      }
+      
+      const conversations = await getConversations(userId, apiKey, apiEndpoint);
       setConversations(conversations);
     } catch (error) {
       console.error("Error fetching conversations:", error);
+      alert("Failed to fetch conversations. Please check the console for details.");
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  };
 
-  // Fetch conversation details
-  const fetchConversationDetail = useCallback(async (conversationId: string) => {
+  // Fetch conversation details (without useCallback)
+  const fetchConversationDetail = async (conversationId: string) => {
     try {
       const apiEndpoint = process.env.NEXT_PUBLIC_OTO_API_ENDPOINT || "";
       const apiKey = process.env.NEXT_PUBLIC_OTO_API_KEY || "";
+      const userId = getUserId();
       
-      const conversation = await getConversationDetail(conversationId, user?.id || "", apiKey, apiEndpoint);
+      if (!userId) {
+        console.error("User wallet address not available");
+        return;
+      }
+      
+      const conversation = await getConversationDetail(conversationId, userId, apiKey, apiEndpoint);
       if (conversation) {
         setSelectedConversation(conversation);
       }
     } catch (error) {
       console.error("Error fetching conversation detail:", error);
     }
-  }, [user?.id]);
+  };
 
-  // Delete conversation
-  const handleDeleteConversation = useCallback(async (conversationId: string) => {
+  // Delete conversation (without useCallback)
+  const handleDeleteConversation = async (conversationId: string) => {
     if (!confirm("Are you sure you want to delete this conversation?")) {
       return;
     }
@@ -76,8 +116,14 @@ export default function HistoryPage() {
     try {
       const apiEndpoint = process.env.NEXT_PUBLIC_OTO_API_ENDPOINT || "";
       const apiKey = process.env.NEXT_PUBLIC_OTO_API_KEY || "";
+      const userId = getUserId();
       
-      const success = await deleteConversation(conversationId, user?.id || "", apiKey, apiEndpoint);
+      if (!userId) {
+        console.error("User wallet address not available");
+        return;
+      }
+      
+      const success = await deleteConversation(conversationId, userId, apiKey, apiEndpoint);
       
       if (success) {
         // Remove from conversation list
@@ -92,7 +138,7 @@ export default function HistoryPage() {
       console.error("Error deleting conversation:", error);
       alert("Failed to delete conversation");
     }
-  }, [user?.id, selectedConversation?.id]);
+  };
 
   // Date formatting
   const formatDate = (dateString: string) => {
@@ -115,10 +161,10 @@ export default function HistoryPage() {
   };
 
   useEffect(() => {
-    if (authenticated && user?.id) {
+    if (authenticated && getUserId()) {
       fetchConversations();
     }
-  }, [authenticated, user?.id, fetchConversations]);
+  }, [authenticated]); // fetchConversationsを依存配列から削除
 
   if (!authenticated) {
     return null;
@@ -141,6 +187,8 @@ export default function HistoryPage() {
             <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">
               Conversation History
             </h1>
+
+
 
             {loading ? (
               <div className="text-center py-12">
@@ -182,6 +230,11 @@ export default function HistoryPage() {
                               <h3 className="font-medium text-gray-900 mb-1">
                                 {conversation.title}
                               </h3>
+                              {conversation.last_transcript_preview && (
+                                <p className="text-sm text-gray-600 mb-1 line-clamp-2">
+                                  {conversation.last_transcript_preview}
+                                </p>
+                              )}
                               <div className="flex items-center text-sm text-gray-500 space-x-3">
                                 <div className="flex items-center">
                                   <Clock size={14} className="mr-1" />
