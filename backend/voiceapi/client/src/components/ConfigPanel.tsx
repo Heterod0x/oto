@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Settings } from 'lucide-react';
 import { ApiConfig } from '../types';
+import { getDefaultApiConfig } from '../config/env';
 
 interface ConfigPanelProps {
   config: ApiConfig;
@@ -17,11 +18,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onConfigChange
   };
 
   const handleReset = () => {
-    setLocalConfig({
-      baseUrl: 'http://localhost:3000',
-      userId: 'test-user-123',
-      authToken: 'Bearer test-token'
-    });
+    setLocalConfig(getDefaultApiConfig());
   };
 
   return (

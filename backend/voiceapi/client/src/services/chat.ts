@@ -13,7 +13,7 @@ export class ChatService {
     this.config = config;
     this.llmApiBaseUrl = config.llmApiBaseUrl;
     this.callId = uuidv4();
-    this.userId = "test-user-123";
+    this.userId = config.userId;
     
     this.api = axios.create({
       baseURL: this.llmApiBaseUrl,

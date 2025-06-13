@@ -1,21 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import Vapi from '@vapi-ai/web';
+import { ApiConfig } from '../types';
 
 interface VapiWidgetProps {
   apiKey: string;
   assistantId: string;
-  config?: Record<string, unknown>;
+  config?: ApiConfig;
 }
 
 const VapiWidget: React.FC<VapiWidgetProps> = ({ 
   apiKey, 
   assistantId, 
-  config = {} 
+  config
 }) => {
   const [vapi, setVapi] = useState<Vapi | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [transcript, setTranscript] = useState<Array<{role: string, text: string}>>([]);
+  const [userId, setUserId] = useState(config?.userId);
+
+  useEffect(() => {
+    setUserId(config?.userId);
+  }, [config]);
 
   useEffect(() => {
     const vapiInstance = new Vapi(apiKey);
@@ -65,7 +71,7 @@ const VapiWidget: React.FC<VapiWidgetProps> = ({
     if (vapi) {
       vapi.start(assistantId, {
         metadata: {
-            "OTO_USER_ID": "123",
+            "OTO_USER_ID": userId,
         },
       });
     }

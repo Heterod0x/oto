@@ -41,6 +41,7 @@ function App() {
 
   const handleConfigChange = (newConfig: ApiConfig) => {
     setConfig(newConfig);
+    localStorage.setItem('user_id', newConfig.userId);
     const newApiService = new ApiService(newConfig);
     const newWsService = new WebSocketService(newConfig.baseUrl, newConfig.authToken, newConfig.userId);
     setApiService(newApiService);
@@ -360,6 +361,7 @@ function App() {
 
         {activeTab === 'vapi' && (
           <VapiChat
+            config={config}
             onError={handleError}
           />
         )}

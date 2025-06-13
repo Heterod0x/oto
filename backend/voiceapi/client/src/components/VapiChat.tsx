@@ -2,20 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { Phone, PhoneOff, Mic, MicOff } from 'lucide-react';
 import Vapi from '@vapi-ai/web';
 import { getVapiConfig } from '../config/env';
+import { ApiConfig } from '../types';
 
 interface VapiChatProps {
   onError: (error: string) => void;
+  config: ApiConfig;
 }
 
-const VapiChat: React.FC<VapiChatProps> = ({ onError }) => {
+const VapiChat: React.FC<VapiChatProps> = ({ onError, config }) => {
   const [vapi, setVapi] = useState<Vapi | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState<Array<{role: string, text: string, timestamp: Date}>>([]);
   const [vapiConfig, setVapiConfig] = useState(getVapiConfig());
+  const [userId, setUserId] = useState(config.userId);
   const [customApiKey, setCustomApiKey] = useState(vapiConfig.apiKey);
   const [customAssistantId, setCustomAssistantId] = useState(vapiConfig.assistantId);
+
+  useEffect(() => {
+    setUserId(config.userId);
+  }, [config]);
 
   useEffect(() => {
     if (!customApiKey) {
@@ -106,10 +113,9 @@ const VapiChat: React.FC<VapiChatProps> = ({ onError }) => {
 
     if (vapi) {
       try {
-        alert("HEY")
         vapi.start(customAssistantId, {
           metadata: {
-              "OTO_USER_ID": "123",
+              "OTO_USER_ID": userId,
           },
         });
       } catch (error) {

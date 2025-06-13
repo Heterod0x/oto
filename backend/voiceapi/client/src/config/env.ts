@@ -19,7 +19,21 @@ export const config = {
 /**
  * Helper function to get API configuration
  */
-export const getApiConfig = () => ({
+export const getApiConfig = () => {
+  let userId = localStorage.getItem('user_id');
+  if (!userId) {
+    userId = config.api.defaultUserId;
+  }
+
+  return {
+  baseUrl: config.api.baseUrl,
+  userId: userId,
+  authToken: config.api.authToken,
+  llmApiBaseUrl: config.api.llmApiBaseUrl
+  };
+};
+
+export const getDefaultApiConfig = () => ({
   baseUrl: config.api.baseUrl,
   userId: config.api.defaultUserId,
   authToken: config.api.authToken,
