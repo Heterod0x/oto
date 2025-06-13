@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, PhoneOff, Mic, MicOff } from 'lucide-react';
+import { Phone, PhoneOff, Mic } from 'lucide-react';
 import Vapi from '@vapi-ai/web';
 import { getVapiConfig } from '../config/env';
 import { ApiConfig } from '../types';
@@ -15,7 +15,7 @@ const VapiChat: React.FC<VapiChatProps> = ({ onError, config }) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState<Array<{role: string, text: string, timestamp: Date}>>([]);
-  const [vapiConfig, setVapiConfig] = useState(getVapiConfig());
+  const [vapiConfig, _] = useState(getVapiConfig());
   const [userId, setUserId] = useState(config.userId);
   const [customApiKey, setCustomApiKey] = useState(vapiConfig.apiKey);
   const [customAssistantId, setCustomAssistantId] = useState(vapiConfig.assistantId);

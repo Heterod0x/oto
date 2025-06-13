@@ -13,7 +13,6 @@ export function AgentChat({ config, onError }: AgentChatProps) {
   const [chatService] = useState(() => new ChatService(config));
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState('');
   const [healthStatus, setHealthStatus] = useState<any>(null);
@@ -47,7 +46,7 @@ export function AgentChat({ config, onError }: AgentChatProps) {
   };
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim() || isLoading || isStreaming) return;
+    if (!inputMessage.trim() || isStreaming) return;
 
     const userMessage: ChatMessage = {
       role: 'user',
@@ -230,22 +229,22 @@ export function AgentChat({ config, onError }: AgentChatProps) {
             onChange={handleTextareaChange}
             onKeyPress={handleKeyPress}
             placeholder="Ask me anything about your conversations..."
-            disabled={isLoading || isStreaming}
+            disabled={isStreaming}
             rows={1}
           />
           <button
             onClick={handleRetryMessage}
-            disabled={isLoading || isStreaming}
+            disabled={isStreaming}
             className="send-button"
           >
             <RefreshCcw size={20} />
           </button>
           <button
             onClick={handleSendMessage}
-            disabled={!inputMessage.trim() || isLoading || isStreaming}
+            disabled={!inputMessage.trim() || isStreaming}
             className="send-button"
           >
-            {isLoading || isStreaming ? (
+            {isStreaming ? (
               <Loader2 size={20} className="spinning" />
             ) : (
               <Send size={20} />
