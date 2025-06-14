@@ -7,12 +7,12 @@
  */
 function createAuthHeaders(apiKey: string, userId: string): HeadersInit {
   // Remove 'Bearer ' prefix if it exists, then add it back
-  const cleanApiKey = apiKey.replace(/^Bearer\s+/i, '');
-  
+  const cleanApiKey = apiKey.replace(/^Bearer\s+/i, "");
+
   return {
-    'Authorization': `Bearer ${cleanApiKey}`,
-    'OTO_USER_ID': userId,
-    'Content-Type': 'application/json',
+    Authorization: `Bearer ${cleanApiKey}`,
+    OTO_USER_ID: userId,
+    "Content-Type": "application/json",
   };
 }
 
@@ -30,38 +30,38 @@ export function validateUUID(uuid: string): boolean {
  */
 export function generateUUID(): string {
   // Use crypto.randomUUID if available (modern browsers)
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
     const uuid = crypto.randomUUID();
     console.log("🎲 Generated UUID using crypto.randomUUID():", uuid);
     return uuid;
   }
-  
+
   // Fallback to manual generation
-  const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+  const uuid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
-  
+
   console.log("🎲 Generated UUID using fallback method:", uuid);
-  
+
   // Validate UUID format
   const isValidUUID = validateUUID(uuid);
   if (!isValidUUID) {
     console.error("❌ Generated UUID is invalid:", uuid);
     throw new Error("Failed to generate valid UUID");
   }
-  
+
   return uuid;
 }
 
 export interface AudioStreamMessage {
-  type: 'audio' | 'complete';
+  type: "audio" | "complete";
   data?: string;
 }
 
 export interface TranscribeMessage {
-  type: 'transcribe';
+  type: "transcribe";
   data: {
     finalized: boolean;
     transcript: string;
@@ -71,7 +71,7 @@ export interface TranscribeMessage {
 }
 
 export interface TranscriptBeautifyMessage {
-  type: 'transcript-beautify';
+  type: "transcript-beautify";
   data: {
     transcript: string;
     audioStart: number;
@@ -85,9 +85,9 @@ export interface TranscriptBeautifyMessage {
 }
 
 export interface DetectActionMessage {
-  type: 'detect-action';
+  type: "detect-action";
   data: {
-    type: 'todo' | 'calendar' | 'research';
+    type: "todo" | "calendar" | "research";
     id: string;
     inner: {
       title: string;
@@ -115,200 +115,203 @@ export function createAudioWebSocket(
   conversationId: string,
   userId: string,
   apiKey: string,
-  apiEndpoint: string
+  apiEndpoint: string,
 ): WebSocket {
-  console.log('=== Creating WebSocket Connection (Reference Implementation) ===');
-  
+  console.log("=== Creating WebSocket Connection (Reference Implementation) ===");
+
   // Validate conversation ID format (must be UUID)
   const isValidUUID = validateUUID(conversationId);
   if (!isValidUUID) {
-    console.error('❌ Invalid conversation ID format (must be UUID):', conversationId);
+    console.error("❌ Invalid conversation ID format (must be UUID):", conversationId);
     throw new Error(`Invalid conversation ID format: ${conversationId}`);
   }
-  
-  // Fix protocol: use wss:// for https endpoints, ws:// for http endpoints  
+
+  // Fix protocol: use wss:// for https endpoints, ws:// for http endpoints
   let baseUrl = apiEndpoint;
   if (baseUrl.includes("https")) {
-    baseUrl = baseUrl.replace('https', 'wss');
+    baseUrl = baseUrl.replace("https", "wss");
   } else {
-    baseUrl = baseUrl.replace('http', 'ws');
+    baseUrl = baseUrl.replace("http", "ws");
   }
-  
+
   // Clean API key - remove Bearer prefix and any whitespace
-  const cleanApiKey = apiKey.replace(/^Bearer\s+/i, '').trim();
-  
+  const cleanApiKey = apiKey.replace(/^Bearer\s+/i, "").trim();
+
   // Simple WebSocket URL without auth parameters (following reference implementation)
   const wsUrl = `${baseUrl}/conversation/${conversationId}/stream`;
-  
-  console.log('📋 Conversation ID (UUID):', conversationId);
-  console.log('🌐 Base URL:', baseUrl);
-  console.log('👤 User ID:', userId);
-  console.log('🔗 Simple WebSocket URL:', wsUrl);
-  console.log('🔑 API Key length:', cleanApiKey.length);
-  
+
+  console.log("📋 Conversation ID (UUID):", conversationId);
+  console.log("🌐 Base URL:", baseUrl);
+  console.log("👤 User ID:", userId);
+  console.log("🔗 Simple WebSocket URL:", wsUrl);
+  console.log("🔑 API Key length:", cleanApiKey.length);
+
   try {
     const ws = new WebSocket(wsUrl);
-    console.log('✅ WebSocket object created');
-    
+    console.log("✅ WebSocket object created");
+
     // Set up connection event handlers following reference implementation
-    ws.addEventListener('open', () => {
-      console.log('🔥 WebSocket OPEN event fired');
-      console.log('🔍 WebSocket readyState:', ws.readyState);
-      console.log('✅ Connection successful');
-      
+    ws.addEventListener("open", () => {
+      console.log("🔥 WebSocket OPEN event fired");
+      console.log("🔍 WebSocket readyState:", ws.readyState);
+      console.log("✅ Connection successful");
+
       // Reset audio stats for new session
       resetAudioStats();
-      
+
       // Send authentication message as backup (in case URL auth didn't work)
       try {
         const authMessage = {
-          type: 'auth',
+          type: "auth",
           data: {
             userId: userId,
-            apiKey: cleanApiKey
-          }
+            apiKey: cleanApiKey,
+          },
         };
         ws.send(JSON.stringify(authMessage));
-        console.log('📤 Backup authentication message sent:', { type: 'auth', userId, apiKeyLength: cleanApiKey.length });
+        console.log("📤 Backup authentication message sent:", {
+          type: "auth",
+          userId,
+          apiKeyLength: cleanApiKey.length,
+        });
       } catch (authError) {
-        console.error('❌ Failed to send backup authentication message:', authError);
+        console.error("❌ Failed to send backup authentication message:", authError);
       }
     });
 
-    ws.addEventListener('message', (event) => {
-      console.log('📥 WebSocket MESSAGE received:', {
+    ws.addEventListener("message", (event) => {
+      console.log("📥 WebSocket MESSAGE received:", {
         timestamp: new Date().toISOString(),
         dataType: typeof event.data,
         dataLength: event.data?.length || 0,
-        rawData: event.data
+        rawData: event.data,
       });
-      
+
       try {
         // Try to parse as JSON
         const parsedData = JSON.parse(event.data);
-        console.log('📄 Parsed WebSocket message:', {
+        console.log("📄 Parsed WebSocket message:", {
           type: parsedData.type,
           dataKeys: Object.keys(parsedData),
-          fullMessage: parsedData
+          fullMessage: parsedData,
         });
-           // Handle different message types
-      switch (parsedData.type) {
-        case 'transcribe':
-          console.log('🎤 Transcription received:', {
-            finalized: parsedData.data?.finalized,
-            transcript: parsedData.data?.transcript,
-            audioStart: parsedData.data?.audioStart,
-            audioEnd: parsedData.data?.audioEnd,
-            transcriptLength: parsedData.data?.transcript?.length || 0
-          });
-          break;
-        case 'transcript-beautify':
-          console.log('✨ Beautified transcript received:', {
-            transcript: parsedData.data?.transcript,
-            segmentsCount: parsedData.data?.segments?.length || 0,
-            transcriptLength: parsedData.data?.transcript?.length || 0,
-            segments: parsedData.data?.segments
-          });
-          break;
-        case 'detect-action':
-          console.log('🎯 Action detected:', {
-            actionType: parsedData.data?.type,
-            actionId: parsedData.data?.id,
-            title: parsedData.data?.inner?.title,
-            body: parsedData.data?.inner?.body,
-            datetime: parsedData.data?.inner?.datetime,
-            relatedTranscript: parsedData.data?.relate?.transcript
-          });
-          break;
-        case 'auth':
-        case 'auth_success':
-        case 'authentication_successful':
-          console.log('🔑 Authentication response:', {
-            type: parsedData.type,
-            success: true,
-            message: parsedData.message || 'Authentication successful'
-          });
-          break;
-        case 'error':
-        case 'auth_failed':
-        case 'authentication_failed':
-          console.error('❌ Server error received:', {
-            type: parsedData.type,
-            error: parsedData.error || parsedData.message,
-            code: parsedData.code,
-            details: parsedData.details,
-            fullMessage: parsedData
-          });
-          break;
-        case 'ping':
-          console.log('🏓 Ping received from server');
-          break;
-        case 'pong':
-          console.log('🏓 Pong received from server');
-          break;
-        default:
-          console.log('❓ Unknown message type received:', {
-            type: parsedData.type,
-            hasData: !!parsedData.data,
-            messageKeys: Object.keys(parsedData),
-            fullMessage: parsedData
-          });
-      }
+        // Handle different message types
+        switch (parsedData.type) {
+          case "transcribe":
+            console.log("🎤 Transcription received:", {
+              finalized: parsedData.data?.finalized,
+              transcript: parsedData.data?.transcript,
+              audioStart: parsedData.data?.audioStart,
+              audioEnd: parsedData.data?.audioEnd,
+              transcriptLength: parsedData.data?.transcript?.length || 0,
+            });
+            break;
+          case "transcript-beautify":
+            console.log("✨ Beautified transcript received:", {
+              transcript: parsedData.data?.transcript,
+              segmentsCount: parsedData.data?.segments?.length || 0,
+              transcriptLength: parsedData.data?.transcript?.length || 0,
+              segments: parsedData.data?.segments,
+            });
+            break;
+          case "detect-action":
+            console.log("🎯 Action detected:", {
+              actionType: parsedData.data?.type,
+              actionId: parsedData.data?.id,
+              title: parsedData.data?.inner?.title,
+              body: parsedData.data?.inner?.body,
+              datetime: parsedData.data?.inner?.datetime,
+              relatedTranscript: parsedData.data?.relate?.transcript,
+            });
+            break;
+          case "auth":
+          case "auth_success":
+          case "authentication_successful":
+            console.log("🔑 Authentication response:", {
+              type: parsedData.type,
+              success: true,
+              message: parsedData.message || "Authentication successful",
+            });
+            break;
+          case "error":
+          case "auth_failed":
+          case "authentication_failed":
+            console.error("❌ Server error received:", {
+              type: parsedData.type,
+              error: parsedData.error || parsedData.message,
+              code: parsedData.code,
+              details: parsedData.details,
+              fullMessage: parsedData,
+            });
+            break;
+          case "ping":
+            console.log("🏓 Ping received from server");
+            break;
+          case "pong":
+            console.log("🏓 Pong received from server");
+            break;
+          default:
+            console.log("❓ Unknown message type received:", {
+              type: parsedData.type,
+              hasData: !!parsedData.data,
+              messageKeys: Object.keys(parsedData),
+              fullMessage: parsedData,
+            });
+        }
       } catch (parseError) {
-        console.log('📄 Non-JSON WebSocket message received:', {
+        console.log("📄 Non-JSON WebSocket message received:", {
           rawMessage: event.data,
-          parseError: parseError.message
+          parseError: parseError.message,
         });
       }
     });
-    
-    ws.addEventListener('error', (error) => {
-      console.error('🔥 WebSocket ERROR event fired:', error);
-      console.error('🔍 WebSocket readyState at error:', ws.readyState);
-      console.error('🔍 Error details:', {
+
+    ws.addEventListener("error", (error) => {
+      console.error("🔥 WebSocket ERROR event fired:", error);
+      console.error("🔍 WebSocket readyState at error:", ws.readyState);
+      console.error("🔍 Error details:", {
         type: error.type,
         target: error.target,
-        currentTarget: error.currentTarget
+        currentTarget: error.currentTarget,
       });
     });
-    
-    ws.addEventListener('close', (event) => {
-      console.error('🔥 WebSocket CLOSE event fired:', {
+
+    ws.addEventListener("close", (event) => {
+      console.error("🔥 WebSocket CLOSE event fired:", {
         code: event.code,
         reason: event.reason,
-        wasClean: event.wasClean
+        wasClean: event.wasClean,
       });
-      
+
       // Detailed close code explanations
       const closeReasons = {
-        1000: 'Normal closure',
-        1001: 'Going away',
-        1002: 'Protocol error',
-        1003: 'Unsupported data type',
-        1005: 'No status received',
-        1006: 'Abnormal closure',
-        1007: 'Invalid data',
-        1008: 'Policy violation',
-        1009: 'Message too big',
-        1010: 'Extension expected',
-        1011: 'Unexpected condition',
-        1015: 'TLS handshake failure'
+        1000: "Normal closure",
+        1001: "Going away",
+        1002: "Protocol error",
+        1003: "Unsupported data type",
+        1005: "No status received",
+        1006: "Abnormal closure",
+        1007: "Invalid data",
+        1008: "Policy violation",
+        1009: "Message too big",
+        1010: "Extension expected",
+        1011: "Unexpected condition",
+        1015: "TLS handshake failure",
       };
-      
-      console.error('🔍 Close reason explanation:', closeReasons[event.code] || 'Unknown');
+
+      console.error("🔍 Close reason explanation:", closeReasons[event.code] || "Unknown");
     });
-    
+
     // Store auth info for reference
     (ws as any).authInfo = {
       apiKey: cleanApiKey,
       userId,
-      conversationId
+      conversationId,
     };
-    
+
     return ws;
-    
   } catch (error) {
-    console.error('Failed to create WebSocket:', error);
+    console.error("Failed to create WebSocket:", error);
     throw error;
   }
 }
@@ -321,46 +324,49 @@ export function createAudioWebSocketWithFallback(
   conversationId: string,
   userId: string,
   apiKey: string,
-  apiEndpoint: string
+  apiEndpoint: string,
 ): Promise<WebSocket> {
   return new Promise((resolve, reject) => {
-    const cleanApiKey = apiKey.replace(/^Bearer\s+/i, '').trim();
-    const protocol = apiEndpoint.startsWith('https://') ? 'wss://' : 'ws://';
-    const baseHost = apiEndpoint.replace(/^https?:\/\//, '');
-    
+    const cleanApiKey = apiKey.replace(/^Bearer\s+/i, "").trim();
+    const protocol = apiEndpoint.startsWith("https://") ? "wss://" : "ws://";
+    const baseHost = apiEndpoint.replace(/^https?:\/\//, "");
+
     const strategies = [
       {
-        name: 'Subprotocol Authentication',
+        name: "Subprotocol Authentication",
         url: `${protocol}${baseHost}/conversation/${conversationId}/stream`,
-        protocols: [`oto-auth-${cleanApiKey}`, `oto-user-${userId}`]
+        protocols: [`oto-auth-${cleanApiKey}`, `oto-user-${userId}`],
       },
       {
-        name: 'URL Parameters',
+        name: "URL Parameters",
         url: `${protocol}${baseHost}/conversation/${conversationId}/stream?authorization=${encodeURIComponent(`Bearer ${cleanApiKey}`)}&oto_user_id=${encodeURIComponent(userId)}`,
-        protocols: []
+        protocols: [],
       },
       {
-        name: 'Message-based Authentication',
+        name: "Message-based Authentication",
         url: `${protocol}${baseHost}/conversation/${conversationId}/stream`,
-        protocols: []
-      }
+        protocols: [],
+      },
     ];
-    
+
     let currentStrategyIndex = 0;
-    
+
     function tryNextStrategy() {
       if (currentStrategyIndex >= strategies.length) {
-        reject(new Error('All WebSocket authentication strategies failed'));
+        reject(new Error("All WebSocket authentication strategies failed"));
         return;
       }
-      
+
       const strategy = strategies[currentStrategyIndex];
-      console.log(`🧪 Trying strategy ${currentStrategyIndex + 1}/${strategies.length}: ${strategy.name}`);
-      
-      const ws = strategy.protocols.length > 0 
-        ? new WebSocket(strategy.url, strategy.protocols)
-        : new WebSocket(strategy.url);
-      
+      console.log(
+        `🧪 Trying strategy ${currentStrategyIndex + 1}/${strategies.length}: ${strategy.name}`,
+      );
+
+      const ws =
+        strategy.protocols.length > 0
+          ? new WebSocket(strategy.url, strategy.protocols)
+          : new WebSocket(strategy.url);
+
       const timeout = setTimeout(() => {
         if (ws.readyState === WebSocket.CONNECTING) {
           console.warn(`⏰ Strategy "${strategy.name}" timed out, trying next...`);
@@ -369,57 +375,59 @@ export function createAudioWebSocketWithFallback(
           tryNextStrategy();
         }
       }, 5000); // 5 second timeout
-      
-      ws.addEventListener('open', () => {
+
+      ws.addEventListener("open", () => {
         clearTimeout(timeout);
         console.log(`✅ WebSocket connected successfully with ${strategy.name}`);
-        
+
         // Handle message-based auth
-        if (strategy.name === 'Message-based Authentication') {
+        if (strategy.name === "Message-based Authentication") {
           try {
             const authMessage = {
-              type: 'authenticate',
+              type: "authenticate",
               data: {
                 authorization: `Bearer ${cleanApiKey}`,
                 user_id: userId,
-                conversation_id: conversationId
-              }
+                conversation_id: conversationId,
+              },
             };
             ws.send(JSON.stringify(authMessage));
-            console.log('📤 Authentication message sent');
+            console.log("📤 Authentication message sent");
           } catch (authError) {
-            console.error('❌ Failed to send authentication message:', authError);
+            console.error("❌ Failed to send authentication message:", authError);
           }
         }
-        
+
         // Store strategy info
         (ws as any).authInfo = {
           apiKey: cleanApiKey,
           userId,
           conversationId,
-          strategy: strategy.name
+          strategy: strategy.name,
         };
-        
+
         resolve(ws);
       });
-      
-      ws.addEventListener('error', (error) => {
+
+      ws.addEventListener("error", (error) => {
         clearTimeout(timeout);
         console.error(`❌ Strategy "${strategy.name}" failed with error:`, error);
         currentStrategyIndex++;
         setTimeout(tryNextStrategy, 100); // Small delay before next attempt
       });
-      
-      ws.addEventListener('close', (event) => {
+
+      ws.addEventListener("close", (event) => {
         clearTimeout(timeout);
         if (event.code === 1006 || event.code === 1008) {
-          console.warn(`⚠️ Strategy "${strategy.name}" failed with code ${event.code}, trying next...`);
+          console.warn(
+            `⚠️ Strategy "${strategy.name}" failed with code ${event.code}, trying next...`,
+          );
           currentStrategyIndex++;
           setTimeout(tryNextStrategy, 100);
         }
       });
     }
-    
+
     tryNextStrategy();
   });
 }
@@ -436,12 +444,12 @@ export function audioBlobToBase64(blob: Blob): Promise<string> {
       resolve(base64Audio);
     } catch (error) {
       // Fallback to original method
-      console.warn('ArrayBuffer encoding failed, using FileReader fallback:', error);
+      console.warn("ArrayBuffer encoding failed, using FileReader fallback:", error);
       const reader = new FileReader();
       reader.onload = () => {
         const base64 = reader.result as string;
         // Remove data URL prefix "data:audio/webm;base64,"
-        const base64Data = base64.split(',')[1];
+        const base64Data = base64.split(",")[1];
         resolve(base64Data);
       };
       reader.onerror = reject;
@@ -457,11 +465,11 @@ export function audioBlobToBase64(blob: Blob): Promise<string> {
 export function sendAuthMessage(ws: WebSocket, userId: string, apiKey: string): void {
   if (ws.readyState === WebSocket.OPEN) {
     const authMessage = {
-      type: 'auth',
+      type: "auth",
       data: {
         userId,
-        apiKey
-      }
+        apiKey,
+      },
     };
     ws.send(JSON.stringify(authMessage));
   }
@@ -473,7 +481,7 @@ let audioStatsCounter = {
   totalBytes: 0,
   totalBase64Bytes: 0,
   startTime: Date.now(),
-  lastChunkTime: Date.now()
+  lastChunkTime: Date.now(),
 };
 
 /**
@@ -481,9 +489,15 @@ let audioStatsCounter = {
  * Handles both Blob and ArrayBuffer data, converts to base64 for transmission
  * Enhanced with detailed logging and statistics tracking
  */
-export async function sendRealtimeAudioData(ws: WebSocket, audioData: Blob | ArrayBuffer): Promise<void> {
+export async function sendRealtimeAudioData(
+  ws: WebSocket,
+  audioData: Blob | ArrayBuffer,
+): Promise<void> {
   if (ws.readyState !== WebSocket.OPEN) {
-    console.warn('⚠️ WebSocket not open, skipping audio data transmission. ReadyState:', ws.readyState);
+    console.warn(
+      "⚠️ WebSocket not open, skipping audio data transmission. ReadyState:",
+      ws.readyState,
+    );
     return;
   }
 
@@ -496,26 +510,26 @@ export async function sendRealtimeAudioData(ws: WebSocket, audioData: Blob | Arr
     if (audioData instanceof Blob) {
       // Convert Blob to base64 using the utility function
       audioSize = audioData.size;
-      audioType = audioData.type || 'unknown';
+      audioType = audioData.type || "unknown";
       base64Audio = await audioBlobToBase64(audioData);
-      
+
       console.log(`🎵 Audio Blob processed:`, {
         size: audioSize,
         type: audioType,
         base64Length: base64Audio.length,
-        processingTime: `${(performance.now() - chunkStartTime).toFixed(2)}ms`
+        processingTime: `${(performance.now() - chunkStartTime).toFixed(2)}ms`,
       });
     } else {
       // Convert ArrayBuffer to base64
       audioSize = audioData.byteLength;
-      audioType = 'ArrayBuffer';
+      audioType = "ArrayBuffer";
       base64Audio = btoa(String.fromCharCode(...new Uint8Array(audioData)));
-      
+
       console.log(`🎵 Audio ArrayBuffer processed:`, {
         byteLength: audioSize,
         type: audioType,
         base64Length: base64Audio.length,
-        processingTime: `${(performance.now() - chunkStartTime).toFixed(2)}ms`
+        processingTime: `${(performance.now() - chunkStartTime).toFixed(2)}ms`,
       });
     }
 
@@ -529,15 +543,15 @@ export async function sendRealtimeAudioData(ws: WebSocket, audioData: Blob | Arr
 
     // Send as JSON message format
     const message = {
-      type: 'audio',
-      data: base64Audio
+      type: "audio",
+      data: base64Audio,
     };
 
     const messageJson = JSON.stringify(message);
     const sendStartTime = performance.now();
     ws.send(messageJson);
     const sendTime = performance.now() - sendStartTime;
-    
+
     // Calculate statistics
     const totalRuntime = (currentTime - audioStatsCounter.startTime) / 1000; // seconds
     const avgChunkSize = audioStatsCounter.totalBytes / audioStatsCounter.totalChunks;
@@ -551,14 +565,15 @@ export async function sendRealtimeAudioData(ws: WebSocket, audioData: Blob | Arr
       originalSize: audioSize,
       base64Size: base64Audio.length,
       jsonSize: messageJson.length,
-      base64Preview: base64Audio.substring(0, 30) + '...' + base64Audio.substring(base64Audio.length - 20),
-      
+      base64Preview:
+        base64Audio.substring(0, 30) + "..." + base64Audio.substring(base64Audio.length - 20),
+
       // Timing info
       timestamp: new Date().toISOString(),
       timeSinceLastChunk: `${timeSinceLastChunk}ms`,
       processingTime: `${(performance.now() - chunkStartTime).toFixed(2)}ms`,
       sendTime: `${sendTime.toFixed(2)}ms`,
-      
+
       // Cumulative statistics
       totalRuntime: `${totalRuntime.toFixed(1)}s`,
       avgChunkSize: `${avgChunkSize.toFixed(0)} bytes`,
@@ -566,10 +581,10 @@ export async function sendRealtimeAudioData(ws: WebSocket, audioData: Blob | Arr
       chunksPerSecond: chunksPerSecond.toFixed(2),
       bytesPerSecond: `${(bytesPerSecond / 1024).toFixed(2)} KB/s`,
       totalDataSent: `${(audioStatsCounter.totalBytes / 1024).toFixed(2)} KB`,
-      
+
       // WebSocket state
       wsReadyState: ws.readyState,
-      wsBufferedAmount: ws.bufferedAmount
+      wsBufferedAmount: ws.bufferedAmount,
     });
 
     // Log detailed statistics every 10 chunks
@@ -583,18 +598,20 @@ export async function sendRealtimeAudioData(ws: WebSocket, audioData: Blob | Arr
         streamingRate: `${chunksPerSecond.toFixed(2)} chunks/sec`,
         bandwidthUsage: `${(bytesPerSecond / 1024).toFixed(2)} KB/s`,
         runtime: `${totalRuntime.toFixed(1)}s`,
-        wsBufferedAmount: `${ws.bufferedAmount} bytes`
+        wsBufferedAmount: `${ws.bufferedAmount} bytes`,
       });
     }
-    
   } catch (error) {
-    console.error('❌ Failed to send audio data (chunk #' + (audioStatsCounter.totalChunks + 1) + '):', error);
-    console.error('🔍 Error details:', {
+    console.error(
+      "❌ Failed to send audio data (chunk #" + (audioStatsCounter.totalChunks + 1) + "):",
+      error,
+    );
+    console.error("🔍 Error details:", {
       errorName: error.name,
       errorMessage: error.message,
       wsReadyState: ws.readyState,
       audioDataType: audioData.constructor.name,
-      audioDataSize: audioData instanceof Blob ? audioData.size : audioData.byteLength
+      audioDataSize: audioData instanceof Blob ? audioData.size : audioData.byteLength,
     });
   }
 }
@@ -608,9 +625,9 @@ export function resetAudioStats(): void {
     totalBytes: 0,
     totalBase64Bytes: 0,
     startTime: Date.now(),
-    lastChunkTime: Date.now()
+    lastChunkTime: Date.now(),
   };
-  console.log('📊 Audio statistics reset for new session');
+  console.log("📊 Audio statistics reset for new session");
 }
 
 /**
@@ -619,7 +636,10 @@ export function resetAudioStats(): void {
 export function getAudioStats() {
   const currentTime = Date.now();
   const totalRuntime = (currentTime - audioStatsCounter.startTime) / 1000;
-  const avgChunkSize = audioStatsCounter.totalChunks > 0 ? audioStatsCounter.totalBytes / audioStatsCounter.totalChunks : 0;
+  const avgChunkSize =
+    audioStatsCounter.totalChunks > 0
+      ? audioStatsCounter.totalBytes / audioStatsCounter.totalChunks
+      : 0;
   const chunksPerSecond = totalRuntime > 0 ? audioStatsCounter.totalChunks / totalRuntime : 0;
   const bytesPerSecond = totalRuntime > 0 ? audioStatsCounter.totalBytes / totalRuntime : 0;
 
@@ -631,8 +651,11 @@ export function getAudioStats() {
     chunksPerSecond: Math.round(chunksPerSecond * 100) / 100,
     bytesPerSecond: Math.round(bytesPerSecond),
     runtime: Math.round(totalRuntime * 10) / 10,
-    compressionRatio: audioStatsCounter.totalBytes > 0 ? 
-      Math.round((audioStatsCounter.totalBase64Bytes / audioStatsCounter.totalBytes) * 1000) / 10 : 0
+    compressionRatio:
+      audioStatsCounter.totalBytes > 0
+        ? Math.round((audioStatsCounter.totalBase64Bytes / audioStatsCounter.totalBytes) * 1000) /
+          10
+        : 0,
   };
 }
 
@@ -643,8 +666,8 @@ export function getAudioStats() {
 export function sendAudioData(ws: WebSocket, audioData: string): void {
   if (ws.readyState === WebSocket.OPEN) {
     const message = {
-      type: 'audio',
-      data: audioData
+      type: "audio",
+      data: audioData,
     };
     ws.send(JSON.stringify(message));
   }
@@ -657,7 +680,7 @@ export function sendAudioData(ws: WebSocket, audioData: string): void {
 export function sendCompleteSignal(ws: WebSocket): void {
   if (ws.readyState === WebSocket.OPEN) {
     const message = {
-      type: 'complete'
+      type: "complete",
     };
     ws.send(JSON.stringify(message));
   }
@@ -676,39 +699,39 @@ export async function getConversations(
   apiKey: string,
   apiEndpoint: string,
   options?: {
-    status?: 'active' | 'archived';
+    status?: "active" | "archived";
     updatedSince?: string;
     limit?: number;
     offset?: number;
-  }
+  },
 ): Promise<any[]> {
   try {
     // Build query parameters for the actual API
     const queryParams = new URLSearchParams();
     // Note: Check if user_id is needed as query param for this endpoint
-    
-    if (options?.status) queryParams.append('status', options.status);
-    if (options?.updatedSince) queryParams.append('updated_since', options.updatedSince);
-    if (options?.limit) queryParams.append('limit', options.limit.toString());
-    if (options?.offset) queryParams.append('offset', options.offset.toString());
-    
+
+    if (options?.status) queryParams.append("status", options.status);
+    if (options?.updatedSince) queryParams.append("updated_since", options.updatedSince);
+    if (options?.limit) queryParams.append("limit", options.limit.toString());
+    if (options?.offset) queryParams.append("offset", options.offset.toString());
+
     // Use the actual API endpoint (plural form)
-    const url = `${apiEndpoint}/conversations${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-    
-    const cleanApiKey = apiKey.replace(/^Bearer\s+/i, '').trim();
-    
+    const url = `${apiEndpoint}/conversations${queryParams.toString() ? "?" + queryParams.toString() : ""}`;
+
+    const cleanApiKey = apiKey.replace(/^Bearer\s+/i, "").trim();
+
     const response = await fetch(url, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Authorization': `Bearer ${cleanApiKey}`,
-        'OTO_USER_ID': userId,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${cleanApiKey}`,
+        OTO_USER_ID: userId,
+        "Content-Type": "application/json",
       },
     });
-    
+
     if (response.ok) {
       const data = await response.json();
-      
+
       // Handle response structure from actual API
       if (Array.isArray(data)) {
         return data;
@@ -716,25 +739,25 @@ export async function getConversations(
         return data.conversations;
       } else if (data.data && Array.isArray(data.data)) {
         return data.data;
-      } else if (data.message && data.message === 'No conversations found') {
+      } else if (data.message && data.message === "No conversations found") {
         return [];
       }
-      
-      console.log('Unknown response structure from /conversations:', data);
+
+      console.log("Unknown response structure from /conversations:", data);
       return [];
     }
-    
+
     const errorText = await response.text();
-    console.error('Failed to fetch conversations:', {
+    console.error("Failed to fetch conversations:", {
       status: response.status,
       statusText: response.statusText,
       errorText: errorText,
-      url: url
+      url: url,
     });
-    
+
     return [];
   } catch (error) {
-    console.error('Error fetching conversations:', error);
+    console.error("Error fetching conversations:", error);
     return [];
   }
 }
@@ -747,28 +770,28 @@ export async function getConversationDetail(
   conversationId: string,
   userId: string,
   apiKey: string,
-  apiEndpoint: string
+  apiEndpoint: string,
 ): Promise<any | null> {
   try {
-    const cleanApiKey = apiKey.replace(/^Bearer\s+/i, '');
-    
+    const cleanApiKey = apiKey.replace(/^Bearer\s+/i, "");
+
     const response = await fetch(`${apiEndpoint}/conversation/${conversationId}`, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Authorization': `Bearer ${cleanApiKey}`,
-        'OTO_USER_ID': userId,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${cleanApiKey}`,
+        OTO_USER_ID: userId,
+        "Content-Type": "application/json",
       },
     });
-    
+
     if (response.ok) {
       return await response.json();
     }
-    
-    console.error('Failed to fetch conversation detail:', response.status, response.statusText);
+
+    console.error("Failed to fetch conversation detail:", response.status, response.statusText);
     return null;
   } catch (error) {
-    console.error('Error fetching conversation detail:', error);
+    console.error("Error fetching conversation detail:", error);
     return null;
   }
 }
@@ -781,22 +804,22 @@ export async function deleteConversation(
   conversationId: string,
   userId: string,
   apiKey: string,
-  apiEndpoint: string
+  apiEndpoint: string,
 ): Promise<boolean> {
   try {
-    const cleanApiKey = apiKey.replace(/^Bearer\s+/i, '');
-    
+    const cleanApiKey = apiKey.replace(/^Bearer\s+/i, "");
+
     const response = await fetch(`${apiEndpoint}/conversation/${conversationId}`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
-        'Authorization': `Bearer ${cleanApiKey}`,
-        'OTO_USER_ID': userId,
+        Authorization: `Bearer ${cleanApiKey}`,
+        OTO_USER_ID: userId,
       },
     });
-    
+
     return response.ok;
   } catch (error) {
-    console.error('Error deleting conversation:', error);
+    console.error("Error deleting conversation:", error);
     return false;
   }
 }
@@ -809,12 +832,12 @@ export async function storeConversationAudio(
   userId: string,
   audioFile: File,
   apiKey: string,
-  apiEndpoint: string
+  apiEndpoint: string,
 ): Promise<{ success: boolean; message?: string; conversationId?: string }> {
   console.log("⚠️ Audio upload not supported by this API - only WebSocket streaming is available");
-  return { 
-    success: false, 
-    message: "This API only supports real-time WebSocket streaming, not audio file uploads" 
+  return {
+    success: false,
+    message: "This API only supports real-time WebSocket streaming, not audio file uploads",
   };
 }
 
@@ -824,16 +847,16 @@ export async function storeConversationAudio(
 export async function getUserProfile(
   userId: string,
   apiKey: string,
-  apiEndpoint: string
+  apiEndpoint: string,
 ): Promise<any | null> {
   try {
-    const cleanApiKey = apiKey.replace(/^Bearer\s+/i, '').trim();
-    
+    const cleanApiKey = apiKey.replace(/^Bearer\s+/i, "").trim();
+
     const response = await fetch(`${apiEndpoint}/profile/${encodeURIComponent(userId)}`, {
       method: "GET",
       headers: {
-        'Authorization': `Bearer ${cleanApiKey}`,
-        'accept': 'application/json',
+        Authorization: `Bearer ${cleanApiKey}`,
+        accept: "application/json",
       },
     });
 

@@ -5,18 +5,14 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { FooterNavigation } from "../components/FooterNavigation";
 import { Button } from "../components/ui/button";
-import {
-  deleteConversation,
-  getConversationDetail,
-  getConversations,
-} from "../lib/oto-api";
+import { deleteConversation, getConversationDetail, getConversations } from "../lib/oto-api";
 
 interface Conversation {
   id: string;
   title: string;
   created_at: string;
   updated_at: string;
-  status: 'active' | 'archived';
+  status: "active" | "archived";
   last_transcript_preview?: string;
   transcript?: string;
   duration?: number;
@@ -54,28 +50,28 @@ export default function HistoryPage() {
       const apiEndpoint = process.env.NEXT_PUBLIC_OTO_API_ENDPOINT || "";
       const apiKey = process.env.NEXT_PUBLIC_OTO_API_KEY || "";
       const userId = getUserId();
-      
+
       if (!apiEndpoint) {
         console.error("API endpoint not configured");
         alert("API endpoint not configured. Please check environment variables.");
         setLoading(false);
         return;
       }
-      
+
       if (!apiKey) {
         console.error("API key not configured");
         alert("API key not configured. Please check environment variables.");
         setLoading(false);
         return;
       }
-      
+
       if (!userId) {
         console.error("User wallet address not available");
         alert("User wallet address not available. Please ensure you're logged in with Privy.");
         setLoading(false);
         return;
       }
-      
+
       const conversations = await getConversations(userId, apiKey, apiEndpoint);
       console.log("Fetched conversations:", conversations);
       setConversations(conversations);
@@ -93,12 +89,12 @@ export default function HistoryPage() {
       const apiEndpoint = process.env.NEXT_PUBLIC_OTO_API_ENDPOINT || "";
       const apiKey = process.env.NEXT_PUBLIC_OTO_API_KEY || "";
       const userId = getUserId();
-      
+
       if (!userId) {
         console.error("User wallet address not available");
         return;
       }
-      
+
       const conversation = await getConversationDetail(conversationId, userId, apiKey, apiEndpoint);
       if (conversation) {
         setSelectedConversation(conversation);
@@ -118,17 +114,17 @@ export default function HistoryPage() {
       const apiEndpoint = process.env.NEXT_PUBLIC_OTO_API_ENDPOINT || "";
       const apiKey = process.env.NEXT_PUBLIC_OTO_API_KEY || "";
       const userId = getUserId();
-      
+
       if (!userId) {
         console.error("User wallet address not available");
         return;
       }
-      
+
       const success = await deleteConversation(conversationId, userId, apiKey, apiEndpoint);
-      
+
       if (success) {
         // Remove from conversation list
-        setConversations(prev => prev.filter(conv => conv.id !== conversationId));
+        setConversations((prev) => prev.filter((conv) => conv.id !== conversationId));
         if (selectedConversation?.id === conversationId) {
           setSelectedConversation(null);
         }
@@ -189,8 +185,6 @@ export default function HistoryPage() {
               Conversation History
             </h1>
 
-
-
             {loading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
@@ -203,14 +197,11 @@ export default function HistoryPage() {
                   <h2 className="text-xl font-semibold text-gray-900 mb-4">
                     Conversations ({conversations.length} items)
                   </h2>
-                  
+
                   {conversations.length === 0 ? (
                     <div className="text-center py-8">
                       <p className="text-gray-500 mb-4">No conversations yet</p>
-                      <Button
-                        onClick={() => router.push("/record")}
-                        className="px-6 py-2"
-                      >
+                      <Button onClick={() => router.push("/record")} className="px-6 py-2">
                         Start Recording
                       </Button>
                     </div>
@@ -267,15 +258,11 @@ export default function HistoryPage() {
 
                 {/* Conversation Details */}
                 <div className="bg-white/70 backdrop-blur-sm rounded-lg p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                    Conversation Details
-                  </h2>
-                  
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Conversation Details</h2>
+
                   {!selectedConversation ? (
                     <div className="text-center py-8">
-                      <p className="text-gray-500">
-                        Select a conversation to view details
-                      </p>
+                      <p className="text-gray-500">Select a conversation to view details</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -304,10 +291,7 @@ export default function HistoryPage() {
                       )}
 
                       <div className="pt-4 border-t">
-                        <Button
-                          onClick={() => router.push("/record")}
-                          className="w-full"
-                        >
+                        <Button onClick={() => router.push("/record")} className="w-full">
                           Start New Recording
                         </Button>
                       </div>

@@ -127,7 +127,7 @@ export function useRealtimeAudioStream({
 
       // Setup MediaRecorder exactly like reference implementation
       mediaRecorderRef.current = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus'
+        mimeType: "audio/webm;codecs=opus",
       });
 
       mediaRecorderRef.current.ondataavailable = (event) => {
@@ -144,7 +144,7 @@ export function useRealtimeAudioStream({
       // Start recording with 100ms chunks (same as reference)
       mediaRecorderRef.current.start(100);
       setIsStreaming(true);
-      
+
       // Start volume monitoring
       monitorVolume();
 
@@ -173,7 +173,7 @@ export function useRealtimeAudioStream({
     setIsStreaming(false);
 
     // Stop MediaRecorder
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
       mediaRecorderRef.current.stop();
       mediaRecorderRef.current = null;
     }
