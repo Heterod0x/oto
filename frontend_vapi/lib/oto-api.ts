@@ -812,7 +812,7 @@ export async function getConversationDetail(
   try {
     const cleanApiKey = apiKey.replace(/^Bearer\s+/i, "");
 
-    const response = await fetch(`${apiEndpoint}/conversation/${conversationId}`, {
+    const response = await fetch(`${apiEndpoint}/conversation/${conversationId}/transcript`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${cleanApiKey}`,
