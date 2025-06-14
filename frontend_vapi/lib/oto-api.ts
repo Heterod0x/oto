@@ -908,3 +908,146 @@ export async function getUserProfile(
     return null;
   }
 }
+
+/**
+ * Action types from the API response
+ */
+export interface ActionResponse {
+  type: "todo" | "calendar" | "research";
+  created_at: string;
+  updated_at: string;
+  status: "created" | "accepted" | "deleted" | "completed";
+  id: string;
+  conversation_id: string;
+  inner: {
+    title: string;
+    body?: string;
+    datetime?: string;
+    query?: string;
+  };
+  relate: {
+    start: number;
+    end: number;
+    transcript: string;
+  };
+}
+
+export interface ActionsApiResponse {
+  actions: ActionResponse[];
+}
+
+/**
+ * Get actions (tasks) from API
+ * Endpoint: GET /actions
+ */
+export async function getActions(
+  userId: string,
+  apiKey: string,
+  apiEndpoint: string,
+  options?: {
+    conversation_id?: string;
+    status?: "created" | "accepted" | "deleted" | "completed";
+    type?: "todo" | "calendar" | "research";
+  },
+): Promise<ActionResponse[]> {
+  try {
+    // Build query parameters
+    const queryParams = new URLSearchParams();
+    
+    if (options?.conversation_id) queryParams.append("conversation_id", options.conversation_id);
+    if (options?.status) queryParams.append("status", options.status);
+    if (options?.type) queryParams.append("type", options.type);
+
+    // Use the actual API endpoint
+    const url = `${apiEndpoint}/actions${queryParams.toString() ? "?" + queryParams.toString() : ""}`;
+    
+    const cleanApiKey = apiKey.replace(/^Bearer\s+/i, "").trim();
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${cleanApiKey}`,
+        OTO_USER_ID: userId,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (response.ok) {
+      const data: ActionsApiResponse = await response.json();
+      
+      // Return the actions array
+      return data.actions || [];
+    }
+
+    const errorText = await response.text();
+    console.error("Failed to fetch actions:", {
+      status: response.status,
+      statusText: response.statusText,
+      errorText: errorText,
+      url: url,
+    });
+
+    return [];
+  } catch (error) {
+    console.error("Error fetching actions:", error);
+    return [];
+  }
+}
+
+/**
+ * Update action status via API
+ * Endpoint: PATCH /action/{action_id}
+ */
+export async function updateAction(
+  actionId: string,
+  status: "created" | "accepted" | "deleted" | "completed",
+  userId: string,
+  apiKey: string,
+  apiEndpoint: string,
+): Promise<{ success: boolean; updatedAt?: string }> {
+  try {
+    const url = `${apiEndpoint}/action/${actionId}`;
+    
+    const cleanApiKey = apiKey.replace(/^Bearer\s+/i, "").trim();
+
+    const response = await fetch(url, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${cleanApiKey}`,
+        OTO_USER_ID: userId,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        status: status,
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      
+      console.log("✅ Action updated successfully:", {
+        id: data.id,
+        status: data.status,
+        updated_at: data.updated_at,
+      });
+
+      return {
+        success: true,
+        updatedAt: data.updated_at,
+      };
+    }
+
+    const errorText = await response.text();
+    console.error("❌ Failed to update action:", {
+      status: response.status,
+      statusText: response.statusText,
+      errorText: errorText,
+      url: url,
+    });
+
+    return { success: false };
+  } catch (error) {
+    console.error("❌ Error updating action:", error);
+    return { success: false };
+  }
+}

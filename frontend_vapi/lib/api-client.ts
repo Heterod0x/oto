@@ -163,21 +163,41 @@ export class VAPIClient {
   }
 
   /**
-   * Add task to Google Calendar
+   * Add task to Google Calendar (using Google Calendar URL)
    */
   async addToGoogleCalendar(task: Task): Promise<{ success: boolean; eventId?: string }> {
     try {
-      const response = await fetch(`${this.baseURL}/api/calendar/google/add`, {
-        method: "POST",
-        headers: this.getHeaders(),
-        body: JSON.stringify({ task }),
+      // Import calendar utilities (dynamic import for client-side only)
+      const { openGoogleCalendar } = await import("./calendar-utils");
+
+      console.log("📅 Adding task to Google Calendar:", task.title);
+
+      // Open Google Calendar with pre-filled event
+      const result = await openGoogleCalendar({
+        id: task.id,
+        title: task.title,
+        description: task.description,
+        dueDate: task.dueDate,
+        type: task.type,
       });
 
-      if (!response.ok) {
-        throw new Error(`Failed to add to Google Calendar: ${response.statusText}`);
+      if (result.success) {
+        return {
+          success: true,
+          eventId: task.id, // Return task ID as event identifier
+        };
+      } else {
+        // Even if popup was blocked, we can still consider it a success
+        // since the URL is available for manual opening
+        if (result.url) {
+          console.log("📋 Google Calendar URL (popup blocked):", result.url);
+          return {
+            success: true,
+            eventId: task.id,
+          };
+        }
+        throw new Error("Failed to create Google Calendar event");
       }
-
-      return await response.json();
     } catch (error) {
       console.error("Error adding to Google Calendar:", error);
       throw error;
@@ -185,21 +205,38 @@ export class VAPIClient {
   }
 
   /**
-   * Add task to iOS calendar (using Web API)
+   * Add task to iOS calendar (using .ics file download)
+   * Based on: https://qiita.com/bananbo/items/281f2c98419355d7324c
    */
   async addToIosCalendar(task: Task): Promise<{ success: boolean; eventId?: string }> {
     try {
-      const response = await fetch(`${this.baseURL}/api/calendar/ios/add`, {
-        method: "POST",
-        headers: this.getHeaders(),
-        body: JSON.stringify({ task }),
-      });
+      // Import calendar utilities (dynamic import for client-side only)
+      const { createAndDownloadIcsFile, isIcsDownloadSupported } = await import("./calendar-utils");
 
-      if (!response.ok) {
-        throw new Error(`Failed to add to iOS Calendar: ${response.statusText}`);
+      // Check if .ics download is supported
+      if (!isIcsDownloadSupported()) {
+        throw new Error("Calendar file download is not supported in this environment");
       }
 
-      return await response.json();
+      console.log("📱 Adding task to iOS Calendar via .ics download:", task.title);
+
+      // Create and download .ics file
+      const result = await createAndDownloadIcsFile({
+        id: task.id,
+        title: task.title,
+        description: task.description,
+        dueDate: task.dueDate,
+        type: task.type,
+      });
+
+      if (result.success) {
+        return {
+          success: true,
+          eventId: result.filename, // Return filename as event identifier
+        };
+      } else {
+        throw new Error("Failed to create calendar file");
+      }
     } catch (error) {
       console.error("Error adding to iOS Calendar:", error);
       throw error;
