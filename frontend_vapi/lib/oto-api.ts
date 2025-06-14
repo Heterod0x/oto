@@ -17,14 +17,42 @@ function createAuthHeaders(apiKey: string, userId: string): HeadersInit {
 }
 
 /**
- * Generate a UUID v4
+ * Validate UUID format (required for conversation ID)
+ */
+export function validateUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
+
+/**
+ * Generate a UUID v4 (RFC 4122 compliant)
+ * Required for conversation ID in WebSocket endpoint: /conversation/{conversation_id}/stream
  */
 export function generateUUID(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+  // Use crypto.randomUUID if available (modern browsers)
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    const uuid = crypto.randomUUID();
+    console.log("🎲 Generated UUID using crypto.randomUUID():", uuid);
+    return uuid;
+  }
+  
+  // Fallback to manual generation
+  const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     const r = Math.random() * 16 | 0;
     const v = c === 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
+  
+  console.log("🎲 Generated UUID using fallback method:", uuid);
+  
+  // Validate UUID format
+  const isValidUUID = validateUUID(uuid);
+  if (!isValidUUID) {
+    console.error("❌ Generated UUID is invalid:", uuid);
+    throw new Error("Failed to generate valid UUID");
+  }
+  
+  return uuid;
 }
 
 export interface AudioStreamMessage {
@@ -79,8 +107,9 @@ export type WebSocketMessage = TranscribeMessage | TranscriptBeautifyMessage | D
 
 /**
  * Create WebSocket connection for audio streaming
- * Based on API documentation: /conversation/{conversation_id}/stream
- * Try simple connection first, then auth via message
+ * Based on reference implementation from Heterod0x/oto
+ * Endpoint: /conversation/{conversation_id}/stream
+ * conversation_id must be a valid UUID
  */
 export function createAudioWebSocket(
   conversationId: string,
@@ -88,67 +117,68 @@ export function createAudioWebSocket(
   apiKey: string,
   apiEndpoint: string
 ): WebSocket {
+  console.log('=== Creating WebSocket Connection (Reference Implementation) ===');
+  
+  // Validate conversation ID format (must be UUID)
+  const isValidUUID = validateUUID(conversationId);
+  if (!isValidUUID) {
+    console.error('❌ Invalid conversation ID format (must be UUID):', conversationId);
+    throw new Error(`Invalid conversation ID format: ${conversationId}`);
+  }
+  
   // Fix protocol: use wss:// for https endpoints, ws:// for http endpoints  
-  const protocol = apiEndpoint.startsWith('https://') ? 'wss://' : 'ws://';
+  let baseUrl = apiEndpoint;
+  if (baseUrl.includes("https")) {
+    baseUrl = baseUrl.replace('https', 'wss');
+  } else {
+    baseUrl = baseUrl.replace('http', 'ws');
+  }
   
   // Clean API key - remove Bearer prefix and any whitespace
   const cleanApiKey = apiKey.replace(/^Bearer\s+/i, '').trim();
   
-  // Try URL with authentication parameters - use different parameter names
-  const baseHost = apiEndpoint.replace(/^https?:\/\//, '');
+  // Build WebSocket URL following reference implementation pattern
+  const wsUrl = `${baseUrl}/conversation/${conversationId}/stream`;
   
-  // Try different auth parameter formats
-  const authParams = [
-    `api_key=${encodeURIComponent(cleanApiKey)}&user_id=${encodeURIComponent(userId)}`,
-    `authorization=${encodeURIComponent(cleanApiKey)}&user_id=${encodeURIComponent(userId)}`,
-    `token=${encodeURIComponent(cleanApiKey)}&user=${encodeURIComponent(userId)}`,
-  ];
-  
-  // Use the first format initially
-  const wsUrlWithAuth = `${protocol}${baseHost}/conversation/${conversationId}/stream`;
-  
-  console.log('=== WebSocket Connection Debug ===');
-  console.log('Original endpoint:', apiEndpoint);
-  console.log('Detected protocol:', protocol);
-  console.log('Raw API Key:', apiKey);
-  console.log('Clean API Key length:', cleanApiKey.length);
-  console.log('Clean API Key starts with:', cleanApiKey.substring(0, 10) + '...');
-  console.log('User ID:', userId);
-  console.log('Conversation ID:', conversationId);
-  console.log('Auth parameter formats to try:', authParams.map(p => p.replace(cleanApiKey, '***')));
-  
-  // Alternative URLs to try (in order of preference)
-  const alternativeUrls = [
-    wsUrlWithAuth, // URL with auth parameters
-    `${protocol}${baseHost}/conversation/${conversationId}/stream`, // Simple URL
-  ];
-  
-  console.log('Alternative URLs to try:', alternativeUrls);
-  
-  // Use the first URL (with auth params)
-  const wsUrl = alternativeUrls[0];
-  console.log('Using WebSocket URL:', wsUrl.replace(cleanApiKey, '***API_KEY***'));
-  
-  // Try simple connection without URL params first
-  let ws;
+  console.log('📋 Conversation ID (UUID):', conversationId);
+  console.log('🌐 Base URL:', baseUrl);
+  console.log('👤 User ID:', userId);
+  console.log('🔗 WebSocket URL:', wsUrl);
+  console.log('🔑 API Key length:', cleanApiKey.length);
   
   try {
-    console.log('Attempting WebSocket connection...');
-    ws = new WebSocket(wsUrl);
-    console.log('WebSocket object created successfully');
+    const ws = new WebSocket(wsUrl);
+    console.log('✅ WebSocket object created');
     
-    // Add additional debugging for connection state changes
+    // Set up connection event handlers following reference implementation
     ws.addEventListener('open', () => {
       console.log('🔥 WebSocket OPEN event fired');
+      console.log('🔍 WebSocket readyState:', ws.readyState);
+      console.log('✅ Connection successful - sending auth message');
+      
+      // Send authentication message immediately upon connection (reference implementation pattern)
+      try {
+        const authMessage = {
+          type: 'auth',
+          data: {
+            userId: userId,
+            apiKey: cleanApiKey
+          }
+        };
+        ws.send(JSON.stringify(authMessage));
+        console.log('📤 Authentication message sent:', { type: 'auth', userId, apiKeyLength: cleanApiKey.length });
+      } catch (authError) {
+        console.error('❌ Failed to send authentication message:', authError);
+      }
     });
     
     ws.addEventListener('error', (error) => {
       console.error('🔥 WebSocket ERROR event fired:', error);
-      console.error('Error details:', {
+      console.error('🔍 WebSocket readyState at error:', ws.readyState);
+      console.error('🔍 Error details:', {
         type: error.type,
         target: error.target,
-        timeStamp: error.timeStamp,
-        isTrusted: error.isTrusted
+        currentTarget: error.currentTarget
       });
     });
     
@@ -156,41 +186,177 @@ export function createAudioWebSocket(
       console.error('🔥 WebSocket CLOSE event fired:', {
         code: event.code,
         reason: event.reason,
-        wasClean: event.wasClean,
-        type: event.type,
-        timeStamp: event.timeStamp
+        wasClean: event.wasClean
       });
+      
+      // Detailed close code explanations
+      const closeReasons = {
+        1000: 'Normal closure',
+        1001: 'Going away',
+        1002: 'Protocol error',
+        1003: 'Unsupported data type',
+        1005: 'No status received',
+        1006: 'Abnormal closure',
+        1007: 'Invalid data',
+        1008: 'Policy violation',
+        1009: 'Message too big',
+        1010: 'Extension expected',
+        1011: 'Unexpected condition',
+        1015: 'TLS handshake failure'
+      };
+      
+      console.error('🔍 Close reason explanation:', closeReasons[event.code] || 'Unknown');
     });
+    
+    // Store auth info for reference
+    (ws as any).authInfo = {
+      apiKey: cleanApiKey,
+      userId,
+      conversationId
+    };
+    
+    return ws;
     
   } catch (error) {
     console.error('Failed to create WebSocket:', error);
     throw error;
   }
-  
-  // Store auth info for use after connection
-  (ws as any).authInfo = {
-    apiKey: apiKey.replace(/^Bearer\s+/i, ''),
-    userId,
-    conversationId
-  };
-  
-  return ws;
 }
 
 /**
+ * Create WebSocket connection with fallback strategies
+ * This function tries multiple authentication methods
+ */
+export function createAudioWebSocketWithFallback(
+  conversationId: string,
+  userId: string,
+  apiKey: string,
+  apiEndpoint: string
+): Promise<WebSocket> {
+  return new Promise((resolve, reject) => {
+    const cleanApiKey = apiKey.replace(/^Bearer\s+/i, '').trim();
+    const protocol = apiEndpoint.startsWith('https://') ? 'wss://' : 'ws://';
+    const baseHost = apiEndpoint.replace(/^https?:\/\//, '');
+    
+    const strategies = [
+      {
+        name: 'Subprotocol Authentication',
+        url: `${protocol}${baseHost}/conversation/${conversationId}/stream`,
+        protocols: [`oto-auth-${cleanApiKey}`, `oto-user-${userId}`]
+      },
+      {
+        name: 'URL Parameters',
+        url: `${protocol}${baseHost}/conversation/${conversationId}/stream?authorization=${encodeURIComponent(`Bearer ${cleanApiKey}`)}&oto_user_id=${encodeURIComponent(userId)}`,
+        protocols: []
+      },
+      {
+        name: 'Message-based Authentication',
+        url: `${protocol}${baseHost}/conversation/${conversationId}/stream`,
+        protocols: []
+      }
+    ];
+    
+    let currentStrategyIndex = 0;
+    
+    function tryNextStrategy() {
+      if (currentStrategyIndex >= strategies.length) {
+        reject(new Error('All WebSocket authentication strategies failed'));
+        return;
+      }
+      
+      const strategy = strategies[currentStrategyIndex];
+      console.log(`🧪 Trying strategy ${currentStrategyIndex + 1}/${strategies.length}: ${strategy.name}`);
+      
+      const ws = strategy.protocols.length > 0 
+        ? new WebSocket(strategy.url, strategy.protocols)
+        : new WebSocket(strategy.url);
+      
+      const timeout = setTimeout(() => {
+        if (ws.readyState === WebSocket.CONNECTING) {
+          console.warn(`⏰ Strategy "${strategy.name}" timed out, trying next...`);
+          ws.close();
+          currentStrategyIndex++;
+          tryNextStrategy();
+        }
+      }, 5000); // 5 second timeout
+      
+      ws.addEventListener('open', () => {
+        clearTimeout(timeout);
+        console.log(`✅ WebSocket connected successfully with ${strategy.name}`);
+        
+        // Handle message-based auth
+        if (strategy.name === 'Message-based Authentication') {
+          try {
+            const authMessage = {
+              type: 'authenticate',
+              data: {
+                authorization: `Bearer ${cleanApiKey}`,
+                user_id: userId,
+                conversation_id: conversationId
+              }
+            };
+            ws.send(JSON.stringify(authMessage));
+            console.log('📤 Authentication message sent');
+          } catch (authError) {
+            console.error('❌ Failed to send authentication message:', authError);
+          }
+        }
+        
+        // Store strategy info
+        (ws as any).authInfo = {
+          apiKey: cleanApiKey,
+          userId,
+          conversationId,
+          strategy: strategy.name
+        };
+        
+        resolve(ws);
+      });
+      
+      ws.addEventListener('error', (error) => {
+        clearTimeout(timeout);
+        console.error(`❌ Strategy "${strategy.name}" failed with error:`, error);
+        currentStrategyIndex++;
+        setTimeout(tryNextStrategy, 100); // Small delay before next attempt
+      });
+      
+      ws.addEventListener('close', (event) => {
+        clearTimeout(timeout);
+        if (event.code === 1006 || event.code === 1008) {
+          console.warn(`⚠️ Strategy "${strategy.name}" failed with code ${event.code}, trying next...`);
+          currentStrategyIndex++;
+          setTimeout(tryNextStrategy, 100);
+        }
+      });
+    }
+    
+    tryNextStrategy();
+  });
+}
+/**
  * Convert audio blob to base64 for WebSocket transmission
+ * Following reference implementation pattern for audio encoding
  */
 export function audioBlobToBase64(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = reader.result as string;
-      // Remove data URL prefix "data:audio/webm;base64,"
-      const base64Data = base64.split(',')[1];
-      resolve(base64Data);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
+  return new Promise(async (resolve, reject) => {
+    try {
+      // Use ArrayBuffer approach like reference implementation
+      const arrayBuffer = await blob.arrayBuffer();
+      const base64Audio = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      resolve(base64Audio);
+    } catch (error) {
+      // Fallback to original method
+      console.warn('ArrayBuffer encoding failed, using FileReader fallback:', error);
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result as string;
+        // Remove data URL prefix "data:audio/webm;base64,"
+        const base64Data = base64.split(',')[1];
+        resolve(base64Data);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    }
   });
 }
 
@@ -238,90 +404,13 @@ export function sendCompleteSignal(ws: WebSocket): void {
   }
 }
 
-/**
- * Create conversation via API
- */
-export async function createConversation(
-  title: string,
-  userId: string,
-  apiKey: string,
-  apiEndpoint: string
-): Promise<{ id: string } | null> {
-  try {
-    // Generate UUID for conversation ID
-    const conversationId = generateUUID();
-    
-    // Remove 'Bearer ' prefix if it exists, then add it back
-    const cleanApiKey = apiKey.replace(/^Bearer\s+/i, '');
-    
-    const headers = {
-      'Authorization': `${cleanApiKey}`,
-      'OTO_USER_ID': userId,
-      'Content-Type': 'application/json',
-    };
-    const body = { 
-      id: conversationId,
-      title 
-    };
-    
-    // Try different possible API paths based on the correct API spec
-    const possiblePaths = [
-      `/conversation`,  // Main API path according to spec
-      `/api/conversation`,
-      `/v1/conversation`,
-      `/api/v1/conversation`,
-      `/conversations`,  // Fallback plural forms
-      `/api/conversations`,
-      `/v1/conversations`,
-      `/api/v1/conversations`
-    ];
-    
-    console.log('=== TRYING DIFFERENT API PATHS ===');
-    
-    for (const path of possiblePaths) {
-      const url = `${apiEndpoint}${path}`;
-      console.log(`Trying URL: ${url}`);
-      
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(body),
-        });
-        
-        console.log(`Response for ${path}:`, response.status, response.statusText);
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log('✅ Success with path:', path);
-          console.log('Response data:', data);
-          return { id: conversationId };
-        } else if (response.status !== 404) {
-          // If it's not 404, the endpoint exists but there might be other issues
-          const errorText = await response.text();
-          console.log(`Non-404 error for ${path}:`, errorText);
-          try {
-            const errorData = JSON.parse(errorText);
-            console.error('Error data:', errorData);
-          } catch (e) {
-            console.error('Could not parse error response as JSON');
-          }
-        }
-      } catch (error) {
-        console.error(`Error with path ${path}:`, error);
-      }
-    }
-    
-    console.error('❌ All API paths failed');
-    return null;
-  } catch (error) {
-    console.error('❌ Error creating conversation:', error);
-    return null;
-  }
-}
+// Note: createConversation function removed - backend doesn't support JSON conversation creation
+// Backend only supports: POST /conversation/ with form-data (audio upload)
+// We generate UUID locally for WebSocket connection instead
 
 /**
  * Get conversation list via API
+ * Backend endpoint: GET /conversations (note: plural form)
  */
 export async function getConversations(
   userId: string,
@@ -335,24 +424,33 @@ export async function getConversations(
   }
 ): Promise<any[]> {
   try {
+    // Build query parameters for the actual API
     const queryParams = new URLSearchParams();
+    // Note: Check if user_id is needed as query param for this endpoint
+    
     if (options?.status) queryParams.append('status', options.status);
     if (options?.updatedSince) queryParams.append('updated_since', options.updatedSince);
     if (options?.limit) queryParams.append('limit', options.limit.toString());
     if (options?.offset) queryParams.append('offset', options.offset.toString());
     
-    // Use correct API path according to spec: /conversation not /conversations
-    const url = `${apiEndpoint}/conversation${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    // Use the actual API endpoint (plural form)
+    const url = `${apiEndpoint}/conversations${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    
+    const cleanApiKey = apiKey.replace(/^Bearer\s+/i, '').trim();
     
     const response = await fetch(url, {
       method: 'GET',
-      headers: createAuthHeaders(apiKey, userId),
+      headers: {
+        'Authorization': `Bearer ${cleanApiKey}`,
+        'OTO_USER_ID': userId,
+        'Content-Type': 'application/json',
+      },
     });
     
     if (response.ok) {
       const data = await response.json();
       
-      // Handle different response structures
+      // Handle response structure from actual API
       if (Array.isArray(data)) {
         return data;
       } else if (data.conversations && Array.isArray(data.conversations)) {
@@ -361,19 +459,12 @@ export async function getConversations(
         return data.data;
       } else if (data.message && data.message === 'No conversations found') {
         return [];
-      } else if (typeof data === 'object' && data !== null) {
-        // If it's an object but not the expected structure, try to find any array property
-        const arrayProps = Object.keys(data).filter(key => Array.isArray(data[key]));
-        if (arrayProps.length > 0) {
-          return data[arrayProps[0]];
-        }
       }
       
-      console.log('Unknown response structure, returning empty array');
+      console.log('Unknown response structure from /conversations:', data);
       return [];
     }
     
-    // Log error details
     const errorText = await response.text();
     console.error('Failed to fetch conversations:', {
       status: response.status,
@@ -381,14 +472,6 @@ export async function getConversations(
       errorText: errorText,
       url: url
     });
-    
-    // Try to parse error response
-    try {
-      const errorData = JSON.parse(errorText);
-      console.error('Parsed error data:', errorData);
-    } catch (e) {
-      console.error('Could not parse error response as JSON');
-    }
     
     return [];
   } catch (error) {
@@ -399,6 +482,7 @@ export async function getConversations(
 
 /**
  * Get conversation detail via API
+ * Endpoint: /conversation/{id}
  */
 export async function getConversationDetail(
   conversationId: string,
@@ -407,10 +491,8 @@ export async function getConversationDetail(
   apiEndpoint: string
 ): Promise<any | null> {
   try {
-    // Remove 'Bearer ' prefix if it exists, then add it back
     const cleanApiKey = apiKey.replace(/^Bearer\s+/i, '');
     
-    // Use correct API path: /conversation/{id} not /conversations/{id}
     const response = await fetch(`${apiEndpoint}/conversation/${conversationId}`, {
       method: 'GET',
       headers: {
@@ -434,6 +516,7 @@ export async function getConversationDetail(
 
 /**
  * Delete conversation via API
+ * Endpoint: /conversation/{id}
  */
 export async function deleteConversation(
   conversationId: string,
@@ -442,10 +525,8 @@ export async function deleteConversation(
   apiEndpoint: string
 ): Promise<boolean> {
   try {
-    // Remove 'Bearer ' prefix if it exists, then add it back
     const cleanApiKey = apiKey.replace(/^Bearer\s+/i, '');
     
-    // Use correct API path: /conversation/{id} not /conversations/{id}
     const response = await fetch(`${apiEndpoint}/conversation/${conversationId}`, {
       method: 'DELETE',
       headers: {
@@ -462,65 +543,49 @@ export async function deleteConversation(
 }
 
 /**
- * Test WebSocket connection with different URL patterns
+ * Store conversation audio via API (DEPRECATED - API doesn't support audio upload)
+ * This API only supports WebSocket streaming, not file uploads
  */
-export async function testWebSocketConnection(
-  conversationId: string,
+export async function storeConversationAudio(
+  userId: string,
+  audioFile: File,
+  apiKey: string,
+  apiEndpoint: string
+): Promise<{ success: boolean; message?: string; conversationId?: string }> {
+  console.log("⚠️ Audio upload not supported by this API - only WebSocket streaming is available");
+  return { 
+    success: false, 
+    message: "This API only supports real-time WebSocket streaming, not audio file uploads" 
+  };
+}
+
+/**
+ * Get user profile via API (following reference implementation pattern)
+ */
+export async function getUserProfile(
   userId: string,
   apiKey: string,
   apiEndpoint: string
-): Promise<{ success: boolean; url?: string; error?: string }> {
-  const protocol = apiEndpoint.startsWith('https://') ? 'wss://' : 'ws://';
-  const baseHost = apiEndpoint.replace(/^https?:\/\//, '');
-  
-  // Test different URL patterns
-  const urlPatterns = [
-    `${protocol}${baseHost}/conversation/${conversationId}/stream`,
-  ];
-  
-  console.log('🧪 Testing WebSocket connection patterns...');
-  
-  for (const url of urlPatterns) {
-    try {
-      console.log(`Testing URL: ${url}`);
-      
-      const result = await new Promise<{ success: boolean; error?: string }>((resolve) => {
-        const ws = new WebSocket(url);
-        const timeout = setTimeout(() => {
-          ws.close();
-          resolve({ success: false, error: 'Connection timeout' });
-        }, 5000);
-        
-        ws.onopen = () => {
-          console.log(`✅ Connection successful: ${url}`);
-          clearTimeout(timeout);
-          ws.close();
-          resolve({ success: true });
-        };
-        
-        ws.onerror = (error) => {
-          console.log(`❌ Connection failed: ${url}`, error);
-          clearTimeout(timeout);
-          resolve({ success: false, error: 'Connection error' });
-        };
-        
-        ws.onclose = (event) => {
-          if (event.code !== 1000) {
-            console.log(`❌ Connection closed with code ${event.code}: ${url}`);
-            clearTimeout(timeout);
-            resolve({ success: false, error: `Close code: ${event.code}` });
-          }
-        };
-      });
-      
-      if (result.success) {
-        return { success: true, url };
-      }
-      
-    } catch (error) {
-      console.log(`❌ Exception for ${url}:`, error);
+): Promise<any | null> {
+  try {
+    const cleanApiKey = apiKey.replace(/^Bearer\s+/i, '').trim();
+    
+    const response = await fetch(`${apiEndpoint}/profile/${encodeURIComponent(userId)}`, {
+      method: "GET",
+      headers: {
+        'Authorization': `Bearer ${cleanApiKey}`,
+        'accept': 'application/json',
+      },
+    });
+
+    if (response.ok) {
+      return await response.json();
+    } else {
+      console.error("Failed to fetch user profile:", response.status, response.statusText);
+      return null;
     }
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    return null;
   }
-  
-  return { success: false, error: 'All connection patterns failed' };
 }
