@@ -137,13 +137,19 @@ export function createAudioWebSocket(
   // Clean API key - remove Bearer prefix and any whitespace
   const cleanApiKey = apiKey.replace(/^Bearer\s+/i, '').trim();
   
-  // Build WebSocket URL following reference implementation pattern
-  const wsUrl = `${baseUrl}/conversation/${conversationId}/stream`;
+  // Try authentication via URL parameters (browsers can't set WebSocket headers)
+  const authParams = new URLSearchParams({
+    authorization: cleanApiKey,
+    user_id: userId
+  });
+  
+  // Build WebSocket URL with auth parameters
+  const wsUrl = `${baseUrl}/conversation/${conversationId}/stream?${authParams.toString()}`;
   
   console.log('📋 Conversation ID (UUID):', conversationId);
   console.log('🌐 Base URL:', baseUrl);
   console.log('👤 User ID:', userId);
-  console.log('🔗 WebSocket URL:', wsUrl);
+  console.log('🔗 WebSocket URL (with auth):', wsUrl.replace(cleanApiKey, '*'.repeat(cleanApiKey.length)));
   console.log('🔑 API Key length:', cleanApiKey.length);
   
   try {
@@ -154,9 +160,9 @@ export function createAudioWebSocket(
     ws.addEventListener('open', () => {
       console.log('🔥 WebSocket OPEN event fired');
       console.log('🔍 WebSocket readyState:', ws.readyState);
-      console.log('✅ Connection successful - sending auth message');
+      console.log('✅ Connection successful');
       
-      // Send authentication message immediately upon connection (reference implementation pattern)
+      // Send authentication message as backup (in case URL auth didn't work)
       try {
         const authMessage = {
           type: 'auth',
@@ -166,9 +172,9 @@ export function createAudioWebSocket(
           }
         };
         ws.send(JSON.stringify(authMessage));
-        console.log('📤 Authentication message sent:', { type: 'auth', userId, apiKeyLength: cleanApiKey.length });
+        console.log('📤 Backup authentication message sent:', { type: 'auth', userId, apiKeyLength: cleanApiKey.length });
       } catch (authError) {
-        console.error('❌ Failed to send authentication message:', authError);
+        console.error('❌ Failed to send backup authentication message:', authError);
       }
     });
     
@@ -378,7 +384,41 @@ export function sendAuthMessage(ws: WebSocket, userId: string, apiKey: string): 
 }
 
 /**
- * Send audio data through WebSocket
+ * Send real-time audio data through WebSocket
+ * Handles both Blob and ArrayBuffer data, converts to base64 for transmission
+ */
+export async function sendRealtimeAudioData(ws: WebSocket, audioData: Blob | ArrayBuffer): Promise<void> {
+  if (ws.readyState !== WebSocket.OPEN) {
+    console.warn('WebSocket not open, skipping audio data transmission');
+    return;
+  }
+
+  try {
+    let base64Audio: string;
+
+    if (audioData instanceof Blob) {
+      // Convert Blob to base64 using the utility function
+      base64Audio = await audioBlobToBase64(audioData);
+    } else {
+      // Convert ArrayBuffer to base64
+      base64Audio = btoa(String.fromCharCode(...new Uint8Array(audioData)));
+    }
+
+    // Send as JSON message format
+    const message = {
+      type: 'audio',
+      data: base64Audio
+    };
+
+    ws.send(JSON.stringify(message));
+    console.log(`📤 Audio data sent: ${base64Audio.length} chars`);
+  } catch (error) {
+    console.error('❌ Failed to send audio data:', error);
+  }
+}
+
+/**
+ * Send audio data as JSON message (fallback method)
  * Format according to API docs: {"type": "audio", "data": "{encoded audio}"}
  */
 export function sendAudioData(ws: WebSocket, audioData: string): void {

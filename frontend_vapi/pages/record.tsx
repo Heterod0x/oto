@@ -5,30 +5,25 @@ import { useRouter } from "next/router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FooterNavigation } from "../components/FooterNavigation";
 import { Button } from "../components/ui/button";
+import { useRealtimeAudioStream } from "../hooks/useRealtimeAudioStream";
 import {
-  audioBlobToBase64,
-  createAudioWebSocket,
   generateUUID,
-  sendAudioData,
   sendCompleteSignal,
-  storeConversationAudio,
+  sendRealtimeAudioData,
   validateUUID
 } from "../lib/oto-api";
 
 /**
- * 日常会話録音画面
+ * 日常会話録音画面 - リアルタイム音声ストリーミング版
  */
 export default function RecordPage() {
   const router = useRouter();
   const { authenticated, user } = usePrivy();
-  const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [connectionStatus, setConnectionStatus] = useState<"disconnected" | "connecting" | "connected" | "authenticated" | "error">("disconnected");
   const [conversationId, setConversationId] = useState<string | null>(null);
   
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const websocketRef = useRef<WebSocket | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     if (!authenticated) {
@@ -58,14 +53,39 @@ export default function RecordPage() {
     return "";
   }, [user]);
 
-  // Generate UUID for WebSocket conversation (no API call needed)
+  // リアルタイム音声ストリーミング用フック
+  const {
+    isStreaming,
+    startStreaming,
+    stopStreaming,
+    hasPermission,
+    requestPermission,
+    volume,
+  } = useRealtimeAudioStream({
+    onAudioData: async (audioBlob: Blob) => {
+      // WebSocketで音声データをリアルタイム送信
+      if (websocketRef.current?.readyState === WebSocket.OPEN && connectionStatus === "authenticated") {
+        try {
+          await sendRealtimeAudioData(websocketRef.current, audioBlob);
+        } catch (error) {
+          console.error("❌ Failed to send audio data:", error);
+        }
+      }
+    },
+    onError: (error: Error) => {
+      console.error("❌ Audio streaming error:", error);
+      setTranscript(prev => prev + `\n❌ Audio error: ${error.message}`);
+    },
+    chunkInterval: 100, // Send 100ms chunks
+  });
+
+  // Generate UUID for WebSocket conversation
   const startNewConversation = useCallback(async () => {
     try {
       console.log("=== Generating UUID for WebSocket Conversation ===");
       const userId = getUserId();
       console.log("User ID:", userId);
       
-      // Generate UUID directly for WebSocket endpoint (no API call needed)
       const conversationId = generateUUID();
       console.log("📋 Generated conversation ID:", conversationId);
       console.log("✅ UUID validation:", validateUUID(conversationId));
@@ -79,14 +99,13 @@ export default function RecordPage() {
     }
   }, [getUserId]);
 
-  // WebSocket接続を開始（conversation_id必須）- 参考実装パターンに基づく
+  // WebSocket接続を開始
   const connectWebSocket = useCallback(async (conversationId: string) => {
     if (websocketRef.current?.readyState === WebSocket.OPEN) {
       console.log("⚠️ WebSocket already open, skipping connection");
       return;
     }
 
-    // Validate conversation ID before attempting WebSocket connection
     if (!validateUUID(conversationId)) {
       console.error("❌ Cannot connect WebSocket: Invalid conversation ID format:", conversationId);
       setConnectionStatus("error");
@@ -96,7 +115,7 @@ export default function RecordPage() {
     const apiEndpoint = process.env.NEXT_PUBLIC_OTO_API_ENDPOINT || "";
     const apiKey = process.env.NEXT_PUBLIC_OTO_API_KEY || "";
     
-    console.log("=== Establishing WebSocket Connection (Reference Implementation) ===");
+    console.log("=== Establishing WebSocket Connection ===");
     console.log("📋 Conversation ID (UUID):", conversationId);
     console.log("✅ UUID validation passed");
     console.log("🔗 API Endpoint:", apiEndpoint);
@@ -105,93 +124,191 @@ export default function RecordPage() {
     try {
       setConnectionStatus("connecting");
       
-      // Use the simple, direct approach like the reference implementation
-      const ws = createAudioWebSocket(conversationId, getUserId(), apiKey, apiEndpoint);
-
-      ws.onopen = () => {
-        setConnectionStatus("connected");
-        console.log("✅ WebSocket connected successfully");
-        console.log("🔐 Authentication message will be sent automatically");
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const message = JSON.parse(event.data);
-          console.log("📨 Received WebSocket message:", message);
-          
-          // Check for authentication response first
-          if (message.type === "auth" || message.type === "authentication") {
-            if (message.success !== false && !message.error) {
-              setConnectionStatus("authenticated");
-              console.log("✅ WebSocket authentication successful");
-            } else {
-              setConnectionStatus("error");
-              console.error("❌ WebSocket authentication failed:", message);
-            }
-            return;
-          }
-          
-          switch (message.type) {
-            case "transcribe":
-              console.log("📝 Transcription update:", message.data?.transcript);
-              setTranscript(prev => prev + (message.data?.transcript || ""));
-              break;
-            case "transcript-beautify":
-              console.log("✨ Beautified transcript:", message.data?.transcript);
-              setTranscript(message.data?.transcript || "");
-              break;
-            case "detect-action":
-              console.log("🎯 Action detected:", message.data);
-              break;
-            case "error":
-              console.error("🚨 Server error:", message);
-              setConnectionStatus("error");
-              break;
-            default:
-              console.log("❓ Unknown message type:", message.type, message);
-              // If we get any successful response that's not an error, consider it authenticated
-              if (connectionStatus === "connected") {
-                setConnectionStatus("authenticated");
-                console.log("✅ Assuming authentication successful based on server response");
-              }
-          }
-        } catch (error) {
-          console.error("❌ Failed to parse WebSocket message:", error);
-        }
-      };
-
-      ws.onerror = (error) => {
-        console.error("❌ WebSocket error:", error);
-        setConnectionStatus("error");
-      };
-
-      ws.onclose = (event) => {
-        setConnectionStatus("disconnected");
-        console.log(`🔌 WebSocket disconnected: code ${event.code}, reason: ${event.reason}`);
+      // Try different connection approaches (simplified - focus on message auth)
+      const strategies = [
+        // Strategy 1: Simple connection with message auth (this should work)
+        () => {
+          const baseUrl = apiEndpoint.replace('https', 'wss').replace('http', 'ws');
+          const wsUrl = `${baseUrl}/conversation/${conversationId}/stream`;
+          console.log("🧪 Trying simple connection with correct auth message format");
+          return new WebSocket(wsUrl);
+        },
         
-        // Log detailed close information for debugging
-        if (event.code === 1005) {
-          console.warn("⚠️ Code 1005: No status received - possible authentication issue");
-        } else if (event.code === 1006) {
-          console.warn("⚠️ Code 1006: Abnormal closure - connection lost");
-        } else if (event.code === 1008) {
-          console.warn("⚠️ Code 1008: Policy violation - likely authentication failure");
+        // Strategy 2: URL parameters as backup
+        () => {
+          const authParams = new URLSearchParams({
+            authorization: apiKey.replace(/^Bearer\s+/i, '').trim(),
+            user_id: getUserId()
+          });
+          const baseUrl = apiEndpoint.replace('https', 'wss').replace('http', 'ws');
+          const wsUrl = `${baseUrl}/conversation/${conversationId}/stream?${authParams.toString()}`;
+          console.log("🧪 Trying URL parameter authentication as backup");
+          return new WebSocket(wsUrl);
         }
+      ];
+
+      let currentStrategy = 0;
+      
+      const tryConnection = () => {
+        if (currentStrategy >= strategies.length) {
+          console.error("❌ All WebSocket connection strategies failed");
+          setConnectionStatus("error");
+          return;
+        }
+
+        const ws = strategies[currentStrategy]();
+        currentStrategy++;
+
+        const connectionTimeout = setTimeout(() => {
+          if (ws.readyState === WebSocket.CONNECTING) {
+            console.warn("⏰ Connection timeout, trying next strategy...");
+            ws.close();
+            tryConnection();
+          }
+        }, 5000);
+
+        ws.onopen = () => {
+          clearTimeout(connectionTimeout);
+          setConnectionStatus("connected");
+          console.log("✅ WebSocket connected successfully");
+          console.log("🔐 Sending authentication message");
+          
+          // Send authentication message with EXACT server format
+          try {
+            const cleanApiKey = apiKey.replace(/^Bearer\s+/i, '').trim();
+            const userId = getUserId();
+            
+            // Use the EXACT format the server expects
+            const authMessage = {
+              type: "auth",
+              data: {
+                userId: userId,
+                apiKey: `Bearer ${cleanApiKey}`
+              }
+            };
+            
+            ws.send(JSON.stringify(authMessage));
+            console.log('📤 Authentication message sent (correct format):', { type: 'auth', userId, apiKeyLength: cleanApiKey.length });
+            
+            // Set a timeout to assume authentication success if no response
+            setTimeout(() => {
+              if (ws.readyState === WebSocket.OPEN && connectionStatus === "connected") {
+                setConnectionStatus("authenticated");
+                console.log("✅ Assuming authentication successful (no explicit response)");
+              }
+            }, 2000);
+          } catch (authError) {
+            console.error('❌ Failed to send authentication message:', authError);
+          }
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const message = JSON.parse(event.data);
+            console.log("📨 Received WebSocket message:", message);
+            
+            // Check for authentication response first
+            if (message.type === "auth" || message.type === "authentication") {
+              if (message.success !== false && !message.error) {
+                setConnectionStatus("authenticated");
+                console.log("✅ WebSocket authentication successful");
+              } else {
+                console.error("❌ WebSocket authentication failed:", message);
+                // Server explicitly rejected auth - don't retry with wrong format
+                setConnectionStatus("error");
+              }
+              return;
+            }
+            
+            switch (message.type) {
+              case "transcribe":
+                console.log("📝 Transcription update:", message.data?.transcript);
+                setTranscript(prev => prev + (message.data?.transcript || ""));
+                break;
+              case "transcript-beautify":
+                console.log("✨ Beautified transcript:", message.data?.transcript);
+                setTranscript(message.data?.transcript || "");
+                break;
+              case "detect-action":
+                console.log("🎯 Action detected:", message.data);
+                break;
+              case "error":
+                console.error("🚨 Server error:", message);
+                
+                // Check if it's an authentication error
+                if (message.message && message.message.includes("Authentication failed")) {
+                  console.log("🔄 Trying correct auth format after error...");
+                  try {
+                    const cleanApiKey = apiKey.replace(/^Bearer\s+/i, '').trim();
+                    const userId = getUserId();
+                    
+                    // Use the EXACT format the server expects
+                    const correctAuthMessage = {
+                      type: "auth",
+                      data: {
+                        userId: userId,
+                        apiKey: cleanApiKey
+                      }
+                    };
+                    ws.send(JSON.stringify(correctAuthMessage));
+                    console.log('📤 Correct auth format sent after error');
+                  } catch (authError) {
+                    console.error('❌ Failed to send correct auth:', authError);
+                    setConnectionStatus("error");
+                  }
+                } else {
+                  setConnectionStatus("error");
+                }
+                break;
+              default:
+                console.log("❓ Unknown message type:", message.type, message);
+                // If we get any successful response that's not an error, consider it authenticated
+                if (connectionStatus === "connected") {
+                  setConnectionStatus("authenticated");
+                  console.log("✅ Assuming authentication successful based on server response");
+                }
+            }
+          } catch (error) {
+            console.error("❌ Failed to parse WebSocket message:", error);
+          }
+        };
+
+        ws.onerror = (error) => {
+          clearTimeout(connectionTimeout);
+          console.error(`❌ WebSocket error with strategy ${currentStrategy}:`, error);
+          tryConnection(); // Try next strategy
+        };
+
+        ws.onclose = (event) => {
+          clearTimeout(connectionTimeout);
+          console.log(`🔌 WebSocket disconnected with strategy ${currentStrategy}: code ${event.code}, reason: ${event.reason}`);
+          
+          if (event.code === 1006) {
+            console.warn("⚠️ Code 1006: Abnormal closure - trying next strategy");
+            tryConnection(); // Try next strategy
+          } else if (event.code === 1008) {
+            console.warn("⚠️ Code 1008: Policy violation - trying next strategy");
+            tryConnection(); // Try next strategy
+          } else {
+            setConnectionStatus("disconnected");
+          }
+        };
+
+        websocketRef.current = ws;
       };
 
-      websocketRef.current = ws;
+      tryConnection();
       
     } catch (error) {
       console.error("❌ WebSocket connection failed:", error);
       setConnectionStatus("error");
-      console.log("💡 Will continue with local recording and API fallback");
     }
-  }, [getUserId]);
+  }, [getUserId, connectionStatus]);
 
-  // One-button recording: automatically handles conversation creation, authentication, and audio streaming
+  // ボタンを押してWebSocket接続 + 音声ストリーミング開始
   const startRecording = useCallback(async () => {
     try {
-      console.log("=== Starting One-Button Recording Process ===");
+      console.log("=== Starting Real-time Audio Streaming ===");
       
       // Step 1: Create new conversation
       const newConversationId = await startNewConversation();
@@ -202,209 +319,31 @@ export default function RecordPage() {
 
       console.log("✅ Conversation created:", newConversationId);
 
-      // Step 2: Setup microphone access first for better UX
-      console.log("🎤 Setting up microphone access...");
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          sampleRate: 16000,
-        } 
-      });
-      
-      console.log("✅ Microphone access granted");
-      streamRef.current = stream;
-
-      // Step 3: Start WebSocket connection with fallback strategies
+      // Step 2: Start WebSocket connection
       await connectWebSocket(newConversationId);
 
-      // Step 4: Setup MediaRecorder with improved compatibility
-      const supportedMimeTypes = [
-        'audio/webm;codecs=opus',
-        'audio/webm',
-        'audio/ogg;codecs=opus',
-        'audio/wav'
-      ];
+      // Step 3: Start real-time audio streaming
+      console.log("🎤 Starting real-time audio streaming...");
+      await startStreaming();
       
-      let mimeType = '';
-      for (const type of supportedMimeTypes) {
-        if (MediaRecorder.isTypeSupported(type)) {
-          mimeType = type;
-          break;
-        }
-      }
-      
-      console.log("Using MIME type:", mimeType || "browser default");
-
-      const mediaRecorder = new MediaRecorder(stream, {
-        ...(mimeType && { mimeType }),
-        audioBitsPerSecond: 64000
-      });
-      
-      mediaRecorderRef.current = mediaRecorder;
-
-      // Store audio chunks for fallback API upload
-      const audioChunks: Blob[] = [];
-      let audioChunkCount = 0;
-
-      mediaRecorder.ondataavailable = async (event) => {
-        audioChunkCount++;
-        console.log(`Audio chunk #${audioChunkCount}, size: ${event.data.size} bytes`);
-        
-        if (event.data.size > 0) {
-          // Store chunk for potential API upload
-          audioChunks.push(event.data);
-          
-          // Try WebSocket streaming first
-          if (websocketRef.current?.readyState === WebSocket.OPEN && connectionStatus === "authenticated") {
-            try {
-              const base64Data = await audioBlobToBase64(event.data);
-              sendAudioData(websocketRef.current, base64Data);
-              console.log(`📤 Sent audio chunk #${audioChunkCount} via WebSocket`);
-            } catch (error) {
-              console.error("❌ Failed to send audio data via WebSocket:", error);
-            }
-          } else {
-            console.log(`💾 WebSocket not ready (status: ${connectionStatus}), storing chunk for API upload`);
-          }
-        }
-      };
-
-      // Setup recording events
-      mediaRecorder.onstart = () => {
-        console.log("✅ MediaRecorder started");
-        setIsRecording(true);
-        setTranscript("🎤 Recording started - streaming audio in real-time...");
-      };
-
-      mediaRecorder.onerror = (event) => {
-        console.error("❌ MediaRecorder error:", event);
-      };
-
-      mediaRecorder.onstop = async () => {
-        console.log("⏹️ MediaRecorder stopped");
-        
-        // Fallback: Upload to API if WebSocket failed
-        if (audioChunks.length > 0 && (!websocketRef.current || connectionStatus !== "authenticated")) {
-          console.log("📤 Uploading audio to API as fallback...");
-          try {
-            await uploadAudioToAPI(audioChunks, newConversationId);
-          } catch (error) {
-            console.error("❌ Failed to upload audio to API:", error);
-          }
-        }
-      };
-
-      // Step 5: Start recording immediately
-      console.log("🎬 Starting recording immediately...");
-      mediaRecorder.start(250); // 250ms intervals for good real-time performance
-      
-      // Step 6: Wait for WebSocket authentication in background (non-blocking)
-      setTimeout(async () => {
-        try {
-          await waitForWebSocketAuth(30000); // 30 second timeout
-          console.log("✅ WebSocket authentication completed in background");
-        } catch (error) {
-          console.warn("⚠️ WebSocket authentication timeout - continuing with local recording");
-        }
-      }, 0);
+      setTranscript("🎤 Real-time audio streaming started - speaking to server...");
       
     } catch (error) {
-      console.error("Failed to start recording:", error);
-      alert("Failed to start recording. Please check microphone permissions.");
+      console.error("Failed to start streaming:", error);
+      alert("Failed to start streaming. Please check microphone permissions.");
     }
-  }, [startNewConversation, connectWebSocket, connectionStatus]);
+  }, [startNewConversation, connectWebSocket, startStreaming]);
 
-  // Helper function to wait for WebSocket authentication
-  const waitForWebSocketAuth = useCallback(async (timeout: number = 30000): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      const checkInterval = 200; // Check every 200ms
-      let elapsed = 0;
-      
-      const checkAuth = () => {
-        if (connectionStatus === "authenticated") {
-          console.log("✅ WebSocket authenticated successfully");
-          resolve();
-        } else if (connectionStatus === "error") {
-          console.log("❌ WebSocket authentication failed");
-          reject(new Error("WebSocket authentication failed"));
-        } else if (elapsed >= timeout) {
-          console.log("⏰ WebSocket authentication timeout");
-          reject(new Error("WebSocket authentication timeout"));
-        } else {
-          elapsed += checkInterval;
-          setTimeout(checkAuth, checkInterval);
-        }
-      };
-      
-      checkAuth();
-    });
-  }, [connectionStatus]);
-
-  // Helper function to upload audio to API as fallback (following reference implementation)
-  const uploadAudioToAPI = useCallback(async (audioChunks: Blob[], conversationId: string) => {
-    try {
-      const apiEndpoint = process.env.NEXT_PUBLIC_OTO_API_ENDPOINT || "";
-      const apiKey = process.env.NEXT_PUBLIC_OTO_API_KEY || "";
-      
-      // Combine audio chunks into single blob
-      const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-      const audioFile = new File([audioBlob], 'recording.wav', { type: 'audio/wav' });
-      
-      console.log("📤 Attempting audio upload to API as fallback...");
-      console.log("⚠️ Note: This API primarily supports WebSocket streaming");
-      
-      // Use the API pattern with updated messaging
-      const result = await storeConversationAudio(
-        getUserId(), 
-        audioFile, 
-        apiKey, 
-        apiEndpoint
-      );
-
-      if (result.success) {
-        console.log("✅ Audio uploaded to API successfully:", result);
-        setTranscript(prev => prev + "\n✅ Audio processing completed via API");
-        
-        if (result.conversationId) {
-          console.log("🔄 Background analysis triggered for conversation:", result.conversationId);
-        }
-      } else {
-        console.log("ℹ️ API upload not available:", result.message);
-        setTranscript(prev => prev + "\n💾 Audio saved locally (API streaming only)");
-      }
-    } catch (error) {
-      console.error("❌ Error uploading to API:", error);
-      setTranscript(prev => prev + "\n❌ Error processing audio");
-    }
-  }, [getUserId]);
-
-  // Monitor connection status for debugging
-  useEffect(() => {
-    console.log(`🔄 Connection status changed: ${connectionStatus}`);
-  }, [connectionStatus]);
-
-  // 録音停止
-  const stopRecording = useCallback(() => {
-    console.log("=== Stopping Recording ===");
+  // ボタンを押してWebSocket接続解除 + 音声ストリーミング停止
+  const stopRecording = useCallback(async () => {
+    console.log("=== Stopping Real-time Audio Streaming ===");
     
     try {
-      // Stop MediaRecorder
-      if (mediaRecorderRef.current && isRecording) {
-        console.log("⏹️ Stopping MediaRecorder...");
-        mediaRecorderRef.current.stop();
-        setIsRecording(false);
-      }
+      // Step 1: Stop audio streaming
+      console.log("🛑 Stopping audio streaming...");
+      stopStreaming();
 
-      // Stop microphone stream
-      if (streamRef.current) {
-        console.log("🎤 Stopping microphone stream...");
-        streamRef.current.getTracks().forEach(track => track.stop());
-        streamRef.current = null;
-      }
-
-      // Send completion signal via WebSocket
+      // Step 2: Send completion signal via WebSocket
       if (websocketRef.current?.readyState === WebSocket.OPEN) {
         console.log("📤 Sending completion signal...");
         try {
@@ -415,10 +354,10 @@ export default function RecordPage() {
           setTimeout(() => {
             if (websocketRef.current) {
               console.log("🔌 Closing WebSocket connection");
-              websocketRef.current.close(1000, "Recording completed");
+              websocketRef.current.close(1000, "Streaming completed");
               websocketRef.current = null;
             }
-          }, 2000); // Increased delay to allow server processing
+          }, 2000);
         } catch (error) {
           console.error("❌ Failed to send completion signal:", error);
         }
@@ -426,26 +365,34 @@ export default function RecordPage() {
         console.log("⚠️ WebSocket not connected, skipping completion signal");
       }
       
-      console.log("✅ Recording stopped successfully");
+      setTranscript(prev => prev + "\n✅ Real-time streaming stopped");
+      console.log("✅ Real-time streaming stopped successfully");
     } catch (error) {
-      console.error("❌ Error during recording stop:", error);
+      console.error("❌ Error during streaming stop:", error);
     }
-  }, [isRecording]);
+  }, [stopStreaming]);
+
+  // Monitor connection status for debugging
+  useEffect(() => {
+    console.log(`🔄 Connection status changed: ${connectionStatus}`);
+  }, [connectionStatus]);
+
+  // Monitor streaming status
+  useEffect(() => {
+    console.log(`🎤 Streaming status changed: ${isStreaming}`);
+  }, [isStreaming]);
 
   // クリーンアップ
   useEffect(() => {
     return () => {
-      if (mediaRecorderRef.current && isRecording) {
-        mediaRecorderRef.current.stop();
-      }
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
+      if (isStreaming) {
+        stopStreaming();
       }
       if (websocketRef.current) {
         websocketRef.current.close();
       }
     };
-  }, [isRecording]);
+  }, [isStreaming, stopStreaming]);
 
   if (!authenticated) {
     return null;
@@ -454,8 +401,8 @@ export default function RecordPage() {
   return (
     <>
       <Head>
-        <title>Daily Conversation Recording · VAPI</title>
-        <meta name="description" content="Record and save daily conversations" />
+        <title>Real-time Voice Streaming · VAPI</title>
+        <meta name="description" content="Real-time voice streaming to server" />
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
@@ -466,32 +413,32 @@ export default function RecordPage() {
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-2xl mx-auto">
             <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">
-              Daily Conversation Recording
+              Real-time Voice Streaming
             </h1>
 
             {/* Connection Status & Recording Info */}
             <div className="mb-6 p-4 rounded-lg bg-white/70 backdrop-blur-sm">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">Recording Status:</span>
+                  <span className="text-sm font-medium text-gray-700">Streaming Status:</span>
                   <span className={`text-sm font-bold flex items-center gap-1 ${
-                    isRecording ? "text-red-600" :
+                    isStreaming ? "text-red-600" :
                     connectionStatus === "authenticated" ? "text-green-600" :
                     connectionStatus === "connected" ? "text-blue-600" :
                     connectionStatus === "connecting" ? "text-yellow-600" :
                     connectionStatus === "error" ? "text-orange-600" :
                     "text-gray-600"
                   }`}>
-                    {isRecording ? (
-                      <>🔴 Recording Active</>
+                    {isStreaming ? (
+                      <>🔴 Streaming Active</>
                     ) : connectionStatus === "authenticated" ? (
-                      <>✅ Ready to Record</>
+                      <>✅ Ready to Stream</>
                     ) : connectionStatus === "connected" ? (
                       <>🔗 Authenticating...</>
                     ) : connectionStatus === "connecting" ? (
                       <>🔄 Connecting...</>
                     ) : connectionStatus === "error" ? (
-                      <>⚠️ Fallback Mode</>
+                      <>⚠️ Connection Error</>
                     ) : (
                       <>⭕ Ready</>
                     )}
@@ -509,8 +456,8 @@ export default function RecordPage() {
                   }`}>
                     {connectionStatus === "authenticated" ? "Real-time Streaming" :
                      connectionStatus === "connected" ? "Authenticating..." :
-                     connectionStatus === "connecting" ? "Trying Multiple Strategies..." :
-                     connectionStatus === "error" ? "Using API Fallback" :
+                     connectionStatus === "connecting" ? "Connecting..." :
+                     connectionStatus === "error" ? "Connection Failed" :
                      "Standby"}
                   </span>
                 </div>
@@ -521,21 +468,20 @@ export default function RecordPage() {
                   </div>
                 )}
                 
-                {isRecording && (
-                  <div className="text-xs text-blue-600">
-                    🎤 One-button recording: Streaming audio and processing in real-time
+                {isStreaming && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-blue-600">
+                      🎤 Real-time audio streaming to server
+                    </span>
+                    <div className="text-xs text-blue-600">
+                      Volume: {Math.round(volume)}%
+                    </div>
                   </div>
                 )}
                 
-                {!isRecording && connectionStatus !== "authenticated" && connectionStatus !== "connecting" && (
-                  <div className="text-xs text-gray-600">
-                    💡 Press record to start - WebSocket strategies will try automatically
-                  </div>
-                )}
-                
-                {connectionStatus === "connecting" && (
-                  <div className="text-xs text-yellow-600">
-                    🔄 Trying multiple WebSocket authentication strategies...
+                {!hasPermission && (
+                  <div className="text-xs text-orange-600">
+                    ⚠️ Microphone permission required
                   </div>
                 )}
               </div>
@@ -544,11 +490,11 @@ export default function RecordPage() {
             {/* Recording Controls */}
             <div className="text-center mb-8">
               <div className={`inline-flex items-center justify-center w-24 h-24 rounded-full mb-4 transition-all duration-300 ${
-                isRecording 
+                isStreaming 
                   ? "bg-red-500 animate-pulse" 
                   : "bg-blue-500 hover:bg-blue-600"
               }`}>
-                {isRecording ? (
+                {isStreaming ? (
                   <MicOff size={32} className="text-white" />
                 ) : (
                   <Mic size={32} className="text-white" />
@@ -556,13 +502,14 @@ export default function RecordPage() {
               </div>
 
               <div className="space-y-3">
-                {!isRecording ? (
+                {!isStreaming ? (
                   <Button
                     onClick={startRecording}
                     className="px-8 py-3 text-lg font-medium"
                     size="lg"
+                    disabled={connectionStatus === "connecting"}
                   >
-                    🎤 Start Recording & Stream
+                    🎤 Start Streaming
                   </Button>
                 ) : (
                   <Button
@@ -572,7 +519,7 @@ export default function RecordPage() {
                     size="lg"
                   >
                     <Square size={20} className="mr-2" />
-                    Stop Recording
+                    Stop Streaming
                   </Button>
                 )}
               </div>
@@ -584,7 +531,7 @@ export default function RecordPage() {
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">
                   Real-time Transcription
                 </h3>
-                <div className="text-gray-700 leading-relaxed">
+                <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">
                   {transcript}
                 </div>
               </div>
@@ -593,19 +540,18 @@ export default function RecordPage() {
             {/* Instructions */}
             <div className="bg-white/70 backdrop-blur-sm rounded-lg p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                Enhanced One-Button Recording
+                Real-time Voice Streaming
               </h3>
               <ul className="text-gray-700 space-y-2">
-                <li>• Press "🎤 Start Recording & Stream" to begin instantly</li>
-                <li>• Automatic conversation creation and authentication</li>
-                <li>• Multiple WebSocket strategies with automatic fallback</li>
-                <li>• Real-time audio streaming + API backup</li>
-                <li>• Live transcription and background processing</li>
-                <li>• Press "Stop Recording" when finished</li>
-                <li>• View processed conversations in history</li>
+                <li>• Press "🎤 Start Streaming" to begin real-time audio streaming</li>
+                <li>• Audio data is sent directly to the server via WebSocket</li>
+                <li>• No file recording - pure real-time streaming</li>
+                <li>• Live transcription and processing</li>
+                <li>• Press "Stop Streaming" to end the connection</li>
+                <li>• WebSocket connection automatically closes after stopping</li>
               </ul>
               <div className="mt-3 text-sm text-blue-600">
-                ✨ Now with improved authentication strategies based on reference implementation
+                ✨ Real-time audio streaming with Web Audio API for low latency
               </div>
             </div>
           </div>
