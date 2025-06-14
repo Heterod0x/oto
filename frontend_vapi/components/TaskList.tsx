@@ -1,9 +1,9 @@
 import { usePrivy } from "@privy-io/react-auth";
-import { Calendar, Clock, Plus } from "lucide-react";
+import { Calendar, Clock, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { VAPIClient } from "../lib/api-client";
-import { ActionResponse, getActions } from "../lib/oto-api";
+import { ActionResponse, getActions, updateAction } from "../lib/oto-api";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { useToast } from "./Toast";
 import { Button } from "./ui/button";
@@ -186,21 +186,38 @@ export function TaskList({ className }: TaskListProps) {
       const task = tasks.find((t) => t.id === taskId);
       if (!task) return;
 
-      const updatedTask = { ...task, completed: !task.completed };
+      if (!apiEndpoint || !apiKey || !userId) {
+        showToast({
+          type: "error",
+          title: "Cannot update task - API not configured",
+        });
+        return;
+      }
+
+      const newStatus = task.completed ? "created" : "completed";
       
-      // TODO: Implement API call to update task status
-      // For now, only update local state since we don't have an update endpoint yet
-      // In the future, you would call something like:
-      // await updateActionStatus(taskId, updatedTask.completed ? "completed" : "created", userId, apiKey, apiEndpoint);
+      console.log("🔄 Updating task status...", { taskId, newStatus });
 
-      setTasks((prevTasks) => prevTasks.map((t) => (t.id === taskId ? updatedTask : t)));
+      // Call the API to update the task status
+      const result = await updateAction(taskId, newStatus, userId, apiKey, apiEndpoint);
 
-      showToast({
-        type: updatedTask.completed ? "success" : "success",
-        title: updatedTask.completed 
-          ? "Task marked as completed (local only)" 
-          : "Task marked as incomplete (local only)",
-      });
+      if (result.success) {
+        // Update local state only if API call was successful
+        const updatedTask = { ...task, completed: !task.completed };
+        setTasks((prevTasks) => prevTasks.map((t) => (t.id === taskId ? updatedTask : t)));
+
+        showToast({
+          type: "success",
+          title: updatedTask.completed 
+            ? "Task marked as completed" 
+            : "Task marked as incomplete",
+        });
+      } else {
+        showToast({
+          type: "error",
+          title: "Failed to update task status",
+        });
+      }
     } catch (err) {
       console.error("Failed to update task:", err);
       showToast({
@@ -226,6 +243,50 @@ export function TaskList({ className }: TaskListProps) {
       showToast({
         type: "error",
         title: "Failed to add to calendar",
+      });
+    }
+  };
+
+  /**
+   * Handles task deletion by marking it as deleted
+   */
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      const task = tasks.find((t) => t.id === taskId);
+      if (!task) return;
+
+      if (!apiEndpoint || !apiKey || !userId) {
+        showToast({
+          type: "error",
+          title: "Cannot delete task - API not configured",
+        });
+        return;
+      }
+
+      console.log("🗑️ Deleting task...", { taskId });
+
+      // Call the API to mark the task as deleted
+      const result = await updateAction(taskId, "deleted", userId, apiKey, apiEndpoint);
+
+      if (result.success) {
+        // Remove the task from local state
+        setTasks((prevTasks) => prevTasks.filter((t) => t.id !== taskId));
+
+        showToast({
+          type: "success",
+          title: "Task deleted successfully",
+        });
+      } else {
+        showToast({
+          type: "error",
+          title: "Failed to delete task",
+        });
+      }
+    } catch (err) {
+      console.error("Failed to delete task:", err);
+      showToast({
+        type: "error",
+        title: "Failed to delete task",
       });
     }
   };
@@ -277,7 +338,19 @@ export function TaskList({ className }: TaskListProps) {
     <div className={`p-6 ${className || ""}`}>
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Task List</h1>
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-3xl font-bold text-gray-900">Task List</h1>
+            <Button
+              onClick={loadTasks}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+              disabled={loading}
+            >
+              <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+              Refresh
+            </Button>
+          </div>
           <p className="text-gray-600">View and manage tasks extracted from voice conversations</p>
         </div>
 
@@ -299,92 +372,124 @@ export function TaskList({ className }: TaskListProps) {
             </Button>
           </div>
         ) : (
-          <div className="space-y-4">
-            {tasks.map((task) => (
-              <div
-                key={task.id}
-                className={`bg-white rounded-lg shadow-sm border transition-all duration-200 ${
-                  task.completed ? "opacity-75" : "hover:shadow-md"
-                }`}
-              >
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-start gap-3 flex-1">
-                      <input
-                        type="checkbox"
-                        checked={task.completed}
-                        onChange={() => handleToggleComplete(task.id)}
-                        className="mt-1 h-4 w-4 text-violet-600 rounded border-gray-300 focus:ring-violet-500"
-                      />
-                      <div className="flex-1">
-                        <h3
-                          className={`text-lg font-medium mb-1 ${
-                            task.completed ? "line-through text-gray-500" : "text-gray-900"
-                          }`}
-                        >
-                          {task.title}
-                        </h3>
-                        <p
-                          className={`text-sm mb-3 ${
-                            task.completed ? "text-gray-400" : "text-gray-600"
-                          }`}
-                        >
-                          {task.description}
-                        </p>
-                      </div>
-                    </div>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(task.priority)}`}
-                    >
-                      {task.priority === "high"
-                        ? "High"
-                        : task.priority === "medium"
-                          ? "Med"
-                          : task.priority === "low"
-                            ? "Low"
-                            : "-"}
-                    </span>
-                  </div>
+          <div>
+            {/* Task Statistics */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="bg-white p-4 rounded-lg shadow-sm border">
+                <div className="text-2xl font-bold text-gray-900">{tasks.length}</div>
+                <div className="text-sm text-gray-600">Total Tasks</div>
+              </div>
+              <div className="bg-white p-4 rounded-lg shadow-sm border">
+                <div className="text-2xl font-bold text-green-600">
+                  {tasks.filter(t => t.completed).length}
+                </div>
+                <div className="text-sm text-gray-600">Completed</div>
+              </div>
+              <div className="bg-white p-4 rounded-lg shadow-sm border">
+                <div className="text-2xl font-bold text-orange-600">
+                  {tasks.filter(t => !t.completed).length}
+                </div>
+                <div className="text-sm text-gray-600">Pending</div>
+              </div>
+            </div>
 
-                  <div className="flex items-center justify-between text-sm text-gray-500">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-1">
-                        <Clock size={14} />
-                        <span>Created: {formatDate(task.createdAt)}</span>
+            {/* Task List */}
+            <div className="space-y-4">
+              {tasks.map((task) => (
+                <div
+                  key={task.id}
+                  className={`bg-white rounded-lg shadow-sm border transition-all duration-200 ${
+                    task.completed ? "opacity-75" : "hover:shadow-md"
+                  }`}
+                >
+                  <div className="p-6">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-start gap-3 flex-1">
+                        <input
+                          type="checkbox"
+                          checked={task.completed}
+                          onChange={() => handleToggleComplete(task.id)}
+                          className="mt-1 h-4 w-4 text-violet-600 rounded border-gray-300 focus:ring-violet-500"
+                        />
+                        <div className="flex-1">
+                          <h3
+                            className={`text-lg font-medium mb-1 ${
+                              task.completed ? "line-through text-gray-500" : "text-gray-900"
+                            }`}
+                          >
+                            {task.title}
+                          </h3>
+                          <p
+                            className={`text-sm mb-3 ${
+                              task.completed ? "text-gray-400" : "text-gray-600"
+                            }`}
+                          >
+                            {task.description}
+                          </p>
+                        </div>
                       </div>
-                      {task.dueDate && (
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(task.priority)}`}
+                      >
+                        {task.priority === "high"
+                          ? "High"
+                          : task.priority === "medium"
+                            ? "Med"
+                            : task.priority === "low"
+                              ? "Low"
+                              : "-"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-sm text-gray-500">
+                      <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1">
-                          <Calendar size={14} />
-                          <span>Due: {formatDate(task.dueDate)}</span>
+                          <Clock size={14} />
+                          <span>Created: {formatDate(task.createdAt)}</span>
+                        </div>
+                        {task.dueDate && (
+                          <div className="flex items-center gap-1">
+                            <Calendar size={14} />
+                            <span>Due: {formatDate(task.dueDate)}</span>
+                          </div>
+                        )}
+                        <span className="px-2 py-1 bg-gray-100 rounded text-xs">{task.type}</span>
+                      </div>
+
+                      {!task.completed && (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleAddToCalendar(task, "google")}
+                            className="text-xs"
+                          >
+                            Google Calendar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleAddToCalendar(task, "ios")}
+                            className="text-xs"
+                          >
+                            iOS Calendar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDeleteTask(task.id)}
+                            className="text-xs text-red-600 hover:text-red-700 hover:border-red-300"
+                          >
+                            <Trash2 size={12} className="mr-1" />
+                            Delete
+                          </Button>
                         </div>
                       )}
-                      <span className="px-2 py-1 bg-gray-100 rounded text-xs">{task.type}</span>
                     </div>
-
-                    {!task.completed && (
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleAddToCalendar(task, "google")}
-                          className="text-xs"
-                        >
-                          Google Calendar
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleAddToCalendar(task, "ios")}
-                          className="text-xs"
-                        >
-                          iOS Calendar
-                        </Button>
-                      </div>
-                    )}
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </div>

@@ -993,3 +993,61 @@ export async function getActions(
     return [];
   }
 }
+
+/**
+ * Update action status via API
+ * Endpoint: PATCH /action/{action_id}
+ */
+export async function updateAction(
+  actionId: string,
+  status: "created" | "accepted" | "deleted" | "completed",
+  userId: string,
+  apiKey: string,
+  apiEndpoint: string,
+): Promise<{ success: boolean; updatedAt?: string }> {
+  try {
+    const url = `${apiEndpoint}/action/${actionId}`;
+    
+    const cleanApiKey = apiKey.replace(/^Bearer\s+/i, "").trim();
+
+    const response = await fetch(url, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${cleanApiKey}`,
+        OTO_USER_ID: userId,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        status: status,
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      
+      console.log("✅ Action updated successfully:", {
+        id: data.id,
+        status: data.status,
+        updated_at: data.updated_at,
+      });
+
+      return {
+        success: true,
+        updatedAt: data.updated_at,
+      };
+    }
+
+    const errorText = await response.text();
+    console.error("❌ Failed to update action:", {
+      status: response.status,
+      statusText: response.statusText,
+      errorText: errorText,
+      url: url,
+    });
+
+    return { success: false };
+  } catch (error) {
+    console.error("❌ Error updating action:", error);
+    return { success: false };
+  }
+}
