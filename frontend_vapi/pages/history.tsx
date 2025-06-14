@@ -77,6 +77,7 @@ export default function HistoryPage() {
       }
       
       const conversations = await getConversations(userId, apiKey, apiEndpoint);
+      console.log("Fetched conversations:", conversations);
       setConversations(conversations);
     } catch (error) {
       console.error("Error fetching conversations:", error);

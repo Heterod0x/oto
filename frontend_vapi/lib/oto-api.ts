@@ -137,19 +137,13 @@ export function createAudioWebSocket(
   // Clean API key - remove Bearer prefix and any whitespace
   const cleanApiKey = apiKey.replace(/^Bearer\s+/i, '').trim();
   
-  // Try authentication via URL parameters (browsers can't set WebSocket headers)
-  const authParams = new URLSearchParams({
-    authorization: cleanApiKey,
-    user_id: userId
-  });
-  
-  // Build WebSocket URL with auth parameters
-  const wsUrl = `${baseUrl}/conversation/${conversationId}/stream?${authParams.toString()}`;
+  // Simple WebSocket URL without auth parameters (following reference implementation)
+  const wsUrl = `${baseUrl}/conversation/${conversationId}/stream`;
   
   console.log('📋 Conversation ID (UUID):', conversationId);
   console.log('🌐 Base URL:', baseUrl);
   console.log('👤 User ID:', userId);
-  console.log('🔗 WebSocket URL (with auth):', wsUrl.replace(cleanApiKey, '*'.repeat(cleanApiKey.length)));
+  console.log('🔗 Simple WebSocket URL:', wsUrl);
   console.log('🔑 API Key length:', cleanApiKey.length);
   
   try {
@@ -161,6 +155,9 @@ export function createAudioWebSocket(
       console.log('🔥 WebSocket OPEN event fired');
       console.log('🔍 WebSocket readyState:', ws.readyState);
       console.log('✅ Connection successful');
+      
+      // Reset audio stats for new session
+      resetAudioStats();
       
       // Send authentication message as backup (in case URL auth didn't work)
       try {
@@ -175,6 +172,93 @@ export function createAudioWebSocket(
         console.log('📤 Backup authentication message sent:', { type: 'auth', userId, apiKeyLength: cleanApiKey.length });
       } catch (authError) {
         console.error('❌ Failed to send backup authentication message:', authError);
+      }
+    });
+
+    ws.addEventListener('message', (event) => {
+      console.log('📥 WebSocket MESSAGE received:', {
+        timestamp: new Date().toISOString(),
+        dataType: typeof event.data,
+        dataLength: event.data?.length || 0,
+        rawData: event.data
+      });
+      
+      try {
+        // Try to parse as JSON
+        const parsedData = JSON.parse(event.data);
+        console.log('📄 Parsed WebSocket message:', {
+          type: parsedData.type,
+          dataKeys: Object.keys(parsedData),
+          fullMessage: parsedData
+        });
+           // Handle different message types
+      switch (parsedData.type) {
+        case 'transcribe':
+          console.log('🎤 Transcription received:', {
+            finalized: parsedData.data?.finalized,
+            transcript: parsedData.data?.transcript,
+            audioStart: parsedData.data?.audioStart,
+            audioEnd: parsedData.data?.audioEnd,
+            transcriptLength: parsedData.data?.transcript?.length || 0
+          });
+          break;
+        case 'transcript-beautify':
+          console.log('✨ Beautified transcript received:', {
+            transcript: parsedData.data?.transcript,
+            segmentsCount: parsedData.data?.segments?.length || 0,
+            transcriptLength: parsedData.data?.transcript?.length || 0,
+            segments: parsedData.data?.segments
+          });
+          break;
+        case 'detect-action':
+          console.log('🎯 Action detected:', {
+            actionType: parsedData.data?.type,
+            actionId: parsedData.data?.id,
+            title: parsedData.data?.inner?.title,
+            body: parsedData.data?.inner?.body,
+            datetime: parsedData.data?.inner?.datetime,
+            relatedTranscript: parsedData.data?.relate?.transcript
+          });
+          break;
+        case 'auth':
+        case 'auth_success':
+        case 'authentication_successful':
+          console.log('🔑 Authentication response:', {
+            type: parsedData.type,
+            success: true,
+            message: parsedData.message || 'Authentication successful'
+          });
+          break;
+        case 'error':
+        case 'auth_failed':
+        case 'authentication_failed':
+          console.error('❌ Server error received:', {
+            type: parsedData.type,
+            error: parsedData.error || parsedData.message,
+            code: parsedData.code,
+            details: parsedData.details,
+            fullMessage: parsedData
+          });
+          break;
+        case 'ping':
+          console.log('🏓 Ping received from server');
+          break;
+        case 'pong':
+          console.log('🏓 Pong received from server');
+          break;
+        default:
+          console.log('❓ Unknown message type received:', {
+            type: parsedData.type,
+            hasData: !!parsedData.data,
+            messageKeys: Object.keys(parsedData),
+            fullMessage: parsedData
+          });
+      }
+      } catch (parseError) {
+        console.log('📄 Non-JSON WebSocket message received:', {
+          rawMessage: event.data,
+          parseError: parseError.message
+        });
       }
     });
     
@@ -383,26 +467,65 @@ export function sendAuthMessage(ws: WebSocket, userId: string, apiKey: string): 
   }
 }
 
+// Global audio statistics for debugging
+let audioStatsCounter = {
+  totalChunks: 0,
+  totalBytes: 0,
+  totalBase64Bytes: 0,
+  startTime: Date.now(),
+  lastChunkTime: Date.now()
+};
+
 /**
  * Send real-time audio data through WebSocket
  * Handles both Blob and ArrayBuffer data, converts to base64 for transmission
+ * Enhanced with detailed logging and statistics tracking
  */
 export async function sendRealtimeAudioData(ws: WebSocket, audioData: Blob | ArrayBuffer): Promise<void> {
   if (ws.readyState !== WebSocket.OPEN) {
-    console.warn('WebSocket not open, skipping audio data transmission');
+    console.warn('⚠️ WebSocket not open, skipping audio data transmission. ReadyState:', ws.readyState);
     return;
   }
 
   try {
+    const chunkStartTime = performance.now();
     let base64Audio: string;
+    let audioSize: number;
+    let audioType: string;
 
     if (audioData instanceof Blob) {
       // Convert Blob to base64 using the utility function
+      audioSize = audioData.size;
+      audioType = audioData.type || 'unknown';
       base64Audio = await audioBlobToBase64(audioData);
+      
+      console.log(`🎵 Audio Blob processed:`, {
+        size: audioSize,
+        type: audioType,
+        base64Length: base64Audio.length,
+        processingTime: `${(performance.now() - chunkStartTime).toFixed(2)}ms`
+      });
     } else {
       // Convert ArrayBuffer to base64
+      audioSize = audioData.byteLength;
+      audioType = 'ArrayBuffer';
       base64Audio = btoa(String.fromCharCode(...new Uint8Array(audioData)));
+      
+      console.log(`🎵 Audio ArrayBuffer processed:`, {
+        byteLength: audioSize,
+        type: audioType,
+        base64Length: base64Audio.length,
+        processingTime: `${(performance.now() - chunkStartTime).toFixed(2)}ms`
+      });
     }
+
+    // Update global statistics
+    audioStatsCounter.totalChunks++;
+    audioStatsCounter.totalBytes += audioSize;
+    audioStatsCounter.totalBase64Bytes += base64Audio.length;
+    const currentTime = Date.now();
+    const timeSinceLastChunk = currentTime - audioStatsCounter.lastChunkTime;
+    audioStatsCounter.lastChunkTime = currentTime;
 
     // Send as JSON message format
     const message = {
@@ -410,11 +533,107 @@ export async function sendRealtimeAudioData(ws: WebSocket, audioData: Blob | Arr
       data: base64Audio
     };
 
-    ws.send(JSON.stringify(message));
-    console.log(`📤 Audio data sent: ${base64Audio.length} chars`);
+    const messageJson = JSON.stringify(message);
+    const sendStartTime = performance.now();
+    ws.send(messageJson);
+    const sendTime = performance.now() - sendStartTime;
+    
+    // Calculate statistics
+    const totalRuntime = (currentTime - audioStatsCounter.startTime) / 1000; // seconds
+    const avgChunkSize = audioStatsCounter.totalBytes / audioStatsCounter.totalChunks;
+    const avgBase64Size = audioStatsCounter.totalBase64Bytes / audioStatsCounter.totalChunks;
+    const chunksPerSecond = audioStatsCounter.totalChunks / totalRuntime;
+    const bytesPerSecond = audioStatsCounter.totalBytes / totalRuntime;
+
+    console.log(`📤 Audio chunk #${audioStatsCounter.totalChunks} sent to WebSocket:`, {
+      // Current chunk info
+      chunkNumber: audioStatsCounter.totalChunks,
+      originalSize: audioSize,
+      base64Size: base64Audio.length,
+      jsonSize: messageJson.length,
+      base64Preview: base64Audio.substring(0, 30) + '...' + base64Audio.substring(base64Audio.length - 20),
+      
+      // Timing info
+      timestamp: new Date().toISOString(),
+      timeSinceLastChunk: `${timeSinceLastChunk}ms`,
+      processingTime: `${(performance.now() - chunkStartTime).toFixed(2)}ms`,
+      sendTime: `${sendTime.toFixed(2)}ms`,
+      
+      // Cumulative statistics
+      totalRuntime: `${totalRuntime.toFixed(1)}s`,
+      avgChunkSize: `${avgChunkSize.toFixed(0)} bytes`,
+      avgBase64Size: `${avgBase64Size.toFixed(0)} chars`,
+      chunksPerSecond: chunksPerSecond.toFixed(2),
+      bytesPerSecond: `${(bytesPerSecond / 1024).toFixed(2)} KB/s`,
+      totalDataSent: `${(audioStatsCounter.totalBytes / 1024).toFixed(2)} KB`,
+      
+      // WebSocket state
+      wsReadyState: ws.readyState,
+      wsBufferedAmount: ws.bufferedAmount
+    });
+
+    // Log detailed statistics every 10 chunks
+    if (audioStatsCounter.totalChunks % 10 === 0) {
+      console.log(`📊 Audio Streaming Statistics (${audioStatsCounter.totalChunks} chunks):`, {
+        totalChunks: audioStatsCounter.totalChunks,
+        totalDataSent: `${(audioStatsCounter.totalBytes / 1024).toFixed(2)} KB`,
+        totalBase64Sent: `${(audioStatsCounter.totalBase64Bytes / 1024).toFixed(2)} KB`,
+        averageChunkSize: `${avgChunkSize.toFixed(0)} bytes`,
+        compressionRatio: `${((audioStatsCounter.totalBase64Bytes / audioStatsCounter.totalBytes) * 100).toFixed(1)}%`,
+        streamingRate: `${chunksPerSecond.toFixed(2)} chunks/sec`,
+        bandwidthUsage: `${(bytesPerSecond / 1024).toFixed(2)} KB/s`,
+        runtime: `${totalRuntime.toFixed(1)}s`,
+        wsBufferedAmount: `${ws.bufferedAmount} bytes`
+      });
+    }
+    
   } catch (error) {
-    console.error('❌ Failed to send audio data:', error);
+    console.error('❌ Failed to send audio data (chunk #' + (audioStatsCounter.totalChunks + 1) + '):', error);
+    console.error('🔍 Error details:', {
+      errorName: error.name,
+      errorMessage: error.message,
+      wsReadyState: ws.readyState,
+      audioDataType: audioData.constructor.name,
+      audioDataSize: audioData instanceof Blob ? audioData.size : audioData.byteLength
+    });
   }
+}
+
+/**
+ * Reset audio statistics counter (useful for new recording sessions)
+ */
+export function resetAudioStats(): void {
+  audioStatsCounter = {
+    totalChunks: 0,
+    totalBytes: 0,
+    totalBase64Bytes: 0,
+    startTime: Date.now(),
+    lastChunkTime: Date.now()
+  };
+  console.log('📊 Audio statistics reset for new session');
+}
+
+/**
+ * Get current audio streaming statistics
+ */
+export function getAudioStats() {
+  const currentTime = Date.now();
+  const totalRuntime = (currentTime - audioStatsCounter.startTime) / 1000;
+  const avgChunkSize = audioStatsCounter.totalChunks > 0 ? audioStatsCounter.totalBytes / audioStatsCounter.totalChunks : 0;
+  const chunksPerSecond = totalRuntime > 0 ? audioStatsCounter.totalChunks / totalRuntime : 0;
+  const bytesPerSecond = totalRuntime > 0 ? audioStatsCounter.totalBytes / totalRuntime : 0;
+
+  return {
+    totalChunks: audioStatsCounter.totalChunks,
+    totalBytes: audioStatsCounter.totalBytes,
+    totalBase64Bytes: audioStatsCounter.totalBase64Bytes,
+    avgChunkSize: Math.round(avgChunkSize),
+    chunksPerSecond: Math.round(chunksPerSecond * 100) / 100,
+    bytesPerSecond: Math.round(bytesPerSecond),
+    runtime: Math.round(totalRuntime * 10) / 10,
+    compressionRatio: audioStatsCounter.totalBytes > 0 ? 
+      Math.round((audioStatsCounter.totalBase64Bytes / audioStatsCounter.totalBytes) * 1000) / 10 : 0
+  };
 }
 
 /**

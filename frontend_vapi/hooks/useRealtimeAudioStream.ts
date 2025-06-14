@@ -41,12 +41,13 @@ export function useRealtimeAudioStream({
    */
   const requestPermission = useCallback(async (): Promise<boolean> => {
     try {
+      // Use exact audio constraints from reference implementation
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          sampleRate,
+          sampleRate: 16000,
+          channelCount: 1,
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true,
         },
       });
 
@@ -103,21 +104,20 @@ export function useRealtimeAudioStream({
 
       console.log("🎤 Starting real-time audio streaming...");
 
-      // Get media stream
+      // Get media stream with exact settings from reference implementation
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          sampleRate,
+          sampleRate: 16000,
           channelCount: 1,
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true,
         },
       });
 
       streamRef.current = stream;
 
       // Create Audio Context for volume monitoring
-      audioContextRef.current = new AudioContext({ sampleRate });
+      audioContextRef.current = new AudioContext({ sampleRate: 16000 });
       const source = audioContextRef.current.createMediaStreamSource(stream);
 
       // Create analyzer for volume monitoring
@@ -125,7 +125,7 @@ export function useRealtimeAudioStream({
       analyzerRef.current.fftSize = 256;
       source.connect(analyzerRef.current);
 
-      // Setup MediaRecorder (following reference implementation)
+      // Setup MediaRecorder exactly like reference implementation
       mediaRecorderRef.current = new MediaRecorder(stream, {
         mimeType: 'audio/webm;codecs=opus'
       });
@@ -141,8 +141,8 @@ export function useRealtimeAudioStream({
         onError?.(new Error("Recording failed"));
       };
 
-      // Start recording with specified chunk interval
-      mediaRecorderRef.current.start(chunkInterval);
+      // Start recording with 100ms chunks (same as reference)
+      mediaRecorderRef.current.start(100);
       setIsStreaming(true);
       
       // Start volume monitoring
