@@ -5,6 +5,10 @@ import { useEffect } from "react";
 import { FooterNavigation } from "../components/FooterNavigation";
 import { TaskList } from "../components/TaskList";
 
+/**
+ * TasksPage component
+ * @returns 
+ */
 export default function TasksPage() {
   const router = useRouter();
   const { authenticated } = usePrivy();

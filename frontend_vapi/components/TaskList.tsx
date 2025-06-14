@@ -1,7 +1,9 @@
+import { usePrivy } from "@privy-io/react-auth";
 import { Calendar, Clock, Plus } from "lucide-react";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { VAPIClient } from "../lib/api-client";
+import { ActionResponse, getActions } from "../lib/oto-api";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { useToast } from "./Toast";
 import { Button } from "./ui/button";
@@ -49,29 +51,131 @@ export function TaskList({ className }: TaskListProps) {
   const [error, setError] = useState<string | null>(null);
   const { showToast } = useToast();
   const router = useRouter();
+  const { user } = usePrivy();
 
   const apiClient = new VAPIClient();
 
+  // Get user ID from Privy authentication (similar to record.tsx)
+  const userId = useMemo(() => {
+    const walletAddress = user?.wallet?.address;
+    const privyId = user?.id;
+
+    // Use wallet address if available (shorter and more standard)
+    if (walletAddress) {
+      console.log("👤 Using wallet address as user ID:", walletAddress);
+      return walletAddress;
+    }
+
+    // Fallback to Privy ID but truncate if too long
+    if (privyId) {
+      const truncatedId = privyId.length > 42 ? privyId.substring(0, 42) : privyId;
+      console.log("👤 Using truncated Privy ID as user ID:", truncatedId);
+      return truncatedId;
+    }
+
+    console.warn("⚠️ No user ID available");
+    return "";
+  }, [user]);
+
+  // Get API configuration from environment variables
+  const apiEndpoint = process.env.NEXT_PUBLIC_OTO_API_ENDPOINT;
+  const apiKey = process.env.NEXT_PUBLIC_OTO_API_KEY;
+
   useEffect(() => {
     loadTasks();
+  }, [userId]);
+
+  /**
+   * Transforms ActionResponse from API to Task interface
+   */
+  const transformActionToTask = useCallback((action: ActionResponse): Task => {
+    // Map action type to task type
+    const getTaskType = (type: string): "TODO" | "CAL" | "TASK" => {
+      switch (type) {
+        case "todo":
+          return "TODO";
+        case "calendar":
+          return "CAL";
+        case "research":
+          return "TASK";
+        default:
+          return "TASK";
+      }
+    };
+
+    // Determine priority based on action content or type
+    const getPriority = (action: ActionResponse): "low" | "medium" | "high" | undefined => {
+      // Set priority based on action type
+      if (action.type === "calendar") return "high"; // Calendar events are high priority
+      if (action.type === "todo") return "medium"; // TODOs are medium priority  
+      return "low"; // Research tasks are low priority
+    };
+
+    // Create a comprehensive description
+    const getDescription = (action: ActionResponse): string => {
+      if (action.inner.body) return action.inner.body;
+      if (action.inner.query) return `Research: ${action.inner.query}`;
+      // Truncate transcript if it's too long
+      const transcript = action.relate.transcript;
+      return transcript.length > 200 ? transcript.substring(0, 200) + "..." : transcript;
+    };
+
+    return {
+      id: action.id,
+      type: getTaskType(action.type),
+      title: action.inner.title,
+      description: getDescription(action),
+      dueDate: action.inner.datetime,
+      priority: getPriority(action),
+      completed: action.status === "completed",
+      createdAt: action.created_at,
+    };
   }, []);
 
   /**
-   * Loads tasks from the API
-   * Currently uses mock data but can be extended to use real API endpoints
+   * Loads tasks from the API using the real getActions endpoint
    */
   const loadTasks = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // For now, use mock data since we don't have a direct getTasks method
-      // In a real implementation, you would use streamTasks or another API endpoint
-      const mockTasks: Task[] = [];
-      setTasks(mockTasks);
+      // Check if we have the required configuration
+      if (!apiEndpoint || !apiKey) {
+        console.warn("⚠️ API endpoint or key not configured");
+        setError("API configuration missing. Please check environment variables.");
+        setTasks([]);
+        return;
+      }
+
+      if (!userId) {
+        console.warn("⚠️ User ID not available");
+        setError("Please authenticate to view your tasks");
+        setTasks([]);
+        return;
+      }
+
+      console.log("📥 Fetching tasks from API...");
+      
+      // Fetch actions from the API
+      const actions = await getActions(userId, apiKey, apiEndpoint, {
+        // Get all tasks (created, accepted, completed) but exclude deleted ones
+        // You can add filters here based on user preferences
+      });
+
+      console.log("📦 Retrieved actions:", actions);
+
+      // Filter out deleted actions on the client side
+      const activeActions = actions.filter(action => action.status !== "deleted");
+
+      // Transform actions to tasks
+      const transformedTasks = activeActions.map(transformActionToTask);
+      
+      setTasks(transformedTasks);
+      console.log("✅ Tasks loaded successfully:", transformedTasks.length);
     } catch (err) {
-      console.error("Failed to load tasks:", err);
-      setError("Failed to load tasks");
+      console.error("❌ Failed to load tasks:", err);
+      setError("Failed to load tasks from API");
     } finally {
       setLoading(false);
     }
@@ -83,14 +187,19 @@ export function TaskList({ className }: TaskListProps) {
       if (!task) return;
 
       const updatedTask = { ...task, completed: !task.completed };
-      // Note: VAPIClient doesn't have updateTask method yet
-      // await apiClient.updateTask(taskId, updatedTask);
+      
+      // TODO: Implement API call to update task status
+      // For now, only update local state since we don't have an update endpoint yet
+      // In the future, you would call something like:
+      // await updateActionStatus(taskId, updatedTask.completed ? "completed" : "created", userId, apiKey, apiEndpoint);
 
       setTasks((prevTasks) => prevTasks.map((t) => (t.id === taskId ? updatedTask : t)));
 
       showToast({
         type: updatedTask.completed ? "success" : "success",
-        title: updatedTask.completed ? "Task marked as completed" : "Task marked as incomplete",
+        title: updatedTask.completed 
+          ? "Task marked as completed (local only)" 
+          : "Task marked as incomplete (local only)",
       });
     } catch (err) {
       console.error("Failed to update task:", err);
@@ -179,14 +288,14 @@ export function TaskList({ className }: TaskListProps) {
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No tasks yet</h3>
             <p className="text-gray-600 mb-6">
-              Start a conversation with the agent to create tasks
+              Record a conversation to automatically extract tasks and action items
             </p>
             <Button
-              onClick={() => router.push("/agent")}
+              onClick={() => router.push("/record")}
               className="bg-violet-600 hover:bg-violet-700 text-white"
             >
               <Plus size={20} className="mr-2" />
-              Start conversation with agent
+              Start recording conversation
             </Button>
           </div>
         ) : (
