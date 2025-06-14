@@ -44,6 +44,7 @@ jobs:
         uses: actions/configure-pages@v4
         with:
           static_site_generator: next
+          enablement: true
 
       - name: Install dependencies
         run: pnpm install
