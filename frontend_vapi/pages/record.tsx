@@ -707,8 +707,8 @@ export default function RecordPage() {
             if (wsState === WebSocket.OPEN) {
               try {
                 console.log(`🎤 Sending audio chunk (${event.data.size} bytes) - WebSocket state: ${wsState}`);
-                // Try binary mode first (raw audio data)
-                sendRealtimeAudioData(websocketRef.current, event.data, true);
+                // Send audio data in JSON format (not binary) for server compatibility
+                sendRealtimeAudioData(websocketRef.current, event.data, false);
               } catch (error) {
                 console.error("❌ Failed to send audio data:", error);
               }
@@ -802,17 +802,14 @@ export default function RecordPage() {
     console.log(`🎤 Streaming status changed: ${isStreaming}`);
   }, [isStreaming]);
 
-  // クリーンアップ
+  // クリーンアップ - only run on component unmount
   useEffect(() => {
     return () => {
       if (isStreaming) {
         stopAudioStreaming();
       }
-      if (websocketRef.current) {
-        websocketRef.current.close();
-      }
     };
-  }, [isStreaming, stopAudioStreaming]);
+  }, [stopAudioStreaming]); // Removed isStreaming from dependencies to prevent cleanup on state change
 
   if (!authenticated) {
     return null;
