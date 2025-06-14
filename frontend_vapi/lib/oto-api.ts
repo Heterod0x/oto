@@ -486,12 +486,13 @@ let audioStatsCounter = {
 
 /**
  * Send real-time audio data through WebSocket
- * Handles both Blob and ArrayBuffer data, converts to base64 for transmission
+ * Handles both Blob and ArrayBuffer data, trying different formats for compatibility
  * Enhanced with detailed logging and statistics tracking
  */
 export async function sendRealtimeAudioData(
   ws: WebSocket,
   audioData: Blob | ArrayBuffer,
+  useBinaryMode: boolean = true
 ): Promise<void> {
   if (ws.readyState !== WebSocket.OPEN) {
     console.warn(
@@ -503,34 +504,70 @@ export async function sendRealtimeAudioData(
 
   try {
     const chunkStartTime = performance.now();
-    let base64Audio: string;
     let audioSize: number;
     let audioType: string;
 
     if (audioData instanceof Blob) {
-      // Convert Blob to base64 using the utility function
       audioSize = audioData.size;
       audioType = audioData.type || "unknown";
-      base64Audio = await audioBlobToBase64(audioData);
-
-      console.log(`🎵 Audio Blob processed:`, {
+      
+      console.log(`🎵 Audio Blob received:`, {
         size: audioSize,
         type: audioType,
-        base64Length: base64Audio.length,
-        processingTime: `${(performance.now() - chunkStartTime).toFixed(2)}ms`,
+        sendMode: useBinaryMode ? "binary" : "base64-json"
       });
+
+      if (useBinaryMode) {
+        // Try sending raw binary data directly
+        const arrayBuffer = await audioData.arrayBuffer();
+        const sendStartTime = performance.now();
+        ws.send(arrayBuffer);
+        const sendTime = performance.now() - sendStartTime;
+
+        // Update statistics
+        audioStatsCounter.totalChunks++;
+        audioStatsCounter.totalBytes += audioSize;
+        
+        console.log(`📤 Binary audio chunk #${audioStatsCounter.totalChunks} sent:`, {
+          chunkNumber: audioStatsCounter.totalChunks,
+          originalSize: audioSize,
+          sendTime: `${sendTime.toFixed(2)}ms`,
+          wsBufferedAmount: ws.bufferedAmount
+        });
+        
+        return;
+      }
     } else {
-      // Convert ArrayBuffer to base64
       audioSize = audioData.byteLength;
       audioType = "ArrayBuffer";
-      base64Audio = btoa(String.fromCharCode(...new Uint8Array(audioData)));
+      
+      if (useBinaryMode) {
+        const sendStartTime = performance.now();
+        ws.send(audioData);
+        const sendTime = performance.now() - sendStartTime;
 
-      console.log(`🎵 Audio ArrayBuffer processed:`, {
-        byteLength: audioSize,
-        type: audioType,
-        base64Length: base64Audio.length,
-        processingTime: `${(performance.now() - chunkStartTime).toFixed(2)}ms`,
-      });
+        // Update statistics
+        audioStatsCounter.totalChunks++;
+        audioStatsCounter.totalBytes += audioSize;
+        
+        console.log(`📤 Binary ArrayBuffer chunk #${audioStatsCounter.totalChunks} sent:`, {
+          chunkNumber: audioStatsCounter.totalChunks,
+          byteLength: audioSize,
+          sendTime: `${sendTime.toFixed(2)}ms`,
+          wsBufferedAmount: ws.bufferedAmount
+        });
+        
+        return;
+      }
+    }
+
+    // Fallback to JSON mode if not using binary
+    let base64Audio: string;
+    
+    if (audioData instanceof Blob) {
+      base64Audio = await audioBlobToBase64(audioData);
+    } else {
+      base64Audio = btoa(String.fromCharCode(...new Uint8Array(audioData)));
     }
 
     // Update global statistics
@@ -552,14 +589,14 @@ export async function sendRealtimeAudioData(
     ws.send(messageJson);
     const sendTime = performance.now() - sendStartTime;
 
-    // Calculate statistics
+    // Calculate statistics for JSON mode
     const totalRuntime = (currentTime - audioStatsCounter.startTime) / 1000; // seconds
     const avgChunkSize = audioStatsCounter.totalBytes / audioStatsCounter.totalChunks;
     const avgBase64Size = audioStatsCounter.totalBase64Bytes / audioStatsCounter.totalChunks;
     const chunksPerSecond = audioStatsCounter.totalChunks / totalRuntime;
     const bytesPerSecond = audioStatsCounter.totalBytes / totalRuntime;
 
-    console.log(`📤 Audio chunk #${audioStatsCounter.totalChunks} sent to WebSocket:`, {
+    console.log(`📤 JSON audio chunk #${audioStatsCounter.totalChunks} sent to WebSocket:`, {
       // Current chunk info
       chunkNumber: audioStatsCounter.totalChunks,
       originalSize: audioSize,

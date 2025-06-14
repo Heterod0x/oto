@@ -5,7 +5,6 @@ import { useRouter } from "next/router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FooterNavigation } from "../components/FooterNavigation";
 import { Button } from "../components/ui/button";
-import { useRealtimeAudioStream } from "../hooks/useRealtimeAudioStream";
 import {
   generateUUID,
   getAudioStats,
@@ -26,6 +25,18 @@ export default function RecordPage() {
     "disconnected" | "connecting" | "connected" | "authenticated" | "error"
   >("disconnected");
   const [conversationId, setConversationId] = useState<string | null>(null);
+
+  // Audio streaming state (moved from hook)
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [hasPermission, setHasPermission] = useState(false);
+  const [volume, setVolume] = useState(0);
+
+  // Audio streaming references
+  const streamRef = useRef<MediaStream | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const analyzerRef = useRef<AnalyserNode | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
   // Audio streaming statistics
   const [audioStats, setAudioStats] = useState({
@@ -65,48 +76,86 @@ export default function RecordPage() {
     return "";
   }, [user]);
 
-  // リアルタイム音声ストリーミング用フック
-  const { isStreaming, startStreaming, stopStreaming, hasPermission, requestPermission, volume } =
-    useRealtimeAudioStream({
-      onAudioData: async (audioBlob: Blob) => {
-        // Check WebSocket state directly (not React state due to async updates)
-        const wsState = websocketRef.current?.readyState;
+  // Volume monitoring function
+  const monitorVolume = useCallback(() => {
+    if (!analyzerRef.current) return;
 
-        if (wsState === WebSocket.OPEN) {
-          try {
-            console.log(
-              `🎤 Sending audio chunk (${audioBlob.size} bytes) - WebSocket state: ${wsState}`,
-            );
-            await sendRealtimeAudioData(websocketRef.current, audioBlob);
-          } catch (error) {
-            console.error("❌ Failed to send audio data:", error);
-          }
-        } else {
-          // Only log every 10th skipped chunk to reduce console spam
-          if (Math.random() < 0.1) {
-            console.warn(`⚠️ WebSocket not ready, skipping chunk:`, {
-              websocketState: wsState,
-              wsStateText:
-                wsState === 0
-                  ? "CONNECTING"
-                  : wsState === 1
-                    ? "OPEN"
-                    : wsState === 2
-                      ? "CLOSING"
-                      : wsState === 3
-                        ? "CLOSED"
-                        : "UNKNOWN",
-              chunkSize: audioBlob.size,
-            });
-          }
-        }
-      },
-      onError: (error: Error) => {
-        console.error("❌ Audio streaming error:", error);
-        setTranscript((prev) => prev + `\n❌ Audio error: ${error.message}`);
-      },
-      chunkInterval: 100, // Send 100ms chunks
-    });
+    const bufferLength = analyzerRef.current.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    analyzerRef.current.getByteFrequencyData(dataArray);
+
+    // Calculate volume (RMS)
+    let sum = 0;
+    for (let i = 0; i < bufferLength; i++) {
+      sum += dataArray[i] * dataArray[i];
+    }
+    const rms = Math.sqrt(sum / bufferLength);
+    const volumeLevel = Math.round((rms / 255) * 100);
+    setVolume(volumeLevel);
+
+    // Continue monitoring
+    animationFrameRef.current = requestAnimationFrame(monitorVolume);
+  }, []);
+
+  // Request microphone permission
+  const requestPermission = useCallback(async (): Promise<boolean> => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          sampleRate: 16000,
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+        },
+      });
+
+      // Test successful - close stream and mark permission granted
+      stream.getTracks().forEach(track => track.stop());
+      setHasPermission(true);
+      console.log("✅ Microphone permission granted");
+      return true;
+    } catch (error) {
+      console.error("❌ Microphone permission denied:", error);
+      setHasPermission(false);
+      return false;
+    }
+  }, []);
+
+  // Stop audio streaming function
+  const stopAudioStreaming = useCallback(() => {
+    console.log("🛑 Stopping real-time audio streaming...");
+
+    // Stop volume monitoring
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+
+    // Stop MediaRecorder
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.stop();
+    }
+
+    // Close AudioContext
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+
+    // Stop all tracks
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+
+    // Reset refs
+    mediaRecorderRef.current = null;
+    analyzerRef.current = null;
+    
+    setIsStreaming(false);
+    setVolume(0);
+    console.log("✅ Audio streaming stopped");
+  }, []);
 
   // Update stats from global counter every second
   useEffect(() => {
@@ -211,6 +260,8 @@ export default function RecordPage() {
           }
         }, 10000);
 
+        let authTimeout: NodeJS.Timeout | null = null;
+
         ws.onopen = () => {
           clearTimeout(connectionTimeout);
           setConnectionStatus("connected");
@@ -222,24 +273,85 @@ export default function RecordPage() {
             extensions: ws.extensions,
           });
 
+          // Add connection monitoring to detect early disconnection
+          const connectionStartTime = Date.now();
+          
+          // Monitor connection stability every 500ms for first 10 seconds
+          const stabilityInterval = setInterval(() => {
+            const elapsed = Date.now() - connectionStartTime;
+            const isStable = ws.readyState === WebSocket.OPEN;
+            
+            console.log(`📊 Connection stability check (${elapsed}ms):`, {
+              readyState: ws.readyState,
+              stateText: ws.readyState === 0 ? "CONNECTING" : 
+                        ws.readyState === 1 ? "OPEN" : 
+                        ws.readyState === 2 ? "CLOSING" : 
+                        ws.readyState === 3 ? "CLOSED" : "UNKNOWN",
+              isStable: isStable,
+              isAuthenticated: (ws as any).isAuthenticated || false
+            });
+            
+            // Stop monitoring after 10 seconds or if connection closes
+            if (elapsed > 10000 || !isStable) {
+              clearInterval(stabilityInterval);
+              if (!isStable) {
+                console.warn(`⚠️ Connection became unstable after ${elapsed}ms`);
+              }
+            }
+          }, 500);
+
           // Send authentication message immediately (following reference implementation)
           try {
             const cleanApiKey = apiKey.replace(/^Bearer\s+/i, "").trim();
             const userId = getUserId();
 
             console.log("🔐 Sending authentication message (reference format)");
+            console.log("🔍 Auth details:", {
+              userId: userId,
+              apiKeyLength: cleanApiKey.length,
+              apiKeyPrefix: cleanApiKey.substring(0, 8) + '...',
+              conversationId: conversationId,
+              wsUrl: wsUrl,
+              timestamp: new Date().toISOString()
+            });
 
-            // Use exact format from reference implementation (keeping Bearer prefix)
+            // Primary format with enhanced debugging
             const authMessage = {
               type: "auth",
               data: {
                 userId: userId,
-                apiKey: `Bearer ${cleanApiKey}`, // Keep Bearer prefix as currently implemented
+                apiKey: `Bearer ${cleanApiKey}`,
               },
             };
 
+            console.log("📤 Auth message payload:", {
+              type: authMessage.type,
+              userIdLength: authMessage.data.userId.length,
+              hasApiKey: !!authMessage.data.apiKey,
+              messageSize: JSON.stringify(authMessage).length,
+              serialized: JSON.stringify(authMessage)
+            });
+
+            // Test WebSocket state before sending
+            if (ws.readyState !== WebSocket.OPEN) {
+              console.error("❌ WebSocket not OPEN when trying to send auth:", ws.readyState);
+              return;
+            }
+
             ws.send(JSON.stringify(authMessage));
-            console.log("📤 Authentication message sent:", JSON.stringify(authMessage));
+            console.log("📤 Authentication message sent successfully at", new Date().toISOString());
+            
+            // Set up a timeout to detect if no auth response is received
+            authTimeout = setTimeout(() => {
+              if ((ws as any).isAuthenticated !== true) {
+                console.warn("⚠️ No authentication response received within 5 seconds");
+                console.log("🔍 Current WebSocket state:", {
+                  readyState: ws.readyState,
+                  isAuthenticated: (ws as any).isAuthenticated,
+                  elapsedSinceConnection: Date.now() - connectionStartTime
+                });
+              }
+            }, 5000);
           } catch (authError) {
             console.error("❌ Failed to send authentication message:", authError);
             setConnectionStatus("error");
@@ -249,12 +361,32 @@ export default function RecordPage() {
         ws.onmessage = (event) => {
           try {
             const message = JSON.parse(event.data);
-            console.log("📨 WebSocket message:", message.type, message);
+            console.log("📨 WebSocket message received:", {
+              type: message.type,
+              timestamp: new Date().toISOString(),
+              wsState: ws.readyState,
+              dataSize: event.data.length
+            });
+            console.log("📄 Full message content:", message);
 
             switch (message.type) {
               case "auth":
+                // Clear auth timeout if it exists
+                if (authTimeout) {
+                  clearTimeout(authTimeout);
+                }
+                
                 // Authentication response - check for specific success indicators
                 console.log("🔐 Auth response received:", message);
+                console.log("🔍 Auth response analysis:", {
+                  hasError: !!message.error,
+                  errorValue: message.error,
+                  hasData: !!message.data,
+                  dataKeys: message.data ? Object.keys(message.data) : [],
+                  successValue: message.data?.success,
+                  rawMessage: JSON.stringify(message)
+                });
+
                 if (!message.error && message.data?.success !== false) {
                   // Mark as authenticated directly on WebSocket object
                   (ws as any).isAuthenticated = true;
@@ -264,9 +396,25 @@ export default function RecordPage() {
                     readyState: ws.readyState,
                     url: ws.url,
                     protocol: ws.protocol,
+                    isAuthenticated: (ws as any).isAuthenticated
                   });
+                  
+                  // Monitor WebSocket stability after authentication
+                  setTimeout(() => {
+                    console.log("🔍 WebSocket stability check (2s after auth):", {
+                      readyState: ws.readyState,
+                      isAuthenticated: (ws as any).isAuthenticated,
+                      stillConnected: ws.readyState === WebSocket.OPEN
+                    });
+                  }, 2000);
+                  
                 } else {
                   console.error("❌ Authentication failed:", message.error || message.data);
+                  console.error("🔍 Failure details:", {
+                    errorType: typeof message.error,
+                    dataType: typeof message.data,
+                    fullResponse: message
+                  });
                   setConnectionStatus("error");
                   // Close connection if auth failed
                   ws.close(1008, "Authentication failed");
@@ -330,10 +478,19 @@ export default function RecordPage() {
             wasClean: event.wasClean,
             timestamp: new Date().toISOString(),
             connectionDuration: Date.now() - performance.now(),
+            wasAuthenticated: (ws as any).isAuthenticated,
+            lastReadyState: ws.readyState
           });
 
           // Log previous connection status before closing
           console.log("📊 Connection status before close:", connectionStatus);
+          
+          // Log timing analysis
+          const connectionStartTime = performance.now();
+          console.log("⏱️ Connection timing analysis:", {
+            totalDuration: Date.now() - connectionStartTime,
+            authenticatedDuration: (ws as any).isAuthenticated ? 'Was authenticated' : 'Never authenticated'
+          });
 
           // Detailed close code analysis
           const closeCodeMeanings = {
@@ -353,6 +510,15 @@ export default function RecordPage() {
 
           const meaning = closeCodeMeanings[event.code] || "Unknown close code";
           console.log(`🔍 Close code ${event.code}: ${meaning}`);
+          
+          // Enhanced error analysis
+          if (event.code === 1005) {
+            console.error("🚨 Code 1005 - Server closed without status. Possible causes:");
+            console.error("   • Server rejected authentication");
+            console.error("   • Server configuration issue");
+            console.error("   • Rate limiting or resource constraints");
+            console.error("   • API endpoint mismatch");
+          }
 
           if (event.code === 1008) {
             console.error("🚨 Authentication failure detected - check API key and user ID");
@@ -367,9 +533,7 @@ export default function RecordPage() {
           // If we were streaming when the connection closed, stop streaming
           if (isStreaming) {
             console.log("🛑 WebSocket closed during streaming, stopping audio stream...");
-            stopStreaming().catch((error) => {
-              console.error("❌ Failed to stop streaming after WebSocket close:", error);
-            });
+            stopAudioStreaming();
           }
 
           // Only clear conversation ID if it was a permanent closure
@@ -498,14 +662,103 @@ export default function RecordPage() {
 
       // Step 3: Start real-time audio streaming
       console.log("🎤 Starting real-time audio streaming...");
-      await startStreaming();
+      
+      // Check microphone permission
+      if (!hasPermission) {
+        console.log("🎤 Requesting microphone permission...");
+        const granted = await requestPermission();
+        if (!granted) {
+          alert("Microphone permission is required for audio streaming.");
+          return;
+        }
+      }
 
-      setTranscript("🎤 Real-time audio streaming started - speaking to server...");
+      try {
+        // Get media stream with exact settings from reference implementation
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            sampleRate: 16000,
+            channelCount: 1,
+            echoCancellation: true,
+            noiseSuppression: true,
+          },
+        });
+
+        streamRef.current = stream;
+
+        // Create Audio Context for volume monitoring
+        audioContextRef.current = new AudioContext({ sampleRate: 16000 });
+        const source = audioContextRef.current.createMediaStreamSource(stream);
+
+        // Create analyzer for volume monitoring
+        analyzerRef.current = audioContextRef.current.createAnalyser();
+        analyzerRef.current.fftSize = 256;
+        source.connect(analyzerRef.current);
+
+        // Setup MediaRecorder exactly like reference implementation
+        mediaRecorderRef.current = new MediaRecorder(stream, {
+          mimeType: "audio/webm;codecs=opus",
+        });
+
+        mediaRecorderRef.current.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            // Send audio data directly to WebSocket - try binary mode first
+            const wsState = websocketRef.current?.readyState;
+            if (wsState === WebSocket.OPEN) {
+              try {
+                console.log(`🎤 Sending audio chunk (${event.data.size} bytes) - WebSocket state: ${wsState}`);
+                // Try binary mode first (raw audio data)
+                sendRealtimeAudioData(websocketRef.current, event.data, true);
+              } catch (error) {
+                console.error("❌ Failed to send audio data:", error);
+              }
+            } else {
+              // Only log every 10th skipped chunk to reduce console spam
+              if (Math.random() < 0.1) {
+                console.warn(`⚠️ WebSocket not ready, skipping chunk:`, {
+                  websocketState: wsState,
+                  wsStateText:
+                    wsState === 0
+                      ? "CONNECTING"
+                      : wsState === 1
+                        ? "OPEN"
+                        : wsState === 2
+                          ? "CLOSING"
+                          : wsState === 3
+                            ? "CLOSED"
+                            : "UNKNOWN",
+                  chunkSize: event.data.size,
+                });
+              }
+            }
+          }
+        };
+
+        mediaRecorderRef.current.onerror = (event) => {
+          console.error("MediaRecorder error:", event);
+          setTranscript((prev) => prev + `\n❌ Audio recording error`);
+        };
+
+        // Start recording with 100ms chunks (same as reference)
+        mediaRecorderRef.current.start(100);
+        setIsStreaming(true);
+
+        // Start volume monitoring
+        monitorVolume();
+
+        console.log("✅ Real-time audio streaming started");
+        setTranscript("🎤 Real-time audio streaming started - speaking to server...");
+        
+      } catch (error) {
+        console.error("❌ Failed to start audio streaming:", error);
+        setTranscript((prev) => prev + `\n❌ Audio streaming error: ${error.message}`);
+        alert("Failed to start audio streaming. Please check microphone permissions.");
+      }
     } catch (error) {
       console.error("Failed to start streaming:", error);
       alert("Failed to start streaming. Please check microphone permissions.");
     }
-  }, [conversationId, startNewConversation, connectWebSocket, startStreaming]);
+  }, [conversationId, startNewConversation, connectWebSocket, requestPermission, hasPermission, monitorVolume]);
 
   // ボタンを押してWebSocket接続解除 + 音声ストリーミング停止
   const stopRecording = useCallback(async () => {
@@ -514,7 +767,7 @@ export default function RecordPage() {
     try {
       // Step 1: Stop audio streaming first
       console.log("🛑 Stopping audio streaming...");
-      await stopStreaming();
+      stopAudioStreaming();
 
       // Step 2: Send completion signal via WebSocket but keep connection open
       if (websocketRef.current?.readyState === WebSocket.OPEN) {
@@ -537,7 +790,7 @@ export default function RecordPage() {
     } catch (error) {
       console.error("❌ Error during streaming stop:", error);
     }
-  }, [stopStreaming]);
+  }, [stopAudioStreaming]);
 
   // Monitor connection status for debugging
   useEffect(() => {
@@ -553,13 +806,13 @@ export default function RecordPage() {
   useEffect(() => {
     return () => {
       if (isStreaming) {
-        stopStreaming();
+        stopAudioStreaming();
       }
       if (websocketRef.current) {
         websocketRef.current.close();
       }
     };
-  }, [isStreaming, stopStreaming]);
+  }, [isStreaming, stopAudioStreaming]);
 
   if (!authenticated) {
     return null;
