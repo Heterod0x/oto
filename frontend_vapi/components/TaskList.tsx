@@ -1,5 +1,5 @@
 import { usePrivy } from "@privy-io/react-auth";
-import { Calendar, Clock, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Calendar, Clock, Download, ExternalLink, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { VAPIClient } from "../lib/api-client";
@@ -229,20 +229,28 @@ export function TaskList({ className }: TaskListProps) {
 
   const handleAddToCalendar = async (task: Task, calendarType: "google" | "ios") => {
     try {
+      let result;
       if (calendarType === "google") {
-        await apiClient.addToGoogleCalendar(task);
+        result = await apiClient.addToGoogleCalendar(task);
       } else {
-        await apiClient.addToIosCalendar(task);
+        result = await apiClient.addToIosCalendar(task);
       }
-      showToast({
-        type: "success",
-        title: `Added to ${calendarType === "google" ? "Google" : "iOS"} Calendar`,
-      });
+
+      if (result.success) {
+        showToast({
+          type: "success",
+          title: calendarType === "google" 
+            ? "Google Calendar opened with event details" 
+            : "Calendar file downloaded successfully",
+        });
+      } else {
+        throw new Error("Calendar operation failed");
+      }
     } catch (err) {
       console.error("Failed to add to calendar:", err);
       showToast({
         type: "error",
-        title: "Failed to add to calendar",
+        title: `Failed to add to ${calendarType === "google" ? "Google" : "iOS"} Calendar`,
       });
     }
   };
@@ -454,37 +462,37 @@ export function TaskList({ className }: TaskListProps) {
                           </div>
                         )}
                         <span className="px-2 py-1 bg-gray-100 rounded text-xs">{task.type}</span>
+                      </div>                    {!task.completed && (
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleAddToCalendar(task, "google")}
+                          className="text-xs flex items-center gap-1"
+                        >
+                          <ExternalLink size={12} />
+                          Google
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleAddToCalendar(task, "ios")}
+                          className="text-xs flex items-center gap-1"
+                        >
+                          <Download size={12} />
+                          iOS
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDeleteTask(task.id)}
+                          className="text-xs text-red-600 hover:text-red-700 hover:border-red-300"
+                        >
+                          <Trash2 size={12} className="mr-1" />
+                          Delete
+                        </Button>
                       </div>
-
-                      {!task.completed && (
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleAddToCalendar(task, "google")}
-                            className="text-xs"
-                          >
-                            Google Calendar
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleAddToCalendar(task, "ios")}
-                            className="text-xs"
-                          >
-                            iOS Calendar
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDeleteTask(task.id)}
-                            className="text-xs text-red-600 hover:text-red-700 hover:border-red-300"
-                          >
-                            <Trash2 size={12} className="mr-1" />
-                            Delete
-                          </Button>
-                        </div>
-                      )}
+                    )}
                     </div>
                   </div>
                 </div>
