@@ -13,6 +13,8 @@ import {
   sendRealtimeAudioData,
   validateUUID,
 } from "../lib/oto-api";
+import { handleFormatTranscript, handleTranscriptBeautify, handleTranscriptSegment, TranscriptSegment } from "../lib/transcript";
+import { handleOtoWsTranscribe, handleOtoWsTranscriptBeautify } from "../lib/oto-websocket";
 
 /**
  * 日常会話録音画面 - リアルタイム音声ストリーミング版
@@ -30,6 +32,7 @@ export default function RecordPage() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [hasPermission, setHasPermission] = useState(false);
   const [volume, setVolume] = useState(0);
+  const [lastVolumeSetDateTime, setLastVolumeSetDateTime] = useState<Date | null>(null);
 
   // Audio streaming references
   const streamRef = useRef<MediaStream | null>(null);
@@ -37,6 +40,15 @@ export default function RecordPage() {
   const analyzerRef = useRef<AnalyserNode | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+
+  // transcript segments
+  const [transcriptSegments, setTranscriptSegments] = useState<TranscriptSegment[]>([]);
+  const transcriptContentRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (transcriptContentRef.current && transcriptSegments.length > 0) {
+      transcriptContentRef.current.scrollTop = transcriptContentRef.current.scrollHeight;
+    }
+  }, [transcriptSegments]);
 
   // Audio streaming statistics
   const [audioStats, setAudioStats] = useState({
@@ -91,7 +103,9 @@ export default function RecordPage() {
     }
     const rms = Math.sqrt(sum / bufferLength);
     const volumeLevel = Math.round((rms / 255) * 100);
+
     setVolume(volumeLevel);
+    setLastVolumeSetDateTime(new Date());
 
     // Continue monitoring
     animationFrameRef.current = requestAnimationFrame(monitorVolume);
@@ -261,6 +275,7 @@ export default function RecordPage() {
         }, 10000);
 
         let authTimeout: NodeJS.Timeout | null = null;
+        let transcriptSegments: TranscriptSegment[] = [];
 
         ws.onopen = () => {
           clearTimeout(connectionTimeout);
@@ -422,14 +437,18 @@ export default function RecordPage() {
                 break;
               case "transcribe":
                 console.log("📝 Transcription:", message.data?.transcript);
-                if (message.data?.transcript) {
-                  setTranscript((prev) => prev + message.data.transcript);
+                if (message.data) {
+                  const segment = handleOtoWsTranscribe(message);
+                  transcriptSegments = handleTranscriptSegment(transcriptSegments, segment);
+                  setTranscriptSegments(transcriptSegments);
                 }
                 break;
               case "transcript-beautify":
                 console.log("✨ Beautified transcript:", message.data?.transcript);
-                if (message.data?.transcript) {
-                  setTranscript(message.data.transcript);
+                if (message.data) {
+                  const beautifyData = handleOtoWsTranscriptBeautify(message);
+                  transcriptSegments = handleTranscriptBeautify(transcriptSegments, beautifyData);
+                  setTranscriptSegments(transcriptSegments);
                 }
                 break;
               case "detect-action":
@@ -706,7 +725,7 @@ export default function RecordPage() {
             const wsState = websocketRef.current?.readyState;
             if (wsState === WebSocket.OPEN) {
               try {
-                console.log(`🎤 Sending audio chunk (${event.data.size} bytes) - WebSocket state: ${wsState}`);
+                //console.log(`🎤 Sending audio chunk (${event.data.size} bytes) - WebSocket state: ${wsState}`);
                 // Send audio data in JSON format (not binary) for server compatibility
                 sendRealtimeAudioData(websocketRef.current, event.data, false);
               } catch (error) {
@@ -942,11 +961,26 @@ export default function RecordPage() {
             {/* Recording Controls */}
             <div className="text-center mb-8">
               {/* Large Microphone Button - Click to Start/Stop */}
-              <div className="relative">
+              <div className="relative mb-4">
+                {/* Volume Ring Indicator */}
+                {isStreaming && volume > 0 && (
+                  <div className="absolute w-full h-full flex items-center justify-center top-0 left-0">
+                    <div
+                      className="rounded-full border-4 border-red-200 bg-red-200"
+                      style={{
+                        opacity: Math.min(volume / 50, 1),
+                        //animationDuration: `${Math.max(0.5, 2 - volume / 50)}s`,
+                        width: `auto`,
+                        height: `calc(100% + ${volume*0.7}px)`,
+                        aspectRatio: "1/1",
+                      }}
+                    />
+                  </div>
+                )}
                 <button
                   onClick={isStreaming ? stopRecording : startRecording}
                   disabled={connectionStatus === "connecting"}
-                  className={`inline-flex items-center justify-center w-32 h-32 rounded-full mb-4 transition-all duration-300 transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-opacity-50 ${
+                  className={`inline-flex items-center justify-center w-32 h-32 rounded-full transition-all duration-300 transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-opacity-50 ${
                     isStreaming
                       ? "bg-red-500 hover:bg-red-600 animate-pulse focus:ring-red-300"
                       : connectionStatus === "authenticated"
@@ -963,17 +997,6 @@ export default function RecordPage() {
                     <Mic size={40} className="text-white" />
                   )}
                 </button>
-
-                {/* Volume Ring Indicator */}
-                {isStreaming && volume > 0 && (
-                  <div
-                    className="absolute inset-0 rounded-full border-4 border-green-400 animate-ping"
-                    style={{
-                      opacity: Math.min(volume / 50, 1),
-                      animationDuration: `${Math.max(0.5, 2 - volume / 50)}s`,
-                    }}
-                  />
-                )}
               </div>
 
               {/* Status Text */}
@@ -1002,7 +1025,7 @@ export default function RecordPage() {
 
                 <div className="text-sm text-gray-500">
                   {isStreaming
-                    ? "Click the microphone to stop streaming"
+                    ? "Click the button to stop streaming"
                     : connectionStatus === "authenticated"
                       ? "Click the microphone to start streaming"
                       : connectionStatus === "connecting"
@@ -1015,7 +1038,7 @@ export default function RecordPage() {
                   {!isStreaming ? (
                     <Button
                       onClick={startRecording}
-                      className="px-6 py-2 text-sm"
+                      className="px-6 py-2 text-sm hidden"
                       size="sm"
                       disabled={connectionStatus === "connecting"}
                       variant="outline"
@@ -1026,7 +1049,7 @@ export default function RecordPage() {
                     <Button
                       onClick={stopRecording}
                       variant="destructive"
-                      className="px-6 py-2 text-sm"
+                      className="px-6 py-2 text-sm hidden"
                       size="sm"
                     >
                       <Square size={16} className="mr-1" />
@@ -1043,8 +1066,8 @@ export default function RecordPage() {
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">
                   Real-time Transcription
                 </h3>
-                <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                  {transcript}
+                <div className="text-gray-700 leading-relaxed whitespace-pre-wrap overflow-y-auto max-h-[320px] scroll-smooth" ref={transcriptContentRef}>
+                  {handleFormatTranscript(transcriptSegments)}
                 </div>
               </div>
             )}
