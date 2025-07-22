@@ -27,9 +27,12 @@ pub struct Claim<'info> {
     #[account(mut)]
     pub beneficiary: Signer<'info>,
 
+    #[account(mut)]
+    pub payer: Signer<'info>,
+
     #[account(
         init_if_needed,
-        payer = beneficiary,
+        payer = payer,
         associated_token::mint = mint,
         associated_token::authority = beneficiary,
         associated_token::token_program = token_program,

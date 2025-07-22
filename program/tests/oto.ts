@@ -7,11 +7,17 @@ import {
   PublicKey,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
+  Transaction,
+  VersionedTransaction,
 } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import { CoreAssetBuilder } from "./core_asset_builder";
 import { expect } from "chai";
-import { ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddress, getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
+import {
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  getAssociatedTokenAddress,
+  getOrCreateAssociatedTokenAccount,
+} from "@solana/spl-token";
 import nacl from "tweetnacl";
 
 describe("oto", () => {
@@ -34,17 +40,26 @@ describe("oto", () => {
   );
 
   it("airdrop", async () => {
-    let tx = await provider.connection.requestAirdrop(
-      authority.publicKey,
-      LAMPORTS_PER_SOL
-    );
-    await provider.connection.confirmTransaction(tx);
+    // transfer sol to authority instead of airdrop
+    try {
+      const transfer = SystemProgram.transfer({
+        fromPubkey: provider.wallet.publicKey,
+        toPubkey: authority.publicKey,
+        lamports: LAMPORTS_PER_SOL,
+      });
+      const tx = new Transaction().add(transfer);
+      await provider.sendAndConfirm(tx);
 
-    tx = await provider.connection.requestAirdrop(
-      user.publicKey,
-      LAMPORTS_PER_SOL
-    );
-    await provider.connection.confirmTransaction(tx);
+      const transfer2 = SystemProgram.transfer({
+        fromPubkey: provider.wallet.publicKey,
+        toPubkey: user.publicKey,
+        lamports: LAMPORTS_PER_SOL,
+      });
+      const tx2 = new Transaction().add(transfer2);
+      await provider.sendAndConfirm(tx2);
+    } catch (e) {
+      console.log(e);
+    }
   });
 
   it("create collection", async () => {
@@ -87,9 +102,9 @@ describe("oto", () => {
     await program.methods
       .initializeUser("user_id", user.publicKey)
       .accounts({
-        payer: user.publicKey,
+        payer: authority.publicKey,
       })
-      .signers([user])
+      .signers([authority])
       .rpc();
   });
 
@@ -120,11 +135,12 @@ describe("oto", () => {
       .claim("user_id", new BN(50))
       .accounts({
         beneficiary: user.publicKey,
+        payer: authority.publicKey,
         tokenProgram: TOKEN_PROGRAM_ID,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
       })
-      .signers([user])
+      .signers([user, authority])
       .rpc();
   });
 
@@ -151,7 +167,7 @@ describe("oto", () => {
       expect.fail();
     } catch {}
   });
-  
+
   // ================================
   // storage
   // ================================
@@ -161,7 +177,7 @@ describe("oto", () => {
 
   const [assetPda] = PublicKey.findProgramAddressSync(
     [Buffer.from("asset"), user.publicKey.toBuffer(), fileHash],
-    program.programId,
+    program.programId
   );
 
   it("user register asset", async () => {
@@ -172,23 +188,29 @@ describe("oto", () => {
       })
       .signers([user])
       .rpc();
-  })
+  });
 
   const buyer = anchor.web3.Keypair.generate();
   const relayer = anchor.web3.Keypair.generate();
 
   it("airdrop for storage", async () => {
-    let tx = await provider.connection.requestAirdrop(
-      buyer.publicKey,
-      LAMPORTS_PER_SOL
+    const tx = new Transaction().add(
+      SystemProgram.transfer({
+        fromPubkey: provider.wallet.publicKey,
+        toPubkey: buyer.publicKey,
+        lamports: LAMPORTS_PER_SOL,
+      })
     );
-    await provider.connection.confirmTransaction(tx);
+    await provider.sendAndConfirm(tx);
 
-    tx = await provider.connection.requestAirdrop(
-      relayer.publicKey,
-      LAMPORTS_PER_SOL
+    const tx2 = new Transaction().add(
+      SystemProgram.transfer({
+        fromPubkey: provider.wallet.publicKey,
+        toPubkey: relayer.publicKey,
+        lamports: LAMPORTS_PER_SOL,
+      })
     );
-    await provider.connection.confirmTransaction(tx);
+    await provider.sendAndConfirm(tx2);
   });
 
   it("create user for buyer", async () => {
@@ -214,7 +236,7 @@ describe("oto", () => {
   it("claim token by buyer", async () => {
     await program.methods
       .claim("buyer_account", new BN(100))
-      .accounts({ 
+      .accounts({
         beneficiary: buyer.publicKey,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
@@ -245,22 +267,23 @@ describe("oto", () => {
       .signers([buyer])
       .rpc();
 
-      const pr = await program.account.purchaseRequest.fetch(purchaseRequest);
-      expect(pr.buyerPubkey.equals(buyer.publicKey)).to.be.true;
-      expect(pr.filterLanguage).to.be.equal(0);
-      expect(pr.startDate).to.be.equal(20250101);
-      expect(pr.endDate).to.be.equal(20250102);
-      expect(pr.unitPrice.toNumber()).to.be.equal(100);
-      expect(pr.budgetRemaining.toNumber()).to.be.equal(100);
+    const pr = await program.account.purchaseRequest.fetch(purchaseRequest);
+    expect(pr.buyerPubkey.equals(buyer.publicKey)).to.be.true;
+    expect(pr.filterLanguage).to.be.equal(0);
+    expect(pr.startDate).to.be.equal(20250101);
+    expect(pr.endDate).to.be.equal(20250102);
+    expect(pr.unitPrice.toNumber()).to.be.equal(100);
+    expect(pr.budgetRemaining.toNumber()).to.be.equal(100);
   });
 
   const [offerPda] = anchor.web3.PublicKey.findProgramAddressSync(
     [Buffer.from("offer"), purchaseRequest.toBuffer(), fileHash],
-    program.programId,
+    program.programId
   );
 
   it("apply asset offer", async () => {
-    await program.methods.applyAssetOffer()
+    await program.methods
+      .applyAssetOffer()
       .accounts({
         purchaseRequest: purchaseRequest,
         assetMetadata: assetPda,
@@ -288,11 +311,8 @@ describe("oto", () => {
     expect(pr.budgetRemaining.toNumber()).to.be.equal(0);
 
     // get token balance for `mint`
-    const ata = await getAssociatedTokenAddress(
-      mint,
-      user.publicKey,
-    );
+    const ata = await getAssociatedTokenAddress(mint, user.publicKey);
     const tokenBalance = await provider.connection.getTokenAccountBalance(ata);
     expect(tokenBalance.value.amount).to.be.equal("150"); // pre-claimed-on-basic-claim + claimed-on-proof
-  })
+  });
 });

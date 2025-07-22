@@ -53,6 +53,10 @@ export class CoreAssetBuilder {
     });
   }
 
+  async airdrop(user: Web3Keypair): Promise<void> {
+    await this.umi.rpc.airdrop(publicKey(user.publicKey.toString()), sol(1));
+  }
+
   getCollectionMint(): Web3Keypair {
     return toWeb3JsKeypair(this.collectionMint);
   }
