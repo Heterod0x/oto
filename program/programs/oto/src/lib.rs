@@ -61,4 +61,8 @@ pub mod oto {
     ) -> Result<()> {
         handle_submit_transfer_proof(ctx, file_hash, buyer_sig)
     }
+
+    pub fn mint_oto(ctx: Context<MintOto>, amount: u64) -> Result<()> {
+        handle_mint_oto(ctx, amount)
+    }
 }

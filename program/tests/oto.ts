@@ -98,6 +98,25 @@ describe("oto", () => {
       .rpc();
   });
 
+  it("mint oto", async () => {
+    await program.methods
+      .mintOto(new BN(50))
+      .accounts({
+        beneficiary: user.publicKey,
+        payer: authority.publicKey,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([user, authority])
+      .rpc();
+
+    // check token balance
+    const ata = await getAssociatedTokenAddress(mint, user.publicKey);
+    const tokenBalance = await provider.connection.getTokenAccountBalance(ata);
+    expect(tokenBalance.value.amount).to.be.equal("50");
+  });
+
   it("initialize user", async () => {
     await program.methods
       .initializeUser("user_id", user.publicKey)
@@ -313,6 +332,6 @@ describe("oto", () => {
     // get token balance for `mint`
     const ata = await getAssociatedTokenAddress(mint, user.publicKey);
     const tokenBalance = await provider.connection.getTokenAccountBalance(ata);
-    expect(tokenBalance.value.amount).to.be.equal("150"); // pre-claimed-on-basic-claim + claimed-on-proof
+    expect(tokenBalance.value.amount).to.be.equal("200"); // minted-on-mint-oto + pre-claimed-on-basic-claim + claimed-on-proof
   });
 });

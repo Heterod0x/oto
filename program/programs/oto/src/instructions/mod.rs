@@ -15,3 +15,6 @@ pub use constants::*;
 
 pub mod storage;
 pub use storage::*;
+
+pub mod mint;
+pub use mint::*;
