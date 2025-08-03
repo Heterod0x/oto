@@ -4,11 +4,11 @@ use anchor_spl::{
     token_interface::{mint_to, Mint, MintTo, TokenAccount, TokenInterface},
 };
 
-use crate::{Oto, OtoError, User};
+use crate::{Oto, OtoError};
 
 #[derive(Accounts)]
-#[instruction(user_id: String, claim_amount: u64)]
-pub struct Claim<'info> {
+#[instruction(amount: u64)]
+pub struct MintOto<'info> {
     #[account(
         seeds = [b"oto"],
         bump = oto.bump,
@@ -16,18 +16,12 @@ pub struct Claim<'info> {
     )]
     pub oto: Account<'info, Oto>,
 
-    #[account(
-        mut,
-        seeds = [b"user", user_id.as_bytes()],
-        bump = user.bump,
-        constraint = user.owner == beneficiary.key(),
-    )]
-    pub user: Account<'info, User>,
-
     #[account(mut)]
     pub beneficiary: Signer<'info>,
 
-    #[account(mut)]
+    #[account(mut,
+        constraint = payer.key() == oto.admin,
+    )]
     pub payer: Signer<'info>,
 
     #[account(
@@ -51,15 +45,8 @@ pub struct Claim<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handle_claim(ctx: Context<Claim>, _user_id: String, claim_amount: u64) -> Result<()> {
-    let user = &mut ctx.accounts.user;
-    let claimable_amount = user.claimable_amount;
-
-    if claim_amount <= 0 {
-        return Err(OtoError::NotEnoughClaimableAmount.into());
-    }
-
-    if claim_amount > claimable_amount {
+pub fn handle_mint_oto(ctx: Context<MintOto>, amount: u64) -> Result<()> {
+    if amount <= 0 {
         return Err(OtoError::NotEnoughClaimableAmount.into());
     }
 
@@ -74,9 +61,7 @@ pub fn handle_claim(ctx: Context<Claim>, _user_id: String, claim_amount: u64) ->
 
     let cpi_context = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer_seeds);
 
-    mint_to(cpi_context, claim_amount)?;
-
-    user.claimable_amount = user.claimable_amount.checked_sub(claim_amount).unwrap();
+    mint_to(cpi_context, amount)?;
 
     Ok(())
 }
