@@ -1,0 +1,1052 @@
+openapi: 3.0.3
+info:
+  title: Oto API
+  description: |
+    The Oto API is a FastAPI-based backend service for conversation analysis. 
+    It processes audio files, transcribes them, and provides AI-powered analysis 
+    including summaries, highlights, insights, and sentiment analysis.
+  version: 1.0.0
+  contact:
+    name: Oto API Support
+servers:
+  - url: http://localhost:8000
+    description: Development server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Privy access token
+    
+  parameters:
+    UserIdHeader:
+      name: Oto-User-Id
+      in: header
+      required: true
+      schema:
+        type: string
+      description: User ID for authentication
+    
+    ConversationId:
+      name: conversation_id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Unique conversation identifier
+    
+    TrendId:
+      name: trend_id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Unique trend identifier
+    
+    MicroTrendId:
+      name: microtrend_id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Unique microtrend identifier
+
+  schemas:
+    # Enums
+    ProcessingStatus:
+      type: string
+      enum:
+        - not_started
+        - processing
+        - completed
+        - failed
+      description: Status of audio file processing
+
+    SentimentType:
+      type: string
+      enum:
+        - positive
+        - neutral
+        - negative
+      description: Sentiment types for analysis
+
+    # Basic Models
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique user identifier
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        name:
+          type: string
+          nullable: true
+        age:
+          type: integer
+          nullable: true
+        nationality:
+          type: string
+          nullable: true
+        first_language:
+          type: string
+          nullable: true
+        second_languages:
+          type: string
+          nullable: true
+        interests:
+          type: string
+          nullable: true
+        preferred_topics:
+          type: string
+          nullable: true
+
+    UpdateUser:
+      type: object
+      properties:
+        name:
+          type: string
+          nullable: true
+        age:
+          type: integer
+          nullable: true
+        nationality:
+          type: string
+          nullable: true
+        first_language:
+          type: string
+          nullable: true
+        second_languages:
+          type: string
+          nullable: true
+        interests:
+          type: string
+          nullable: true
+        preferred_topics:
+          type: string
+          nullable: true
+
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique conversation identifier
+        user_id:
+          type: string
+          description: User who owns this conversation
+        status:
+          $ref: '#/components/schemas/ProcessingStatus'
+        inner_status:
+          type: string
+          description: Internal processing status
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        file_name:
+          type: string
+          description: Original filename of uploaded audio
+        file_path:
+          type: string
+          description: Server path to audio file
+        mime_type:
+          type: string
+          description: MIME type of audio file
+        available_duration:
+          type: string
+          nullable: true
+          description: Duration of audio in HH:MM:SS format
+        language:
+          type: string
+          nullable: true
+          description: Detected language of conversation
+        situation:
+          type: string
+          nullable: true
+          description: Context/situation of conversation
+        place:
+          type: string
+          nullable: true
+          description: Location where conversation took place
+        time:
+          type: string
+          nullable: true
+          description: Time period of conversation
+        location:
+          type: string
+          nullable: true
+          description: Geographic location
+        points:
+          type: integer
+          description: Points earned from this conversation
+
+    Caption:
+      type: object
+      properties:
+        timecode:
+          type: string
+          description: Timestamp in HH:MM:SS format
+        speaker:
+          type: string
+          description: Speaker identifier
+        caption:
+          type: string
+          description: Transcribed text
+      required:
+        - timecode
+        - speaker
+        - caption
+
+    TranscriptResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Conversation ID
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        captions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Caption'
+      required:
+        - id
+        - created_at
+        - updated_at
+        - captions
+
+    ConversationHighlight:
+      type: object
+      properties:
+        summary:
+          type: string
+          description: Brief summary of the highlight
+        highlight:
+          type: string
+          description: The highlighted content
+        timecode_start_at:
+          type: string
+          description: Start timestamp
+        timecode_end_at:
+          type: string
+          description: End timestamp
+        favorite:
+          type: boolean
+          description: Whether this highlight is marked as favorite
+      required:
+        - summary
+        - highlight
+        - timecode_start_at
+        - timecode_end_at
+        - favorite
+
+    ConversationSummary:
+      type: object
+      properties:
+        summary:
+          type: string
+          description: Overall conversation summary
+      required:
+        - summary
+
+    ConversationInsight:
+      type: object
+      properties:
+        suggestions:
+          type: array
+          items:
+            type: string
+          description: AI-generated suggestions for improvement
+        boring_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: How boring the conversation was (0-1)
+        density_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Information density score (0-1)
+        clarity_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Clarity of communication score (0-1)
+        engagement_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Engagement level score (0-1)
+        interesting_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: How interesting the conversation was (0-1)
+      required:
+        - suggestions
+        - boring_score
+        - density_score
+        - clarity_score
+        - engagement_score
+        - interesting_score
+
+    ConversationMetadata:
+      type: object
+      properties:
+        duration:
+          type: string
+          description: Duration in HH:MM:SS format
+        language:
+          type: string
+          description: Detected language
+        situation:
+          type: string
+          description: Conversation context
+        place:
+          type: string
+          description: Location
+        time:
+          type: string
+          description: Time period
+        location:
+          type: string
+          description: Geographic location
+        participants:
+          type: array
+          items:
+            type: string
+          description: List of conversation participants
+      required:
+        - duration
+        - language
+        - situation
+        - place
+        - time
+        - location
+        - participants
+
+    ConversationSentiment:
+      type: object
+      properties:
+        positive:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Positive sentiment score (0-1)
+        neutral:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Neutral sentiment score (0-1)
+        negative:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Negative sentiment score (0-1)
+      required:
+        - positive
+        - neutral
+        - negative
+
+    ConversationKeyword:
+      type: object
+      properties:
+        keyword:
+          type: string
+          description: Extracted keyword
+        importance_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Importance score (0-1)
+      required:
+        - keyword
+        - importance_score
+
+    ConversationBreakdown:
+      type: object
+      properties:
+        metadata:
+          $ref: '#/components/schemas/ConversationMetadata'
+        sentiment:
+          $ref: '#/components/schemas/ConversationSentiment'
+        keywords:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConversationKeyword'
+      required:
+        - metadata
+        - sentiment
+        - keywords
+
+    ConversationAnalysisData:
+      type: object
+      properties:
+        summary:
+          $ref: '#/components/schemas/ConversationSummary'
+        highlights:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConversationHighlight'
+        insights:
+          $ref: '#/components/schemas/ConversationInsight'
+        breakdown:
+          $ref: '#/components/schemas/ConversationBreakdown'
+      required:
+        - summary
+        - highlights
+        - insights
+        - breakdown
+
+    Point:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique point record identifier
+        user_id:
+          type: string
+          description: User ID
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        points:
+          type: integer
+          description: Current point balance
+      required:
+        - id
+        - user_id
+        - created_at
+        - updated_at
+        - points
+
+    PointTransaction:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique transaction identifier
+        user_id:
+          type: string
+          description: User ID
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        amount:
+          type: integer
+          description: Point amount (positive or negative)
+        conversation_id:
+          type: string
+          nullable: true
+          description: Related conversation ID if applicable
+      required:
+        - id
+        - user_id
+        - created_at
+        - updated_at
+        - amount
+
+    Trend:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique trend identifier
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        title:
+          type: string
+          description: Trend title
+        description:
+          type: string
+          description: Trend description
+        volume:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Trend volume score (0-1)
+        overall_positive_sentiment:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Overall positive sentiment (0-1)
+        overall_negative_sentiment:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Overall negative sentiment (0-1)
+        cluster_id:
+          type: integer
+          description: Cluster identifier for grouping related trends
+      required:
+        - id
+        - created_at
+        - updated_at
+        - title
+        - description
+        - volume
+        - overall_positive_sentiment
+        - overall_negative_sentiment
+        - cluster_id
+
+    MicroTrend:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique microtrend identifier
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        title:
+          type: string
+          description: Microtrend title
+        description:
+          type: string
+          description: Microtrend description
+        volume:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Microtrend volume score (0-1)
+        overall_positive_sentiment:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Overall positive sentiment (0-1)
+        overall_negative_sentiment:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Overall negative sentiment (0-1)
+      required:
+        - id
+        - created_at
+        - updated_at
+        - title
+        - description
+        - volume
+        - overall_positive_sentiment
+        - overall_negative_sentiment
+
+    # Response Models
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "ok"
+      required:
+        - status
+
+    UserCreateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Created user ID
+      required:
+        - id
+
+    ConversationCreateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Created conversation ID
+        status:
+          $ref: '#/components/schemas/ProcessingStatus'
+        flow_run_id:
+          type: string
+          description: Prefect flow run ID for tracking processing
+      required:
+        - id
+        - status
+        - flow_run_id
+
+    # Error Response
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Error message
+      required:
+        - detail
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health Check
+      summary: Check API health status
+      description: Simple health check endpoint to verify API is running
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /user/create:
+    post:
+      tags:
+        - User Management
+      summary: Create a new user account
+      description: Creates a new user account with the provided user ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+      responses:
+        '200':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCreateResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /user/get:
+    get:
+      tags:
+        - User Management
+      summary: Get user profile information
+      description: Retrieves the current user's profile information
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /user/update:
+    post:
+      tags:
+        - User Management
+      summary: Update user profile information
+      description: Updates the current user's profile with provided information
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUser'
+      responses:
+        '200':
+          description: User profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCreateResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /conversation/create:
+    post:
+      tags:
+        - Conversation Processing
+      summary: Upload audio file for processing
+      description: |
+        Uploads an audio file for transcription and analysis. 
+        The file must be in audio format and under 300MB.
+        Processing happens asynchronously in the background.
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Audio file to upload (max 300MB)
+              required:
+                - file
+      responses:
+        '200':
+          description: File uploaded successfully, processing started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationCreateResponse'
+        '400':
+          description: Bad request (invalid file format or too large)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service unavailable (server capacity exceeded)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /conversation/list:
+    get:
+      tags:
+        - Conversation Processing
+      summary: List user's conversations
+      description: |
+        Retrieves the last 30 conversations for the current user, 
+        ordered by creation date (newest first)
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+      responses:
+        '200':
+          description: Conversations retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Conversation'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /conversation/{conversation_id}:
+    get:
+      tags:
+        - Conversation Processing
+      summary: Get specific conversation details
+      description: Retrieves details for a specific conversation owned by the user
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/ConversationId'
+      responses:
+        '200':
+          description: Conversation retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (user doesn't own this conversation)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Conversation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /transcript/{conversation_id}:
+    get:
+      tags:
+        - Transcription
+      summary: Get conversation transcript
+      description: |
+        Retrieves the transcript for a conversation with timestamped captions 
+        and speaker identification
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/ConversationId'
+      responses:
+        '200':
+          description: Transcript retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranscriptResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (user doesn't own this conversation)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Transcript not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /analysis/{conversation_id}:
+    get:
+      tags:
+        - Analysis
+      summary: Get conversation analysis
+      description: |
+        Retrieves AI-powered analysis including summary, highlights, 
+        insights, and breakdown with sentiment analysis
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/ConversationId'
+      responses:
+        '200':
+          description: Analysis retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationAnalysisData'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (user doesn't own this conversation)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Analysis not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /point/get:
+    get:
+      tags:
+        - Points System
+      summary: Get user's current point balance
+      description: Retrieves the current point balance for the user
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+      responses:
+        '200':
+          description: Point balance retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Point'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /point/transaction/list:
+    get:
+      tags:
+        - Points System
+      summary: Get point transaction history
+      description: |
+        Retrieves the user's point transaction history, 
+        ordered by creation date (newest first)
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+      responses:
+        '200':
+          description: Transaction history retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PointTransaction'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /trend/trends:
+    get:
+      tags:
+        - Trends
+      summary: Get all trending topics
+      description: |
+        Retrieves all trending topics ordered by volume (highest first).
+        No authentication required.
+      responses:
+        '200':
+          description: Trends retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Trend'
+
+  /trend/microtrends:
+    get:
+      tags:
+        - Trends
+      summary: Get all microtrends
+      description: |
+        Retrieves all microtrends ordered by volume (highest first).
+        No authentication required.
+      responses:
+        '200':
+          description: Microtrends retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MicroTrend'
+
+  /trend/trends/{trend_id}:
+    get:
+      tags:
+        - Trends
+      summary: Get specific trend by ID
+      description: Retrieves details for a specific trend
+      parameters:
+        - $ref: '#/components/parameters/TrendId'
+      responses:
+        '200':
+          description: Trend retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trend'
+        '404':
+          description: Trend not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /trend/microtrends/{microtrend_id}:
+    get:
+      tags:
+        - Trends
+      summary: Get specific microtrend by ID
+      description: Retrieves details for a specific microtrend
+      parameters:
+        - $ref: '#/components/parameters/MicroTrendId'
+      responses:
+        '200':
+          description: Microtrend retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MicroTrend'
+        '404':
+          description: MicroTrend not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+tags:
+  - name: Health Check
+    description: API health monitoring
+  - name: User Management
+    description: User account operations
+  - name: Conversation Processing
+    description: Audio upload and conversation management
+  - name: Transcription
+    description: Audio transcription services
+  - name: Analysis
+    description: AI-powered conversation analysis
+  - name: Points System
+    description: User points and rewards
+  - name: Trends
+    description: Trending topics and microtrends

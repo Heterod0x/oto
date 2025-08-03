@@ -1,0 +1,22 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10.6"
+dependencies = [
+    "fastapi>=0.115.13",
+    "google-cloud-aiplatform>=1.99.0",
+    "hdbscan>=0.8.40",
+    "openai>=1.95.1",
+    "prefect>=3.4.6",
+    "privy-client>=0.5.0",
+    "psycopg2>=2.9.10",
+    "pydantic-settings>=2.10.1",
+    "pydub>=0.25.1",
+    "python-multipart>=0.0.20",
+    "solana>=0.36.7",
+    "solders>=0.26.0",
+    "sqlmodel>=0.0.24",
+    "uvicorn>=0.34.3",
+]
