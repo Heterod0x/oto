@@ -1,0 +1,3 @@
+# prerequistes
+
+ffmpeg
